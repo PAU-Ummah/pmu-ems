@@ -38,6 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error("Login error:", error);
       throw error;
     } finally {
@@ -51,6 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await signOut(auth);
       router.push("/login");
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error("Logout error:", error);
     } finally {
       setLoading(false);

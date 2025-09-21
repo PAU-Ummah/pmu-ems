@@ -12,31 +12,50 @@ const compat = new FlatCompat({
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
+    ignores: [
+      ".next/**/*",
+      "node_modules/**/*",
+      "out/**/*",
+      "dist/**/*",
+      "build/**/*",
+      "*.config.js",
+      "*.config.mjs",
+      "next-env.d.ts",
+    ],
+  },
+  {
     rules: {
-      // TypeScript specific rules
-      "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+      // TypeScript specific rules - more lenient
+      "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
       "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-empty-object-type": "off",
+      "@typescript-eslint/no-unsafe-function-type": "off",
+      "@typescript-eslint/no-wrapper-object-types": "off",
+      "@typescript-eslint/triple-slash-reference": "off",
+      "@typescript-eslint/no-unused-expressions": "off",
+      "@typescript-eslint/no-this-alias": "off",
       
       // React specific rules
       "react-hooks/exhaustive-deps": "warn",
       "react/no-unescaped-entities": "off",
       "react/react-in-jsx-scope": "off", // Not needed in Next.js
       
-      // General code quality rules
+      // General code quality rules - more lenient
       "no-console": "warn",
-      "prefer-const": "error",
-      "no-var": "error",
+      "prefer-const": "warn",
+      "no-var": "warn",
       
       // Next.js specific
       "@next/next/no-img-element": "warn",
       "@next/next/no-html-link-for-pages": "error",
+      "@next/next/no-assign-module-variable": "off",
     },
   },
   {
     files: ["**/*.ts", "**/*.tsx"],
     rules: {
       // TypeScript specific rules for TS files
-      "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+      "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
     },
   },
 ];

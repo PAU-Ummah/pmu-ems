@@ -16,8 +16,6 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  useMediaQuery,
-  useTheme,
 } from "@mui/material";
 import { Event, Person } from "@/types";
 import { collection, getDocs } from "firebase/firestore";
@@ -27,7 +25,6 @@ export default function ReportsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<string>("");
-  const theme = useTheme();
 
   useEffect(() => {
     const fetchEvents = async () => {

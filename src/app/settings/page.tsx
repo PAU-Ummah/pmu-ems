@@ -1,10 +1,9 @@
 "use client";
 import NavigationDrawer from "@/components/Drawer";
-import { Box, Typography, useMediaQuery, useTheme } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function SettingsPage() {
-  const theme = useTheme();
 
   return (
     <ProtectedRoute>

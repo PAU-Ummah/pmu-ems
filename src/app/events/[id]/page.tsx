@@ -16,7 +16,6 @@ import {
   useMediaQuery,
   useTheme,
   Chip,
-  IconButton,
 } from "@mui/material";
 import { Stop } from "@mui/icons-material";
 import { Person, Event } from "@/types";
