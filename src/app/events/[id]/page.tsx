@@ -15,9 +15,12 @@ import {
   Button,
   useMediaQuery,
   useTheme,
+  Chip,
+  IconButton,
 } from "@mui/material";
+import { Stop } from "@mui/icons-material";
 import { Person, Event } from "@/types";
-import { doc, getDoc, getDocs, collection } from "firebase/firestore";
+import { doc, getDoc, getDocs, collection, updateDoc } from "firebase/firestore";
 import { db } from "@/firebase";
 import Link from "next/link";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -51,6 +54,21 @@ export default function EventDetailPage() {
     fetchEvent();
     fetchPeople();
   }, [eventId]);
+
+  const handleEndEvent = async () => {
+    if (!event) return;
+    const endTime = new Date().toISOString();
+    await updateDoc(doc(db, "events", event.id), {
+      endTime,
+      isEnded: true,
+    });
+    // Refresh the event data
+    const docRef = doc(db, "events", eventId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      setEvent({ id: docSnap.id, ...docSnap.data() } as Event);
+    }
+  };
 
   if (!event) {
     return (
@@ -92,26 +110,62 @@ export default function EventDetailPage() {
             <Typography variant="h4" color="black" sx={{ fontSize: { xs: "1.5rem", md: "2rem" } }}>
               {event.name}
             </Typography>
-            <Link href="/events" passHref>
-              <Button
-                variant="outlined"
-                sx={{
-                  borderColor: "#144404",
-                  color: "#144404",
-                  width: isMobile ? "100%" : "auto"
-                }}
-              >
-                Back to Events
-              </Button>
-            </Link>
+            <Box sx={{ display: "flex", gap: 2, flexDirection: isMobile ? "column" : "row" }}>
+              {!event.isEnded && (
+                <Button
+                  variant="contained"
+                  startIcon={<Stop />}
+                  onClick={handleEndEvent}
+                  sx={{
+                    backgroundColor: "#ff9800",
+                    "&:hover": { backgroundColor: "#f57c00" },
+                    width: isMobile ? "100%" : "auto"
+                  }}
+                >
+                  End Event
+                </Button>
+              )}
+              <Link href="/events" passHref>
+                <Button
+                  variant="outlined"
+                  sx={{
+                    borderColor: "#144404",
+                    color: "#144404",
+                    width: isMobile ? "100%" : "auto"
+                  }}
+                >
+                  Back to Events
+                </Button>
+              </Link>
+            </Box>
           </Box>
 
-          <Typography variant="subtitle1" color="black" gutterBottom>
-            Date: {event.date}
-          </Typography>
-          <Typography variant="subtitle1" color="black" gutterBottom>
-            Total Attendees: {event.attendees.length}
-          </Typography>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mb: 3 }}>
+            <Typography variant="subtitle1" color="black">
+              Date: {event.date}
+            </Typography>
+            <Typography variant="subtitle1" color="black">
+              Start Time: {event.startTime ? new Date(event.startTime).toLocaleString() : "Not set"}
+            </Typography>
+            {event.endTime && (
+              <Typography variant="subtitle1" color="black">
+                End Time: {new Date(event.endTime).toLocaleString()}
+              </Typography>
+            )}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography variant="subtitle1" color="black">
+                Status:
+              </Typography>
+              <Chip
+                label={event.isEnded ? "Ended" : "Active"}
+                color={event.isEnded ? "default" : "success"}
+                size="small"
+              />
+            </Box>
+            <Typography variant="subtitle1" color="black">
+              Total Attendees: {event.attendees.length}
+            </Typography>
+          </Box>
 
           <TableContainer component={Paper} sx={{ mt: 3, overflowX: "auto" }}>
             <Table size="small">

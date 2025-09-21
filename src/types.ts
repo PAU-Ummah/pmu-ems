@@ -13,5 +13,8 @@ export interface Person {
     id: string;
     name: string;
     date: string;
+    startTime?: string; // ISO string for start time
+    endTime?: string; // ISO string for end time
+    isEnded?: boolean; // Flag to indicate if event has ended
     attendees: string[]; // Array of person IDs
   }
