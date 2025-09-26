@@ -104,7 +104,7 @@ export default function ReportsPage() {
                   <TableRow sx={{ backgroundColor: "#f0f0f0" }}>
                     <TableCell>Name</TableCell>
                     <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>Department</TableCell>
-                    <TableCell>Email</TableCell>
+                    <TableCell>Class</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -117,7 +117,7 @@ export default function ReportsPage() {
                           {person.firstName} {person.middleName} {person.surname}
                         </TableCell>
                         <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>{person.department}</TableCell>
-                        <TableCell>{person.email}</TableCell>
+                        <TableCell>{person.class}</TableCell>
                       </TableRow>
                     );
                   })}

@@ -6,7 +6,7 @@ export interface Person {
     surname: string;
     department: string;
     gender: string;
-    email: string;
+    class: string;
   }
   
   export interface Event {

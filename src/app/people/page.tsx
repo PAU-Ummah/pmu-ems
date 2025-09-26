@@ -108,7 +108,7 @@ export default function PeoplePage() {
         surname: row["SURNAME"] || "",
         department: row["DEPARTMENT"] || "",
         gender: row["GENDER"] || "",
-        email: row["EMAIL"] || "",
+        class: row["CLASS"] || "",
       }));
 
       const batchPromises = peopleData.map((person) =>
@@ -203,7 +203,7 @@ export default function PeoplePage() {
                   <TableCell>Name</TableCell>
                   <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>Department</TableCell>
                   <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>Gender</TableCell>
-                  <TableCell>Email</TableCell>
+                  <TableCell>Class</TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -215,7 +215,7 @@ export default function PeoplePage() {
                     </TableCell>
                     <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>{person.department}</TableCell>
                     <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>{person.gender}</TableCell>
-                    <TableCell>{person.email}</TableCell>
+                    <TableCell>{person.class}</TableCell>
                     <TableCell>
                       <IconButton onClick={() => handleEdit(person)}>
                         <Edit color="primary" />
@@ -286,9 +286,9 @@ export default function PeoplePage() {
                   size="small"
                 />
                 <TextField
-                  name="email"
-                  label="Email"
-                  value={currentPerson.email || ""}
+                  name="class"
+                  label="Class"
+                  value={currentPerson.class || ""}
                   onChange={handleInputChange}
                   fullWidth
                   margin="normal"
