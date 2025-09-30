@@ -123,10 +123,11 @@ export default function FinanceReportPage() {
             component="main"
             sx={{
               flexGrow: 1,
-              p: { xs: 2, md: 3 },
+              p: { xs: 1, sm: 2, md: 3 },
               backgroundColor: "#f5f5f5",
               minHeight: "100vh",
               ml: { xs: 0, md: "56px" },
+              maxWidth: { xs: "100%", sm: "100%" },
             }}
           >
             <Typography
@@ -139,67 +140,76 @@ export default function FinanceReportPage() {
             </Typography>
 
             {/* Summary Cards */}
-            <Grid container spacing={2} sx={{ mb: 3 }}>
-              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                <Card>
-                  <CardContent>
-                    <Typography color="textSecondary" gutterBottom>
-                      Total Events
-                    </Typography>
-                    <Typography variant="h5" component="div">
-                      {events.length}
-                    </Typography>
-                  </CardContent>
-                </Card>
+            <Box sx={{ 
+              maxWidth: { xs: "95%", sm: "100%" },
+              mx: { xs: "auto", sm: 0 }
+            }}>
+              <Grid container spacing={{ xs: 1, sm: 2 }} sx={{ mb: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Card sx={{ height: "100%" }}>
+                    <CardContent sx={{ p: { xs: 1, sm: 2 } }}>
+                      <Typography color="textSecondary" gutterBottom sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
+                        Total Events
+                      </Typography>
+                      <Typography variant="h5" component="div" sx={{ fontSize: { xs: "1.25rem", sm: "1.5rem" } }}>
+                        {events.length}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Card sx={{ height: "100%" }}>
+                    <CardContent sx={{ p: { xs: 1, sm: 2 } }}>
+                      <Typography color="textSecondary" gutterBottom sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
+                        Total Spending
+                      </Typography>
+                      <Typography variant="h5" component="div" color="primary" sx={{ fontSize: { xs: "1.25rem", sm: "1.5rem" } }}>
+                        ₦{getTotalSpending().toLocaleString()}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Card sx={{ height: "100%" }}>
+                    <CardContent sx={{ p: { xs: 1, sm: 2 } }}>
+                      <Typography color="textSecondary" gutterBottom sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
+                        Total Invoices
+                      </Typography>
+                      <Typography variant="h5" component="div" sx={{ fontSize: { xs: "1.25rem", sm: "1.5rem" } }}>
+                        {getTotalInvoices()}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Card sx={{ height: "100%" }}>
+                    <CardContent sx={{ p: { xs: 1, sm: 2 } }}>
+                      <Typography color="textSecondary" gutterBottom sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
+                        Total Items
+                      </Typography>
+                      <Typography variant="h5" component="div" sx={{ fontSize: { xs: "1.25rem", sm: "1.5rem" } }}>
+                        {getTotalItems()}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
               </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                <Card>
-                  <CardContent>
-                    <Typography color="textSecondary" gutterBottom>
-                      Total Spending
-                    </Typography>
-                    <Typography variant="h5" component="div" color="primary">
-                      ₦{getTotalSpending().toLocaleString()}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                <Card>
-                  <CardContent>
-                    <Typography color="textSecondary" gutterBottom>
-                      Total Invoices
-                    </Typography>
-                    <Typography variant="h5" component="div">
-                      {getTotalInvoices()}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                <Card>
-                  <CardContent>
-                    <Typography color="textSecondary" gutterBottom>
-                      Total Items
-                    </Typography>
-                    <Typography variant="h5" component="div">
-                      {getTotalItems()}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
+            </Box>
 
             {/* Events Finance Table */}
-            <TableContainer component={Paper} sx={{ overflowX: "auto" }}>
-              <Table sx={{ minWidth: 650 }} size="small">
+            <Box sx={{ 
+              maxWidth: { xs: "95%", sm: "100%" },
+              mx: { xs: "auto", sm: 0 }
+            }}>
+              <TableContainer component={Paper} sx={{ overflowX: "auto" }}>
+                <Table sx={{ minWidth: 650 }} size="small">
                 <TableHead>
                   <TableRow sx={{ backgroundColor: "#f0f0f0" }}>
                     <TableCell>Event Name</TableCell>
-                    <TableCell>Date</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Invoices</TableCell>
-                    <TableCell>Items</TableCell>
+                    <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>Date</TableCell>
+                    <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>Status</TableCell>
+                    <TableCell sx={{ display: { xs: "none", lg: "table-cell" } }}>Invoices</TableCell>
+                    <TableCell sx={{ display: { xs: "none", lg: "table-cell" } }}>Items</TableCell>
                     <TableCell>Total Spent</TableCell>
                     <TableCell>Actions</TableCell>
                   </TableRow>
@@ -211,56 +221,89 @@ export default function FinanceReportPage() {
                         <Typography variant="body2" fontWeight="bold">
                           {data.event.name}
                         </Typography>
+                        {isMobile && (
+                          <Box sx={{ mt: 0.5 }}>
+                            <Chip
+                              label={data.event.isEnded ? "Ended" : "Active"}
+                              color={data.event.isEnded ? "default" : "success"}
+                              size="small"
+                              sx={{ fontSize: "0.7rem", height: "20px", mr: 1 }}
+                            />
+                            <Typography variant="caption" color="text.secondary">
+                              {data.event.date}
+                            </Typography>
+                          </Box>
+                        )}
                       </TableCell>
-                      <TableCell>{data.event.date}</TableCell>
-                      <TableCell>
+                      <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
+                        {data.event.date}
+                      </TableCell>
+                      <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
                         <Chip
                           label={data.event.isEnded ? "Ended" : "Active"}
                           color={data.event.isEnded ? "default" : "success"}
                           size="small"
                         />
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={{ display: { xs: "none", lg: "table-cell" } }}>
                         <Typography variant="body2">
                           {data.invoices.length} invoice(s)
                         </Typography>
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={{ display: { xs: "none", lg: "table-cell" } }}>
                         <Typography variant="body2">
                           {data.itemCount} item(s)
                         </Typography>
                       </TableCell>
                       <TableCell>
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <AttachMoney color="success" />
-                          ₦{data.totalSpent.toLocaleString()}
+                          <AttachMoney color="success" sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }} />
+                          <Typography variant="body2" sx={{ fontSize: { xs: "0.8rem", sm: "0.875rem" } }}>
+                            ₦{data.totalSpent.toLocaleString()}
+                          </Typography>
                         </Box>
+                        {isMobile && (
+                          <Box sx={{ mt: 0.5 }}>
+                            <Typography variant="caption" color="text.secondary">
+                              {data.invoices.length} invoices • {data.itemCount} items
+                            </Typography>
+                          </Box>
+                        )}
                       </TableCell>
                       <TableCell>
-                        <IconButton
-                          onClick={() => handleViewDetails(data)}
-                          title="View Details"
-                        >
-                          <Visibility color="primary" />
-                        </IconButton>
-                        <IconButton
-                          onClick={() => handleGeneratePDF(data)}
-                          title="Generate PDF"
-                        >
-                          <Print color="primary" />
-                        </IconButton>
-                        <IconButton
-                          onClick={() => handleDownloadData(data)}
-                          title="Download Data"
-                        >
-                          <Download color="primary" />
-                        </IconButton>
+                        <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                          <IconButton
+                            onClick={() => handleViewDetails(data)}
+                            title="View Details"
+                            size="small"
+                            sx={{ p: { xs: 0.5, sm: 1 } }}
+                          >
+                            <Visibility color="primary" sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }} />
+                          </IconButton>
+                          <IconButton
+                            onClick={() => handleGeneratePDF(data)}
+                            title="Generate PDF"
+                            size="small"
+                            sx={{ p: { xs: 0.5, sm: 1 } }}
+                          >
+                            <Print color="primary" sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }} />
+                          </IconButton>
+                          <IconButton
+                            onClick={() => handleDownloadData(data)}
+                            title="Download Data"
+                            size="small"
+                            sx={{ p: { xs: 0.5, sm: 1 } }}
+                          >
+                            <Download color="primary" sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }} />
+                          </IconButton>
+                        </Box>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </TableContainer>
+            </Box>
 
             {/* Event Details Dialog */}
             <Dialog
@@ -297,48 +340,74 @@ export default function FinanceReportPage() {
                     <Typography variant="h6" sx={{ mb: 2 }}>Invoice Details</Typography>
                     
                     {selectedEvent.invoices.map((invoice) => (
-                      <Paper key={invoice.id} sx={{ p: 2, mb: 2, border: "1px solid #e0e0e0" }}>
-                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                          <Typography variant="h6">
+                      <Paper key={invoice.id} sx={{ p: { xs: 1.5, sm: 2 }, mb: 2, border: "1px solid #e0e0e0" }}>
+                        <Box sx={{ 
+                          display: "flex", 
+                          justifyContent: "space-between", 
+                          alignItems: { xs: "flex-start", sm: "center" },
+                          flexDirection: { xs: "column", sm: "row" },
+                          gap: { xs: 1, sm: 0 },
+                          mb: 2 
+                        }}>
+                          <Typography variant="h6" sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }}>
                             Invoice #{invoice.invoiceNumber || `INV-${invoice.id?.slice(-6)}`}
                           </Typography>
-                          <Typography variant="h6" color="primary">
+                          <Typography variant="h6" color="primary" sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }}>
                             ₦{invoice.totalAmount.toLocaleString()}
                           </Typography>
                         </Box>
                         
                         <Grid container spacing={2} sx={{ mb: 2 }}>
                           <Grid size={{ xs: 12, md: 6 }}>
-                            <Typography><strong>Vendor:</strong> {invoice.vendor || "N/A"}</Typography>
+                            <Typography sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+                              <strong>Vendor:</strong> {invoice.vendor || "N/A"}
+                            </Typography>
                           </Grid>
                           <Grid size={{ xs: 12, md: 6 }}>
-                            <Typography><strong>Date:</strong> {invoice.date}</Typography>
+                            <Typography sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+                              <strong>Date:</strong> {invoice.date}
+                            </Typography>
                           </Grid>
                         </Grid>
 
                         {invoice.notes && (
-                          <Typography sx={{ mb: 2 }}>
+                          <Typography sx={{ mb: 2, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
                             <strong>Notes:</strong> {invoice.notes}
                           </Typography>
                         )}
 
-                        <TableContainer component={Paper} variant="outlined">
+                        <TableContainer component={Paper} variant="outlined" sx={{ overflowX: "auto" }}>
                           <Table size="small">
                             <TableHead>
                               <TableRow>
-                                <TableCell>Description</TableCell>
-                                <TableCell>Quantity</TableCell>
-                                <TableCell>Unit Price</TableCell>
-                                <TableCell>Total</TableCell>
+                                <TableCell sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>Description</TableCell>
+                                <TableCell sx={{ display: { xs: "none", sm: "table-cell" }, fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>Quantity</TableCell>
+                                <TableCell sx={{ display: { xs: "none", md: "table-cell" }, fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>Unit Price</TableCell>
+                                <TableCell sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>Total</TableCell>
                               </TableRow>
                             </TableHead>
                             <TableBody>
                               {invoice.items?.map((item) => (
                                 <TableRow key={item.id}>
-                                  <TableCell>{item.description}</TableCell>
-                                  <TableCell>{item.quantity}</TableCell>
-                                  <TableCell>₦{item.unitPrice.toLocaleString()}</TableCell>
-                                  <TableCell>₦{item.totalPrice.toLocaleString()}</TableCell>
+                                  <TableCell sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
+                                    {item.description}
+                                    {isMobile && (
+                                      <Box sx={{ mt: 0.5 }}>
+                                        <Typography variant="caption" color="text.secondary">
+                                          Qty: {item.quantity} × ₦{item.unitPrice.toLocaleString()}
+                                        </Typography>
+                                      </Box>
+                                    )}
+                                  </TableCell>
+                                  <TableCell sx={{ display: { xs: "none", sm: "table-cell" }, fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
+                                    {item.quantity}
+                                  </TableCell>
+                                  <TableCell sx={{ display: { xs: "none", md: "table-cell" }, fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
+                                    ₦{item.unitPrice.toLocaleString()}
+                                  </TableCell>
+                                  <TableCell sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
+                                    ₦{item.totalPrice.toLocaleString()}
+                                  </TableCell>
                                 </TableRow>
                               ))}
                             </TableBody>
@@ -349,14 +418,26 @@ export default function FinanceReportPage() {
                   </Box>
                 )}
               </DialogContent>
-              <DialogActions>
-                <Button onClick={() => setOpen(false)}>Close</Button>
+              <DialogActions sx={{ 
+                flexDirection: { xs: "column", sm: "row" },
+                gap: { xs: 1, sm: 0 },
+                p: { xs: 2, sm: 3 }
+              }}>
+                <Button 
+                  onClick={() => setOpen(false)}
+                  fullWidth={isMobile}
+                  sx={{ order: { xs: 3, sm: 0 } }}
+                >
+                  Close
+                </Button>
                 {selectedEvent && (
                   <>
                     <Button
                       startIcon={<Print />}
                       onClick={() => handleGeneratePDF(selectedEvent)}
                       variant="outlined"
+                      fullWidth={isMobile}
+                      sx={{ order: { xs: 1, sm: 0 } }}
                     >
                       Generate PDF
                     </Button>
@@ -364,7 +445,12 @@ export default function FinanceReportPage() {
                       startIcon={<Download />}
                       onClick={() => handleDownloadData(selectedEvent)}
                       variant="contained"
-                      sx={{ backgroundColor: "#144404", color: "white" }}
+                      fullWidth={isMobile}
+                      sx={{ 
+                        backgroundColor: "#144404", 
+                        color: "white",
+                        order: { xs: 2, sm: 0 }
+                      }}
                     >
                       Download Data
                     </Button>
