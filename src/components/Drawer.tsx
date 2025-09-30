@@ -26,9 +26,12 @@ import {
   ChevronLeft,
   ChevronRight,
   ExitToApp,
+  AttachMoney,
+  Receipt,
 } from "@mui/icons-material";
 import Link from 'next/link';
 import Image from "next/image";
+import { useRole } from "@/hooks/useRole";
 
 export const drawerWidth = 240;
 export const collapsedWidth = 68;
@@ -45,18 +48,21 @@ export default function NavigationDrawer() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [open, setOpen] = useState(!isMobile);
+  const { canCreateEvents, canManagePeople, canManageFinance, canViewReports } = useRole();
 
   const handleDrawerToggle = () => {
     setOpen(!open);
   };
 
   const menuItems = [
-    { text: "Events", icon: <Event />, path: "/events" },
-    { text: "People", icon: <People />, path: "/people" },
-    { text: "Reports", icon: <Assessment />, path: "/reports" },
-    { text: "Settings", icon: <Settings />, path: "/settings" },
-    { text: "Logout", icon: <ExitToApp />, path: "/logout" },
-  ];
+    { text: "Events", icon: <Event />, path: "/events", show: canCreateEvents() },
+    { text: "People", icon: <People />, path: "/people", show: canManagePeople() },
+    { text: "Finance", icon: <AttachMoney />, path: "/finance", show: canManageFinance() },
+    { text: "Finance Report", icon: <Receipt />, path: "/finance-report", show: canManageFinance() || canViewReports() },
+    { text: "Reports", icon: <Assessment />, path: "/reports", show: canViewReports() },
+    { text: "Settings", icon: <Settings />, path: "/settings", show: true },
+    { text: "Logout", icon: <ExitToApp />, path: "/logout", show: true },
+  ].filter(item => item.show);
 
   return (
     <>

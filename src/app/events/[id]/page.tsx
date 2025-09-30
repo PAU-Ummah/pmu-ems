@@ -23,6 +23,7 @@ import { doc, getDoc, getDocs, collection, updateDoc } from "firebase/firestore"
 import { db } from "@/firebase";
 import Link from "next/link";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import RoleGuard from "@/components/RoleGuard";
 
 export default function EventDetailPage() {
   const params = useParams();
@@ -110,20 +111,22 @@ export default function EventDetailPage() {
               {event.name}
             </Typography>
             <Box sx={{ display: "flex", gap: 2, flexDirection: isMobile ? "column" : "row" }}>
-              {!event.isEnded && (
-                <Button
-                  variant="contained"
-                  startIcon={<Stop />}
-                  onClick={handleEndEvent}
-                  sx={{
-                    backgroundColor: "#ff9800",
-                    "&:hover": { backgroundColor: "#f57c00" },
-                    width: isMobile ? "100%" : "auto"
-                  }}
-                >
-                  End Event
-                </Button>
-              )}
+              <RoleGuard allowedRoles="event-organizer">
+                {!event.isEnded && (
+                  <Button
+                    variant="contained"
+                    startIcon={<Stop />}
+                    onClick={handleEndEvent}
+                    sx={{
+                      backgroundColor: "#ff9800",
+                      "&:hover": { backgroundColor: "#f57c00" },
+                      width: isMobile ? "100%" : "auto"
+                    }}
+                  >
+                    End Event
+                  </Button>
+                )}
+              </RoleGuard>
               <Link href="/events" passHref>
                 <Button
                   variant="outlined"

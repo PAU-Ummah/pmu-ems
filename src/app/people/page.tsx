@@ -34,6 +34,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "@/firebase";
+import RoleGuard from "@/components/RoleGuard";
 
 export default function PeoplePage() {
   const [people, setPeople] = useState<Person[]>([]);
@@ -145,56 +146,58 @@ export default function PeoplePage() {
             People Management
           </Typography>
 
-          <Box sx={{ mb: 3, display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2 }}>
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={() => {
-                setOpen(true);
-                setIsEdit(false);
-              }}
-              sx={{
-                backgroundColor: "#144404",
-                "&:hover": { backgroundColor: "#0d3002" },
-                width: { xs: "100%", sm: "auto" }
-              }}
-            >
-              Add Person
-            </Button>
-
-            <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2 }}>
+          <RoleGuard allowedRoles="it">
+            <Box sx={{ mb: 3, display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2 }}>
               <Button
-                variant="outlined"
-                component="label"
+                variant="contained"
+                startIcon={<Add />}
+                onClick={() => {
+                  setOpen(true);
+                  setIsEdit(false);
+                }}
                 sx={{
-                  borderColor: "#144404",
-                  color: "#144404",
+                  backgroundColor: "#144404",
+                  "&:hover": { backgroundColor: "#0d3002" },
                   width: { xs: "100%", sm: "auto" }
                 }}
               >
-                Upload Excel
-                <input
-                  type="file"
-                  hidden
-                  accept=".xlsx, .xls"
-                  onChange={handleFileUpload}
-                />
+                Add Person
               </Button>
-              {file && (
+
+              <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2 }}>
                 <Button
-                  variant="contained"
-                  onClick={processExcel}
+                  variant="outlined"
+                  component="label"
                   sx={{
-                    backgroundColor: "#144404",
-                    "&:hover": { backgroundColor: "#0d3002" },
+                    borderColor: "#144404",
+                    color: "#144404",
                     width: { xs: "100%", sm: "auto" }
                   }}
                 >
-                  Process File
+                  Upload Excel
+                  <input
+                    type="file"
+                    hidden
+                    accept=".xlsx, .xls"
+                    onChange={handleFileUpload}
+                  />
                 </Button>
-              )}
+                {file && (
+                  <Button
+                    variant="contained"
+                    onClick={processExcel}
+                    sx={{
+                      backgroundColor: "#144404",
+                      "&:hover": { backgroundColor: "#0d3002" },
+                      width: { xs: "100%", sm: "auto" }
+                    }}
+                  >
+                    Process File
+                  </Button>
+                )}
+              </Box>
             </Box>
-          </Box>
+          </RoleGuard>
 
           <TableContainer component={Paper} sx={{ overflowX: "auto" }}>
             <Table sx={{ minWidth: 650 }} size="small">
@@ -217,12 +220,14 @@ export default function PeoplePage() {
                     <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>{person.gender}</TableCell>
                     <TableCell>{person.class}</TableCell>
                     <TableCell>
-                      <IconButton onClick={() => handleEdit(person)}>
-                        <Edit color="primary" />
-                      </IconButton>
-                      <IconButton onClick={() => handleDelete(person.id!)}>
-                        <Delete color="error" />
-                      </IconButton>
+                      <RoleGuard allowedRoles="it">
+                        <IconButton onClick={() => handleEdit(person)}>
+                          <Edit color="primary" />
+                        </IconButton>
+                        <IconButton onClick={() => handleDelete(person.id!)}>
+                          <Delete color="error" />
+                        </IconButton>
+                      </RoleGuard>
                     </TableCell>
                   </TableRow>
                 ))}

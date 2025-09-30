@@ -1,12 +1,15 @@
 // src/context/AuthContext.tsx
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
-import { User, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { auth } from "@/firebase";
+import { User as FirebaseUser, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "@/firebase";
 import { useRouter } from "next/navigation";
+import { User } from "@/types";
 
 interface AuthContextType {
-  user: User | null;
+  user: FirebaseUser | null;
+  userData: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -14,19 +17,46 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
+  userData: null,
   loading: true,
   login: async () => {},
   logout: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [userData, setUserData] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser);
+      
+      if (firebaseUser) {
+        // Fetch user data from Firestore
+        try {
+          const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
+          if (userDoc.exists()) {
+            setUserData({ id: firebaseUser.uid, ...userDoc.data() } as User);
+          } else {
+            // If user document doesn't exist, create a default one
+            setUserData({
+              id: firebaseUser.uid,
+              email: firebaseUser.email || "",
+              role: "event-organizer", // Default role
+              displayName: firebaseUser.displayName || firebaseUser.email || "",
+            });
+          }
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error("Error fetching user data:", error);
+          setUserData(null);
+        }
+      } else {
+        setUserData(null);
+      }
+      
       setLoading(false);
     });
 
@@ -60,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, userData, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

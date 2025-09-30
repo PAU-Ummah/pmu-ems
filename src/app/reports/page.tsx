@@ -20,6 +20,7 @@ import {
 import { Event, Person } from "@/types";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/firebase";
+import RoleGuard from "@/components/RoleGuard";
 
 export default function ReportsPage() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -53,26 +54,27 @@ export default function ReportsPage() {
 
   return (
     <ProtectedRoute>
-      <Box sx={{ display: 'flex' }}>
-        <NavigationDrawer />
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          p: { xs: 2, md: 3 },
-          backgroundColor: "#f5f5f5",
-          minHeight: "100vh",
-          ml: { xs: 0, md: "56px" },
-        }}
-      >
-        <Typography 
-          variant="h4" 
-          color="black" 
-          gutterBottom 
-          sx={{ fontSize: { xs: "1.5rem", md: "2rem" } }}
+      <RoleGuard allowedRoles="admin">
+        <Box sx={{ display: 'flex' }}>
+          <NavigationDrawer />
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            p: { xs: 2, md: 3 },
+            backgroundColor: "#f5f5f5",
+            minHeight: "100vh",
+            ml: { xs: 0, md: "56px" },
+          }}
         >
-          Attendance Reports
-        </Typography>
+          <Typography 
+            variant="h4" 
+            color="black" 
+            gutterBottom 
+            sx={{ fontSize: { xs: "1.5rem", md: "2rem" } }}
+          >
+            Event Reports
+          </Typography>
 
         <FormControl fullWidth sx={{ mb: 3, maxWidth: 400 }}>
           <InputLabel>Select Event</InputLabel>
@@ -91,12 +93,54 @@ export default function ReportsPage() {
 
         {selectedEventData && (
           <>
-            <Typography variant="h5" gutterBottom sx={{ fontSize: { xs: "1.25rem", md: "1.5rem" } }}>
+            <Typography 
+              variant="h5" 
+              gutterBottom 
+              sx={{ 
+                fontSize: { xs: "1.25rem", md: "1.5rem" },
+                color: "black",
+              }}
+            >
               {selectedEventData.name} - {selectedEventData.date}
             </Typography>
-            <Typography variant="subtitle1" gutterBottom>
+            <Typography 
+              variant="subtitle1" 
+              gutterBottom
+              sx={{ 
+                color: "black",
+                mb: 1
+              }}
+            >
               Total Attendees: {selectedEventData.attendees.length}
             </Typography>
+            <Typography 
+              variant="subtitle1" 
+              gutterBottom
+              sx={{ 
+                color: "black",
+                mb: 1
+              }}
+            >
+              Amount Spent: ₦{selectedEventData.amountSpent?.toLocaleString() || "0"}
+            </Typography>
+            {(selectedEventData.startTime || selectedEventData.endTime) && (
+              <Typography 
+                variant="body1" 
+                gutterBottom
+                sx={{ 
+                  color: "text.secondary",
+                  mb: 2
+                }}
+              >
+                {selectedEventData.startTime && (
+                  <>Start Time: {new Date(selectedEventData.startTime).toLocaleString()}</>
+                )}
+                {selectedEventData.startTime && selectedEventData.endTime && " | "}
+                {selectedEventData.endTime && (
+                  <>End Time: {new Date(selectedEventData.endTime).toLocaleString()}</>
+                )}
+              </Typography>
+            )}
 
             <TableContainer component={Paper} sx={{ overflowX: "auto" }}>
               <Table size="small">
@@ -126,8 +170,9 @@ export default function ReportsPage() {
             </TableContainer>
           </>
         )}
+        </Box>
       </Box>
-    </Box>
+      </RoleGuard>
     </ProtectedRoute>
   );
 }

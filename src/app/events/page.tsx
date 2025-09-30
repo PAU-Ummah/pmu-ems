@@ -40,6 +40,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/firebase";
 import Link from "next/link";
+import RoleGuard from "@/components/RoleGuard";
 
 export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -57,6 +58,7 @@ export default function EventsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  // Role-based permissions are handled by RoleGuard components
 
   useEffect(() => {
     fetchEvents();
@@ -216,22 +218,24 @@ export default function EventsPage() {
             Events Management
           </Typography>
 
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => {
-              setOpen(true);
-              setIsEdit(false);
-            }}
-            sx={{
-              mb: 3,
-              backgroundColor: "#144404",
-              "&:hover": { backgroundColor: "#0d3002" },
-              width: { xs: "100%", sm: "auto" }
-            }}
-          >
-            Create Event
-          </Button>
+          <RoleGuard allowedRoles="event-organizer">
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => {
+                setOpen(true);
+                setIsEdit(false);
+              }}
+              sx={{
+                mb: 3,
+                backgroundColor: "#144404",
+                "&:hover": { backgroundColor: "#0d3002" },
+                width: { xs: "100%", sm: "auto" }
+              }}
+            >
+              Create Event
+            </Button>
+          </RoleGuard>
 
           <TableContainer component={Paper} sx={{ overflowX: "auto" }}>
             <Table sx={{ minWidth: 650 }} size="small">
@@ -283,23 +287,25 @@ export default function EventsPage() {
                           <People color="primary" />
                         </IconButton>
                       </Link>
-                      {!event.isEnded && (
-                        <IconButton onClick={() => handleEdit(event)}>
-                          <Edit color="primary" />
+                      <RoleGuard allowedRoles="event-organizer">
+                        {!event.isEnded && (
+                          <IconButton onClick={() => handleEdit(event)}>
+                            <Edit color="primary" />
+                          </IconButton>
+                        )}
+                        {!event.isEnded && (
+                          <IconButton 
+                            onClick={() => handleEndEvent(event.id)}
+                            sx={{ color: "#ff9800" }}
+                            title="End Event"
+                          >
+                            <Typography variant="body2">End</Typography>
+                          </IconButton>
+                        )}
+                        <IconButton onClick={() => handleDelete(event.id)}>
+                          <Delete color="error" />
                         </IconButton>
-                      )}
-                      {!event.isEnded && (
-                        <IconButton 
-                          onClick={() => handleEndEvent(event.id)}
-                          sx={{ color: "#ff9800" }}
-                          title="End Event"
-                        >
-                          <Typography variant="body2">End</Typography>
-                        </IconButton>
-                      )}
-                      <IconButton onClick={() => handleDelete(event.id)}>
-                        <Delete color="error" />
-                      </IconButton>
+                      </RoleGuard>
                     </TableCell>
                   </TableRow>
                 ))}
