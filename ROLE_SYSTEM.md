@@ -4,7 +4,7 @@ This document describes the role-based access control (RBAC) system implemented 
 
 ## User Roles
 
-The system supports four distinct user roles:
+The system supports five distinct user roles:
 
 ### 1. Event Organizer (`event-organizer`)
 **Permissions:**
@@ -16,7 +16,7 @@ The system supports four distinct user roles:
 **Access:**
 - Events page (full access)
 - Can create, edit, and end events
-- Can manage event attendance
+- Cannot manage event attendance (removed from this role)
 
 ### 2. IT (`it`)
 **Permissions:**
@@ -59,6 +59,18 @@ The system supports four distinct user roles:
 - Reports page (full access)
 - Can view all system data
 
+### 5. Registrar (`registrar`)
+**Permissions:**
+- Mark attendance for events
+- View events starting within 1 hour
+- Access to people data for attendance marking
+
+**Access:**
+- Attendance page (full access)
+- Can only see events that start within 1 hour
+- Can mark attendance for people attending events
+- Time-based visibility: Events appear 1 hour before start time
+
 ## Implementation Details
 
 ### Authentication Context
@@ -83,7 +95,7 @@ The system supports four distinct user roles:
 {
   id: string;
   email: string;
-  role: 'event-organizer' | 'it' | 'finance-manager' | 'admin';
+  role: 'event-organizer' | 'it' | 'finance-manager' | 'admin' | 'registrar';
   displayName?: string;
 }
 ```

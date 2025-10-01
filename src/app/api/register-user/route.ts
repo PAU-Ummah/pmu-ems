@@ -17,10 +17,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate role
-    const validRoles: User['role'][] = ['event-organizer', 'it', 'finance-manager', 'admin'];
+    const validRoles: User['role'][] = ['event-organizer', 'it', 'finance-manager', 'admin', 'registrar'];
     if (!validRoles.includes(role)) {
       return NextResponse.json(
-        { error: 'Invalid role. Must be one of: event-organizer, it, finance-manager, admin' },
+        { error: 'Invalid role. Must be one of: event-organizer, it, finance-manager, admin, registrar' },
         { status: 400 }
       );
     }

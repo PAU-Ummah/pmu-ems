@@ -55,7 +55,6 @@ export default function EventsPage() {
   const [selectedDate, setSelectedDate] = useState<Dayjs | null>(dayjs());
   const [selectedDateTime, setSelectedDateTime] = useState<Dayjs | null>(dayjs());
   const [isEdit, setIsEdit] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   // Role-based permissions are handled by RoleGuard components
@@ -82,6 +81,7 @@ export default function EventsPage() {
     });
     setPeople(peopleData);
   };
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -110,7 +110,6 @@ export default function EventsPage() {
     });
     setSelectedDate(dayjs());
     setSelectedDateTime(dayjs());
-    setSearchTerm("");
   };
 
   const handleEdit = (event: Event) => {
@@ -139,34 +138,10 @@ export default function EventsPage() {
     fetchEvents();
   };
 
-  const toggleAttendance = (personId: string) => {
-    const attendees = currentEvent.attendees || [];
-    if (attendees.includes(personId)) {
-      setCurrentEvent({
-        ...currentEvent,
-        attendees: attendees.filter((id) => id !== personId),
-      });
-    } else {
-      setCurrentEvent({
-        ...currentEvent,
-        attendees: [...attendees, personId],
-      });
-    }
-  };
-
   const getPersonName = (id: string) => {
     const person = people.find((p) => p.id === id);
     return person ? `${person.firstName} ${person.surname}` : "Unknown";
   };
-
-  const filteredPeople = people.filter((person) => {
-    const fullName = `${person.firstName} ${person.middleName || ""} ${person.surname}`.toLowerCase();
-    const department = person.department?.toLowerCase() || "";
-    return (
-      fullName.includes(searchTerm.toLowerCase()) ||
-      department.includes(searchTerm.toLowerCase())
-    );
-  });
 
   if (!events) {
     return (
@@ -318,7 +293,6 @@ export default function EventsPage() {
               open={open}
               onClose={() => {
                 setOpen(false);
-                setSearchTerm("");
                 setSelectedDate(dayjs());
                 setSelectedDateTime(dayjs());
               }}
@@ -363,68 +337,11 @@ export default function EventsPage() {
                       },
                     }}
                   />
-                <Typography variant="h6" sx={{ mt: 2 }}>
-                  Mark Attendance
-                </Typography>
-                {isEdit && currentEvent.isEnded ? (
-                  <Typography sx={{ p: 2, textAlign: 'center', color: 'text.secondary', fontStyle: 'italic' }}>
-                    Cannot modify attendance for ended events
-                  </Typography>
-                ) : (
-                  <>
-                    <TextField
-                      label="Search by name or department"
-                      variant="outlined"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      fullWidth
-                      sx={{ mb: 2 }}
-                    />
-                    <Box sx={{ maxHeight: "400px", overflow: "auto" }}>
-                      {filteredPeople.length > 0 ? (
-                        filteredPeople.map((person) => (
-                          <Box
-                            key={person.id}
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              p: 1,
-                              borderBottom: "1px solid #eee",
-                              '&:hover': {
-                                backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                              },
-                            }}
-                          >
-                            <Box sx={{ flexGrow: 1 }}>
-                              <Typography>
-                                {person.firstName} {person.middleName} {person.surname}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                {person.department}
-                              </Typography>
-                            </Box>
-                            <input
-                              type="checkbox"
-                              checked={currentEvent.attendees?.includes(person.id!) || false}
-                              onChange={() => toggleAttendance(person.id!)}
-                              style={{ width: '18px', height: '18px' }}
-                            />
-                          </Box>
-                        ))
-                      ) : (
-                        <Typography sx={{ p: 2, textAlign: 'center', color: 'text.secondary' }}>
-                          No matching people found
-                        </Typography>
-                      )}
-                    </Box>
-                  </>
-                )}
               </Box>
             </DialogContent>
             <DialogActions>
               <Button onClick={() => {
                 setOpen(false);
-                setSearchTerm("");
                 setSelectedDate(dayjs());
                 setSelectedDateTime(dayjs());
               }}>

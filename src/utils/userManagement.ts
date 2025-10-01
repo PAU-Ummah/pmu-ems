@@ -43,6 +43,7 @@ export const getRolePermissions = (role: User['role']) => {
       canManagePeople: false,
       canManageFinance: false,
       canViewReports: false,
+      canMarkAttendance: false,
     },
     'it': {
       canCreateEvents: false,
@@ -51,6 +52,7 @@ export const getRolePermissions = (role: User['role']) => {
       canManagePeople: true,
       canManageFinance: false,
       canViewReports: false,
+      canMarkAttendance: false,
     },
     'finance-manager': {
       canCreateEvents: false,
@@ -59,6 +61,7 @@ export const getRolePermissions = (role: User['role']) => {
       canManagePeople: false,
       canManageFinance: true,
       canViewReports: false,
+      canMarkAttendance: false,
     },
     'admin': {
       canCreateEvents: false,
@@ -67,6 +70,16 @@ export const getRolePermissions = (role: User['role']) => {
       canManagePeople: false,
       canManageFinance: false,
       canViewReports: true,
+      canMarkAttendance: false,
+    },
+    'registrar': {
+      canCreateEvents: false,
+      canEditEvents: false,
+      canEndEvents: false,
+      canManagePeople: false,
+      canManageFinance: false,
+      canViewReports: false,
+      canMarkAttendance: true,
     },
   };
 

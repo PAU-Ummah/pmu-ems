@@ -23,7 +23,7 @@ export interface Person {
   export interface User {
     id: string;
     email: string;
-    role: 'event-organizer' | 'it' | 'finance-manager' | 'admin';
+    role: 'event-organizer' | 'it' | 'finance-manager' | 'admin' | 'registrar';
     displayName?: string;
   }
 

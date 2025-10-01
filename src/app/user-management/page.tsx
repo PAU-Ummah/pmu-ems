@@ -323,6 +323,7 @@ export default function UserManagementPage() {
                       <MenuItem value="it">IT</MenuItem>
                       <MenuItem value="finance-manager">Finance Manager</MenuItem>
                       <MenuItem value="admin">Admin</MenuItem>
+                      <MenuItem value="registrar">Registrar</MenuItem>
                     </Select>
                   </FormControl>
 

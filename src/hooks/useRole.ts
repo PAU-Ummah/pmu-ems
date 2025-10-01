@@ -22,6 +22,7 @@ export const useRole = () => {
   const canViewReports = () => hasRole('admin');
   const canManageUsers = () => hasRole('it');
   const canRegisterUsers = () => hasRole('it');
+  const canMarkAttendance = () => hasRole('registrar');
 
   return {
     userRole: userData?.role,
@@ -34,5 +35,6 @@ export const useRole = () => {
     canViewReports,
     canManageUsers,
     canRegisterUsers,
+    canMarkAttendance,
   };
 };

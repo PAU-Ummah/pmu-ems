@@ -49,7 +49,7 @@ export default function NavigationDrawer() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [open, setOpen] = useState(!isMobile);
-  const { canCreateEvents, canManagePeople, canManageFinance, canViewReports, canManageUsers } = useRole();
+  const { canCreateEvents, canManagePeople, canManageFinance, canViewReports, canManageUsers, canMarkAttendance } = useRole();
 
   const handleDrawerToggle = () => {
     setOpen(!open);
@@ -57,6 +57,7 @@ export default function NavigationDrawer() {
 
   const menuItems = [
     { text: "Events", icon: <Event />, path: "/events", show: canCreateEvents() },
+    { text: "Attendance", icon: <People />, path: "/attendance", show: canMarkAttendance() },
     { text: "People", icon: <People />, path: "/people", show: canManagePeople() },
     { text: "User Management", icon: <PersonAdd />, path: "/user-management", show: canManageUsers() },
     { text: "Finance", icon: <AttachMoney />, path: "/finance", show: canManageFinance() },
