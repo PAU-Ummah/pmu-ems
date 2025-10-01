@@ -24,10 +24,14 @@ The system supports four distinct user roles:
 - Edit existing people records
 - Delete people from the system
 - Upload Excel files to bulk import people
+- Register new users with specific roles
+- Manage user accounts and role assignments
 
 **Access:**
 - People page (full access)
+- User Management page (full access)
 - Can manage all people-related operations
+- Can register new users and assign roles
 
 ### 3. Finance Manager (`finance-manager`)
 **Permissions:**

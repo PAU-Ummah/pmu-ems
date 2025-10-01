@@ -28,6 +28,7 @@ import {
   ExitToApp,
   AttachMoney,
   Receipt,
+  PersonAdd,
 } from "@mui/icons-material";
 import Link from 'next/link';
 import Image from "next/image";
@@ -48,7 +49,7 @@ export default function NavigationDrawer() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [open, setOpen] = useState(!isMobile);
-  const { canCreateEvents, canManagePeople, canManageFinance, canViewReports } = useRole();
+  const { canCreateEvents, canManagePeople, canManageFinance, canViewReports, canManageUsers } = useRole();
 
   const handleDrawerToggle = () => {
     setOpen(!open);
@@ -57,6 +58,7 @@ export default function NavigationDrawer() {
   const menuItems = [
     { text: "Events", icon: <Event />, path: "/events", show: canCreateEvents() },
     { text: "People", icon: <People />, path: "/people", show: canManagePeople() },
+    { text: "User Management", icon: <PersonAdd />, path: "/user-management", show: canManageUsers() },
     { text: "Finance", icon: <AttachMoney />, path: "/finance", show: canManageFinance() },
     { text: "Finance Report", icon: <Receipt />, path: "/finance-report", show: canManageFinance() || canViewReports() },
     { text: "Reports", icon: <Assessment />, path: "/reports", show: canViewReports() },
