@@ -30,7 +30,10 @@ import {
   collection,
   getDocs,
   doc,
-  updateDoc,
+  runTransaction,
+  onSnapshot,
+  arrayUnion,
+  arrayRemove,
 } from "firebase/firestore";
 import { db } from "@/firebase";
 import dayjs from "dayjs";
@@ -41,6 +44,8 @@ export default function AttendancePage() {
   const [open, setOpen] = useState(false);
   const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -48,6 +53,28 @@ export default function AttendancePage() {
     fetchEvents();
     fetchPeople();
   }, []);
+
+  // Set up real-time listener for events when attendance dialog is open
+  useEffect(() => {
+    if (!open || !currentEvent) return;
+
+    const eventRef = doc(db, "events", currentEvent.id);
+    const unsubscribe = onSnapshot(eventRef, (doc) => {
+      if (doc.exists()) {
+        const updatedEvent = { id: doc.id, ...doc.data() } as Event;
+        setCurrentEvent(updatedEvent);
+        
+        // Also update the events list
+        setEvents(prevEvents => 
+          prevEvents.map(event => 
+            event.id === updatedEvent.id ? updatedEvent : event
+          )
+        );
+      }
+    });
+
+    return () => unsubscribe();
+  }, [open, currentEvent]);
 
   const fetchEvents = async () => {
     const querySnapshot = await getDocs(collection(db, "events"));
@@ -68,30 +95,57 @@ export default function AttendancePage() {
   };
 
   const toggleAttendance = async (personId: string) => {
-    if (!currentEvent) return;
+    if (!currentEvent || isUpdating) return;
     
-    const attendees = currentEvent.attendees || [];
-    let newAttendees: string[];
+    setIsUpdating(true);
+    setUpdateError(null);
     
-    if (attendees.includes(personId)) {
-      newAttendees = attendees.filter((id) => id !== personId);
-    } else {
-      newAttendees = [...attendees, personId];
+    try {
+      const eventRef = doc(db, "events", currentEvent.id);
+      
+      // Use transaction to ensure atomic updates and handle concurrent access
+      await runTransaction(db, async (transaction) => {
+        const eventDoc = await transaction.get(eventRef);
+        
+        if (!eventDoc.exists()) {
+          throw new Error("Event not found");
+        }
+        
+        const eventData = eventDoc.data() as Event;
+        const attendees = eventData.attendees || [];
+        const isAttending = attendees.includes(personId);
+        
+        if (isAttending) {
+          // Remove person from attendees using arrayRemove
+          transaction.update(eventRef, {
+            attendees: arrayRemove(personId)
+          });
+        } else {
+          // Add person to attendees using arrayUnion
+          transaction.update(eventRef, {
+            attendees: arrayUnion(personId)
+          });
+        }
+      });
+      
+      // Update local state optimistically
+      const attendees = currentEvent.attendees || [];
+      const isAttending = attendees.includes(personId);
+      const newAttendees = isAttending 
+        ? attendees.filter((id) => id !== personId)
+        : [...attendees, personId];
+        
+      setCurrentEvent({
+        ...currentEvent,
+        attendees: newAttendees,
+      });
+      
+    } catch {
+      // Handle error silently and show user-friendly message
+      setUpdateError("Failed to update attendance. Please try again.");
+    } finally {
+      setIsUpdating(false);
     }
-
-    // Update the event in the database
-    await updateDoc(doc(db, "events", currentEvent.id), {
-      attendees: newAttendees,
-    });
-
-    // Update local state
-    setCurrentEvent({
-      ...currentEvent,
-      attendees: newAttendees,
-    });
-
-    // Refresh events list
-    fetchEvents();
   };
 
   const getPersonName = (id: string) => {
@@ -286,6 +340,18 @@ export default function AttendancePage() {
                     Mark attendance for people attending this event. Only events starting within 1 hour are shown.
                   </Alert>
                   
+                  {updateError && (
+                    <Alert severity="error" onClose={() => setUpdateError(null)}>
+                      {updateError}
+                    </Alert>
+                  )}
+                  
+                  {isUpdating && (
+                    <Alert severity="info">
+                      Updating attendance...
+                    </Alert>
+                  )}
+                  
                   <TextField
                     label="Search by name or department"
                     variant="outlined"
@@ -322,6 +388,7 @@ export default function AttendancePage() {
                             type="checkbox"
                             checked={currentEvent?.attendees?.includes(person.id!) || false}
                             onChange={() => toggleAttendance(person.id!)}
+                            disabled={isUpdating}
                             style={{ width: '18px', height: '18px' }}
                           />
                         </Box>

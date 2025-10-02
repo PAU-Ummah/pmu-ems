@@ -71,6 +71,12 @@ The system supports five distinct user roles:
 - Can mark attendance for people attending events
 - Time-based visibility: Events appear 1 hour before start time
 
+**Concurrent Access Features:**
+- Multiple registrars can mark attendance simultaneously
+- Real-time updates when other registrars make changes
+- Atomic database operations prevent data conflicts
+- Error handling for concurrent access scenarios
+
 ## Implementation Details
 
 ### Authentication Context
@@ -177,6 +183,23 @@ await updateUserRole(userId, 'finance-manager');
 2. **Server-side Validation**: For production, implement server-side role validation
 3. **Firestore Rules**: Configure Firestore security rules to enforce role-based access
 4. **Default Role**: New users default to `event-organizer` role
+
+## Technical Improvements
+
+### Attendance System Enhancements
+The attendance marking system has been enhanced to support concurrent access:
+
+1. **Firestore Transactions**: Uses `runTransaction()` to ensure atomic updates
+2. **Array Operations**: Uses `arrayUnion()` and `arrayRemove()` for safe concurrent modifications
+3. **Real-time Listeners**: Implements `onSnapshot()` for live updates when other users make changes
+4. **Error Handling**: Comprehensive error handling with user feedback
+5. **Loading States**: UI feedback during database operations
+
+### Benefits
+- **Concurrent Safety**: Multiple registrars can mark attendance simultaneously without data conflicts
+- **Real-time Updates**: Changes made by other registrars are immediately visible
+- **Data Integrity**: Atomic operations prevent partial updates and data corruption
+- **User Experience**: Clear feedback and loading states improve usability
 
 ## Future Enhancements
 
