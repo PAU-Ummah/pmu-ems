@@ -72,10 +72,10 @@ The system supports five distinct user roles:
 - Time-based visibility: Events appear 1 hour before start time
 
 **Concurrent Access Features:**
-- Multiple registrars can mark attendance simultaneously
+- Multiple registrars can mark attendance simultaneously for different people
 - Real-time updates when other registrars make changes
-- Atomic database operations prevent data conflicts
-- Error handling for concurrent access scenarios
+- Safe array operations using Firestore's arrayUnion/arrayRemove
+- Error handling and user feedback
 
 ## Implementation Details
 
@@ -187,18 +187,18 @@ await updateUserRole(userId, 'finance-manager');
 ## Technical Improvements
 
 ### Attendance System Enhancements
-The attendance marking system has been enhanced to support concurrent access:
+The attendance marking system has been optimized for concurrent access:
 
-1. **Firestore Transactions**: Uses `runTransaction()` to ensure atomic updates
-2. **Array Operations**: Uses `arrayUnion()` and `arrayRemove()` for safe concurrent modifications
-3. **Real-time Listeners**: Implements `onSnapshot()` for live updates when other users make changes
-4. **Error Handling**: Comprehensive error handling with user feedback
-5. **Loading States**: UI feedback during database operations
+1. **Safe Array Operations**: Uses `arrayUnion()` and `arrayRemove()` for concurrent-safe modifications
+2. **Real-time Listeners**: Implements `onSnapshot()` for live updates when other users make changes
+3. **Error Handling**: Comprehensive error handling with user feedback
+4. **Loading States**: UI feedback during database operations
+5. **Mobile Responsive**: Optimized for both desktop and mobile devices
 
 ### Benefits
-- **Concurrent Safety**: Multiple registrars can mark attendance simultaneously without data conflicts
+- **Concurrent Safety**: Multiple registrars can mark attendance simultaneously for different people
 - **Real-time Updates**: Changes made by other registrars are immediately visible
-- **Data Integrity**: Atomic operations prevent partial updates and data corruption
+- **Efficient Operations**: Simple array operations are fast and reliable
 - **User Experience**: Clear feedback and loading states improve usability
 
 ## Future Enhancements

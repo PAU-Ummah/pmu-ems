@@ -30,7 +30,7 @@ import {
   collection,
   getDocs,
   doc,
-  runTransaction,
+  updateDoc,
   onSnapshot,
   arrayUnion,
   arrayRemove,
@@ -102,35 +102,22 @@ export default function AttendancePage() {
     
     try {
       const eventRef = doc(db, "events", currentEvent.id);
-      
-      // Use transaction to ensure atomic updates and handle concurrent access
-      await runTransaction(db, async (transaction) => {
-        const eventDoc = await transaction.get(eventRef);
-        
-        if (!eventDoc.exists()) {
-          throw new Error("Event not found");
-        }
-        
-        const eventData = eventDoc.data() as Event;
-        const attendees = eventData.attendees || [];
-        const isAttending = attendees.includes(personId);
-        
-        if (isAttending) {
-          // Remove person from attendees using arrayRemove
-          transaction.update(eventRef, {
-            attendees: arrayRemove(personId)
-          });
-        } else {
-          // Add person to attendees using arrayUnion
-          transaction.update(eventRef, {
-            attendees: arrayUnion(personId)
-          });
-        }
-      });
-      
-      // Update local state optimistically
       const attendees = currentEvent.attendees || [];
       const isAttending = attendees.includes(personId);
+      
+      if (isAttending) {
+        // Remove person from attendees using arrayRemove
+        await updateDoc(eventRef, {
+          attendees: arrayRemove(personId)
+        });
+      } else {
+        // Add person to attendees using arrayUnion
+        await updateDoc(eventRef, {
+          attendees: arrayUnion(personId)
+        });
+      }
+      
+      // Update local state optimistically
       const newAttendees = isAttending 
         ? attendees.filter((id) => id !== personId)
         : [...attendees, personId];
@@ -219,7 +206,7 @@ export default function AttendancePage() {
             component="main"
             sx={{
               flexGrow: 1,
-              p: 3,
+              p: { xs: 1, sm: 2, md: 3 },
               backgroundColor: "#f5f5f5",
               minHeight: "100vh",
               marginLeft: {
@@ -251,13 +238,20 @@ export default function AttendancePage() {
                   Events starting within 1 hour ({upcomingEvents.length})
                 </Typography>
 
-                <TableContainer component={Paper} sx={{ overflowX: "auto" }}>
+                {/* Desktop Table View */}
+                <TableContainer 
+                  component={Paper} 
+                  sx={{ 
+                    overflowX: "auto",
+                    display: { xs: "none", md: "block" }
+                  }}
+                >
                   <Table sx={{ minWidth: 650 }} size="small">
                     <TableHead>
                       <TableRow sx={{ backgroundColor: "#f0f0f0" }}>
                         <TableCell>Event Name</TableCell>
-                        <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>Date</TableCell>
-                        <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>Start Time</TableCell>
+                        <TableCell>Date</TableCell>
+                        <TableCell>Start Time</TableCell>
                         <TableCell>Time Until Start</TableCell>
                         <TableCell>Attendees</TableCell>
                         <TableCell>Actions</TableCell>
@@ -274,8 +268,8 @@ export default function AttendancePage() {
                         return (
                           <TableRow key={event.id}>
                             <TableCell>{event.name}</TableCell>
-                            <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>{event.date}</TableCell>
-                            <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                            <TableCell>{event.date}</TableCell>
+                            <TableCell>
                               {event.startTime ? new Date(event.startTime).toLocaleString() : "Not set"}
                             </TableCell>
                             <TableCell>
@@ -287,16 +281,16 @@ export default function AttendancePage() {
                             </TableCell>
                             <TableCell>
                               <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                                {event.attendees.slice(0, isMobile ? 1 : 3).map((attendee) => (
+                                {event.attendees.slice(0, 3).map((attendee) => (
                                   <Chip
                                     key={attendee}
                                     label={getPersonName(attendee)}
                                     size="small"
                                   />
                                 ))}
-                                {event.attendees.length > (isMobile ? 1 : 3) && (
+                                {event.attendees.length > 3 && (
                                   <Chip
-                                    label={`+${event.attendees.length - (isMobile ? 1 : 3)}`}
+                                    label={`+${event.attendees.length - 3}`}
                                     size="small"
                                   />
                                 )}
@@ -321,6 +315,91 @@ export default function AttendancePage() {
                     </TableBody>
                   </Table>
                 </TableContainer>
+
+                {/* Mobile Card View */}
+                <Box sx={{ display: { xs: "block", md: "none" } }}>
+                  {upcomingEvents.map((event) => {
+                    const eventStartTime = dayjs(event.startTime);
+                    const timeUntilStart = eventStartTime.diff(dayjs(), 'minute');
+                    const timeDisplay = timeUntilStart > 0 
+                      ? `${timeUntilStart} minutes` 
+                      : 'Starting now';
+                    
+                    return (
+                      <Paper
+                        key={event.id}
+                        sx={{
+                          p: 2,
+                          mb: 2,
+                          borderRadius: 2,
+                          boxShadow: 1,
+                        }}
+                      >
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: "1.1rem" }}>
+                            {event.name}
+                          </Typography>
+                          
+                          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                            <Typography variant="body2" color="text.secondary">
+                              <strong>Date:</strong> {event.date}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              <strong>Start Time:</strong> {event.startTime ? new Date(event.startTime).toLocaleString() : "Not set"}
+                            </Typography>
+                          </Box>
+                          
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                              Time Until Start:
+                            </Typography>
+                            <Chip
+                              label={timeDisplay}
+                              color={timeUntilStart <= 15 ? "error" : timeUntilStart <= 30 ? "warning" : "success"}
+                              size="small"
+                            />
+                          </Box>
+                          
+                          <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
+                              Attendees ({event.attendees.length}):
+                            </Typography>
+                            <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                              {event.attendees.slice(0, 2).map((attendee) => (
+                                <Chip
+                                  key={attendee}
+                                  label={getPersonName(attendee)}
+                                  size="small"
+                                  variant="outlined"
+                                />
+                              ))}
+                              {event.attendees.length > 2 && (
+                                <Chip
+                                  label={`+${event.attendees.length - 2} more`}
+                                  size="small"
+                                  variant="outlined"
+                                />
+                              )}
+                            </Box>
+                          </Box>
+                          
+                          <Button
+                            variant="contained"
+                            fullWidth
+                            onClick={() => handleOpenAttendance(event)}
+                            sx={{
+                              backgroundColor: "#144404",
+                              "&:hover": { backgroundColor: "#0d3002" },
+                              mt: 1,
+                            }}
+                          >
+                            Mark Attendance
+                          </Button>
+                        </Box>
+                      </Paper>
+                    );
+                  })}
+                </Box>
               </>
             )}
 
@@ -330,13 +409,26 @@ export default function AttendancePage() {
               fullWidth
               maxWidth="md"
               fullScreen={isMobile}
+              sx={{
+                '& .MuiDialog-paper': {
+                  margin: { xs: 0, sm: 2 },
+                  height: { xs: '100vh', sm: 'auto' },
+                  maxHeight: { xs: '100vh', sm: '90vh' },
+                }
+              }}
             >
-              <DialogTitle>
+              <DialogTitle sx={{ 
+                fontSize: { xs: "1.1rem", sm: "1.25rem" },
+                pb: 1
+              }}>
                 Mark Attendance - {currentEvent?.name}
               </DialogTitle>
-              <DialogContent>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}>
-                  <Alert severity="info">
+              <DialogContent sx={{ 
+                px: { xs: 2, sm: 3 },
+                py: { xs: 1, sm: 2 }
+              }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <Alert severity="info" sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}>
                     Mark attendance for people attending this event. Only events starting within 1 hour are shown.
                   </Alert>
                   
@@ -358,10 +450,22 @@ export default function AttendancePage() {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     fullWidth
-                    sx={{ mb: 2 }}
+                    size={isMobile ? "small" : "medium"}
+                    sx={{ 
+                      mb: 1,
+                      '& .MuiOutlinedInput-root': {
+                        fontSize: { xs: "0.875rem", sm: "1rem" }
+                      }
+                    }}
                   />
                   
-                  <Box sx={{ maxHeight: "400px", overflow: "auto" }}>
+                  <Box sx={{ 
+                    maxHeight: { xs: "calc(100vh - 300px)", sm: "400px" }, 
+                    overflow: "auto",
+                    border: "1px solid #e0e0e0",
+                    borderRadius: 1,
+                    backgroundColor: "#fafafa"
+                  }}>
                     {filteredPeople.length > 0 ? (
                       filteredPeople.map((person) => (
                         <Box
@@ -369,40 +473,84 @@ export default function AttendancePage() {
                           sx={{
                             display: "flex",
                             alignItems: "center",
-                            p: 1,
+                            p: { xs: 1.5, sm: 2 },
                             borderBottom: "1px solid #eee",
+                            backgroundColor: "white",
                             '&:hover': {
                               backgroundColor: 'rgba(0, 0, 0, 0.04)',
                             },
+                            '&:last-child': {
+                              borderBottom: 'none'
+                            }
                           }}
                         >
-                          <Box sx={{ flexGrow: 1 }}>
-                            <Typography>
+                          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                            <Typography 
+                              sx={{ 
+                                fontSize: { xs: "0.875rem", sm: "1rem" },
+                                fontWeight: 500,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap"
+                              }}
+                            >
                               {person.firstName} {person.middleName} {person.surname}
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography 
+                              variant="body2" 
+                              color="text.secondary"
+                              sx={{ 
+                                fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap"
+                              }}
+                            >
                               {person.department} - {person.class}
                             </Typography>
                           </Box>
-                          <input
-                            type="checkbox"
-                            checked={currentEvent?.attendees?.includes(person.id!) || false}
-                            onChange={() => toggleAttendance(person.id!)}
-                            disabled={isUpdating}
-                            style={{ width: '18px', height: '18px' }}
-                          />
+                          <Box sx={{ ml: 1, flexShrink: 0 }}>
+                            <input
+                              type="checkbox"
+                              checked={currentEvent?.attendees?.includes(person.id!) || false}
+                              onChange={() => toggleAttendance(person.id!)}
+                              disabled={isUpdating}
+                              style={{ 
+                                width: isMobile ? '20px' : '18px', 
+                                height: isMobile ? '20px' : '18px',
+                                cursor: isUpdating ? 'not-allowed' : 'pointer'
+                              }}
+                            />
+                          </Box>
                         </Box>
                       ))
                     ) : (
-                      <Typography sx={{ p: 2, textAlign: 'center', color: 'text.secondary' }}>
-                        No matching people found
-                      </Typography>
+                      <Box sx={{ 
+                        p: 3, 
+                        textAlign: 'center', 
+                        color: 'text.secondary',
+                        backgroundColor: "white"
+                      }}>
+                        <Typography sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+                          No matching people found
+                        </Typography>
+                      </Box>
                     )}
                   </Box>
                 </Box>
               </DialogContent>
-              <DialogActions>
-                <Button onClick={handleCloseAttendance}>
+              <DialogActions sx={{ 
+                px: { xs: 2, sm: 3 },
+                py: { xs: 1, sm: 2 }
+              }}>
+                <Button 
+                  onClick={handleCloseAttendance}
+                  variant="outlined"
+                  fullWidth={isMobile}
+                  sx={{
+                    minWidth: { xs: "auto", sm: "64px" }
+                  }}
+                >
                   Close
                 </Button>
               </DialogActions>
