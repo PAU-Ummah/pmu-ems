@@ -23,6 +23,10 @@ import {
   Chip,
   useMediaQuery,
   useTheme,
+  Card,
+  CardContent,
+  CardActions,
+  Stack,
 } from "@mui/material";
 import { DatePicker, DateTimePicker } from "@mui/x-date-pickers";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -171,7 +175,7 @@ export default function EventsPage() {
           component="main"
           sx={{
             flexGrow: 1,
-            p: 3,
+            p: { xs: 2, sm: 3 },
             backgroundColor: "#f5f5f5",
             minHeight: "100vh",
             marginLeft: {
@@ -188,7 +192,10 @@ export default function EventsPage() {
             variant="h4"
             color="black"
             gutterBottom
-            sx={{ fontSize: { xs: "1.5rem", md: "2rem" } }}
+            sx={{ 
+              fontSize: { xs: "1.5rem", md: "2rem" },
+              mb: { xs: 2, sm: 3 }
+            }}
           >
             Events Management
           </Typography>
@@ -202,91 +209,182 @@ export default function EventsPage() {
                 setIsEdit(false);
               }}
               sx={{
-                mb: 3,
+                mb: { xs: 2, sm: 3 },
                 backgroundColor: "#144404",
                 "&:hover": { backgroundColor: "#0d3002" },
-                width: { xs: "100%", sm: "auto" }
+                width: { xs: "100%", sm: "auto" },
+                py: { xs: 1.5, sm: 1 },
+                fontSize: { xs: "1rem", sm: "0.875rem" }
               }}
             >
               Create Event
             </Button>
           </RoleGuard>
 
-          <TableContainer component={Paper} sx={{ overflowX: "auto" }}>
-            <Table sx={{ minWidth: 650 }} size="small">
-              <TableHead>
-                <TableRow sx={{ backgroundColor: "#f0f0f0" }}>
-                  <TableCell>Event Name</TableCell>
-                  <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>Date</TableCell>
-                  <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>Start Time</TableCell>
-                  <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>Status</TableCell>
-                  <TableCell>Attendees</TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {events.map((event) => (
-                  <TableRow key={event.id}>
-                    <TableCell>{event.name}</TableCell>
-                    <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>{event.date}</TableCell>
-                    <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
-                      {event.startTime ? new Date(event.startTime).toLocaleString() : "Not set"}
-                    </TableCell>
-                    <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
-                      <Chip
-                        label={event.isEnded ? "Ended" : "Active"}
-                        color={event.isEnded ? "default" : "success"}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                        {event.attendees.slice(0, isMobile ? 1 : 3).map((attendee) => (
-                          <Chip
-                            key={attendee}
-                            label={getPersonName(attendee)}
-                            size="small"
-                          />
-                        ))}
-                        {event.attendees.length > (isMobile ? 1 : 3) && (
-                          <Chip
-                            label={`+${event.attendees.length - (isMobile ? 1 : 3)}`}
-                            size="small"
-                          />
-                        )}
+          {/* Mobile Card Layout */}
+          {isMobile ? (
+            <Stack spacing={2}>
+              {events.map((event) => (
+                <Card key={event.id} sx={{ boxShadow: 2 }}>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      {event.name}
+                    </Typography>
+                    <Stack spacing={1}>
+                      <Box>
+                        <Typography variant="body2" color="text.secondary">
+                          Date: {event.date}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Time: {event.startTime ? new Date(event.startTime).toLocaleString() : "Not set"}
+                        </Typography>
                       </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Link href={`/events/${event.id}`} passHref>
-                        <IconButton>
-                          <People color="primary" />
-                        </IconButton>
-                      </Link>
-                      <RoleGuard allowedRoles="event-organizer">
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Chip
+                          label={event.isEnded ? "Ended" : "Active"}
+                          color={event.isEnded ? "default" : "success"}
+                          size="small"
+                        />
+                        <Typography variant="body2" color="text.secondary">
+                          {event.attendees.length} attendees
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          Attendees:
+                        </Typography>
+                        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                          {event.attendees.slice(0, 2).map((attendee) => (
+                            <Chip
+                              key={attendee}
+                              label={getPersonName(attendee)}
+                              size="small"
+                            />
+                          ))}
+                          {event.attendees.length > 2 && (
+                            <Chip
+                              label={`+${event.attendees.length - 2}`}
+                              size="small"
+                            />
+                          )}
+                        </Box>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                  <CardActions sx={{ justifyContent: "space-between", px: 2, pb: 2 }}>
+                    <Link href={`/events/${event.id}`} passHref>
+                      <Button
+                        variant="outlined"
+                        startIcon={<People />}
+                        size="small"
+                        sx={{ minWidth: "auto" }}
+                      >
+                        View
+                      </Button>
+                    </Link>
+                    <RoleGuard allowedRoles="event-organizer">
+                      <Stack direction="row" spacing={1}>
                         {!event.isEnded && (
-                          <IconButton onClick={() => handleEdit(event)}>
+                          <IconButton onClick={() => handleEdit(event)} size="small">
                             <Edit color="primary" />
                           </IconButton>
                         )}
                         {!event.isEnded && (
-                          <IconButton 
+                          <Button
                             onClick={() => handleEndEvent(event.id)}
-                            sx={{ color: "#ff9800" }}
-                            title="End Event"
+                            size="small"
+                            sx={{ color: "#ff9800", minWidth: "auto" }}
                           >
-                            <Typography variant="body2">End</Typography>
-                          </IconButton>
+                            End
+                          </Button>
                         )}
-                        <IconButton onClick={() => handleDelete(event.id)}>
+                        <IconButton onClick={() => handleDelete(event.id)} size="small">
                           <Delete color="error" />
                         </IconButton>
-                      </RoleGuard>
-                    </TableCell>
+                      </Stack>
+                    </RoleGuard>
+                  </CardActions>
+                </Card>
+              ))}
+            </Stack>
+          ) : (
+            /* Desktop Table Layout */
+            <TableContainer component={Paper} sx={{ overflowX: "auto" }}>
+              <Table sx={{ minWidth: 650 }} size="small">
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: "#f0f0f0" }}>
+                    <TableCell>Event Name</TableCell>
+                    <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>Date</TableCell>
+                    <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>Start Time</TableCell>
+                    <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>Status</TableCell>
+                    <TableCell>Attendees</TableCell>
+                    <TableCell>Actions</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {events.map((event) => (
+                    <TableRow key={event.id}>
+                      <TableCell>{event.name}</TableCell>
+                      <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>{event.date}</TableCell>
+                      <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                        {event.startTime ? new Date(event.startTime).toLocaleString() : "Not set"}
+                      </TableCell>
+                      <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                        <Chip
+                          label={event.isEnded ? "Ended" : "Active"}
+                          color={event.isEnded ? "default" : "success"}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                          {event.attendees.slice(0, 3).map((attendee) => (
+                            <Chip
+                              key={attendee}
+                              label={getPersonName(attendee)}
+                              size="small"
+                            />
+                          ))}
+                          {event.attendees.length > 3 && (
+                            <Chip
+                              label={`+${event.attendees.length - 3}`}
+                              size="small"
+                            />
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Link href={`/events/${event.id}`} passHref>
+                          <IconButton>
+                            <People color="primary" />
+                          </IconButton>
+                        </Link>
+                        <RoleGuard allowedRoles="event-organizer">
+                          {!event.isEnded && (
+                            <IconButton onClick={() => handleEdit(event)}>
+                              <Edit color="primary" />
+                            </IconButton>
+                          )}
+                          {!event.isEnded && (
+                            <IconButton 
+                              onClick={() => handleEndEvent(event.id)}
+                              sx={{ color: "#ff9800" }}
+                              title="End Event"
+                            >
+                              <Typography variant="body2">End</Typography>
+                            </IconButton>
+                          )}
+                          <IconButton onClick={() => handleDelete(event.id)}>
+                            <Delete color="error" />
+                          </IconButton>
+                        </RoleGuard>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
 
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <Dialog
@@ -297,20 +395,38 @@ export default function EventsPage() {
                 setSelectedDateTime(dayjs());
               }}
               fullWidth
-              maxWidth="md"
+              maxWidth={isMobile ? "sm" : "md"}
               fullScreen={isMobile}
+              PaperProps={{
+                sx: {
+                  m: isMobile ? 0 : 2,
+                  height: isMobile ? "100vh" : "auto",
+                }
+              }}
             >
-              <DialogTitle>{isEdit ? "Edit Event" : "Create New Event"}</DialogTitle>
-              <DialogContent>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}>
+              <DialogTitle sx={{ 
+                fontSize: { xs: "1.25rem", sm: "1.5rem" },
+                pb: 1
+              }}>
+                {isEdit ? "Edit Event" : "Create New Event"}
+              </DialogTitle>
+              <DialogContent sx={{ 
+                px: { xs: 2, sm: 3 },
+                py: { xs: 1, sm: 2 }
+              }}>
+                <Stack spacing={2} sx={{ pt: 1 }}>
                   <TextField
                     name="name"
                     label="Event Name"
                     value={currentEvent.name || ""}
                     onChange={handleInputChange}
                     fullWidth
-                    margin="normal"
-                    size="small"
+                    size={isMobile ? "medium" : "small"}
+                    sx={{
+                      '& .MuiInputBase-root': {
+                        fontSize: { xs: "1rem", sm: "0.875rem" }
+                      }
+                    }}
                   />
                   <DatePicker
                     label="Event Date"
@@ -319,8 +435,12 @@ export default function EventsPage() {
                     slotProps={{
                       textField: {
                         fullWidth: true,
-                        margin: "normal",
-                        size: "small",
+                        size: isMobile ? "medium" : "small",
+                        sx: {
+                          '& .MuiInputBase-root': {
+                            fontSize: { xs: "1rem", sm: "0.875rem" }
+                          }
+                        }
                       },
                     }}
                   />
@@ -332,28 +452,47 @@ export default function EventsPage() {
                     slotProps={{
                       textField: {
                         fullWidth: true,
-                        margin: "normal",
-                        size: "small",
+                        size: isMobile ? "medium" : "small",
+                        sx: {
+                          '& .MuiInputBase-root': {
+                            fontSize: { xs: "1rem", sm: "0.875rem" }
+                          }
+                        }
                       },
                     }}
                   />
-              </Box>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => {
-                setOpen(false);
-                setSelectedDate(dayjs());
-                setSelectedDateTime(dayjs());
+                </Stack>
+              </DialogContent>
+              <DialogActions sx={{ 
+                px: { xs: 2, sm: 3 },
+                pb: { xs: 2, sm: 3 },
+                flexDirection: { xs: "column", sm: "row" },
+                gap: { xs: 1, sm: 0 }
               }}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                sx={{ backgroundColor: "#144404", color: "white" }}
-              >
-                {isEdit ? "Update" : "Create"}
-              </Button>
-            </DialogActions>
+                <Button 
+                  onClick={() => {
+                    setOpen(false);
+                    setSelectedDate(dayjs());
+                    setSelectedDateTime(dayjs());
+                  }}
+                  fullWidth={isMobile}
+                  size={isMobile ? "large" : "medium"}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  sx={{ 
+                    backgroundColor: "#144404", 
+                    color: "white",
+                    width: { xs: "100%", sm: "auto" },
+                    minWidth: { xs: "auto", sm: "100px" }
+                  }}
+                  size={isMobile ? "large" : "medium"}
+                >
+                  {isEdit ? "Update" : "Create"}
+                </Button>
+              </DialogActions>
             </Dialog>
           </LocalizationProvider>
         </Box>
