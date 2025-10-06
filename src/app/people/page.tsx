@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import NavigationDrawer from "@/components/Drawer";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import {
@@ -21,6 +21,10 @@ import {
   IconButton,
   useMediaQuery,
   useTheme,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import { Add, Delete, Edit } from "@mui/icons-material";
 import * as XLSX from "xlsx";
@@ -35,19 +39,20 @@ import {
 } from "firebase/firestore";
 import { db } from "@/firebase";
 import RoleGuard from "@/components/RoleGuard";
+import { useRole } from "@/hooks/useRole";
 
 export default function PeoplePage() {
   const [people, setPeople] = useState<Person[]>([]);
+  const [filteredPeople, setFilteredPeople] = useState<Person[]>([]);
   const [open, setOpen] = useState(false);
   const [currentPerson, setCurrentPerson] = useState<Partial<Person>>({});
   const [isEdit, setIsEdit] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [classFilter, setClassFilter] = useState<string>("");
+  const [departmentFilter, setDepartmentFilter] = useState<string>("");
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
-  useEffect(() => {
-    fetchPeople();
-  }, []);
+  const { hasRole } = useRole();
 
   const fetchPeople = async () => {
     const querySnapshot = await getDocs(collection(db, "people"));
@@ -56,6 +61,36 @@ export default function PeoplePage() {
       peopleData.push({ id: doc.id, ...doc.data() } as Person);
     });
     setPeople(peopleData);
+  };
+
+  const applyFilters = useCallback(() => {
+    let filtered = people;
+    
+    if (classFilter) {
+      filtered = filtered.filter(person => person.class === classFilter);
+    }
+    
+    if (departmentFilter) {
+      filtered = filtered.filter(person => person.department === departmentFilter);
+    }
+    
+    setFilteredPeople(filtered);
+  }, [people, classFilter, departmentFilter]);
+
+  useEffect(() => {
+    fetchPeople();
+  }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [applyFilters]);
+
+  const getUniqueClasses = () => {
+    return Array.from(new Set(people.map(person => person.class))).sort();
+  };
+
+  const getUniqueDepartments = () => {
+    return Array.from(new Set(people.map(person => person.department))).sort();
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -137,16 +172,21 @@ export default function PeoplePage() {
             ml: { xs: 0, md: "56px" },
           }}
         >
+          <RoleGuard allowedRoles={["it", "admin"]}>
           <Typography
             variant="h4"
             color="black"
             gutterBottom
-            sx={{ fontSize: { xs: "1.5rem", md: "2rem" } }}
+            sx={{ 
+              fontSize: { xs: "1.25rem", sm: "1.5rem", md: "2rem" },
+              fontWeight: 600,
+              mb: { xs: 2, md: 3 }
+            }}
           >
             People Management
           </Typography>
 
-          <RoleGuard allowedRoles="it">
+          {hasRole("it") && (
             <Box sx={{ mb: 3, display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2 }}>
               <Button
                 variant="contained"
@@ -197,37 +237,232 @@ export default function PeoplePage() {
                 )}
               </Box>
             </Box>
-          </RoleGuard>
+          )}
 
-          <TableContainer component={Paper} sx={{ overflowX: "auto" }}>
-            <Table sx={{ minWidth: 650 }} size="small">
+          {/* Filter Section */}
+          <Box sx={{ mb: 3 }}>
+            <Typography 
+              variant="h6" 
+              gutterBottom
+              sx={{ 
+                fontSize: { xs: "1rem", sm: "1.25rem" },
+                fontWeight: 500,
+                mb: 2
+              }}
+            >
+              Filters
+            </Typography>
+            <Box sx={{ 
+              display: "flex", 
+              flexDirection: { xs: "column", sm: "row" }, 
+              gap: { xs: 2, sm: 2 }, 
+              flexWrap: "wrap",
+              alignItems: { xs: "stretch", sm: "flex-end" }
+            }}>
+              <Box sx={{ 
+                flex: { xs: "1 1 100%", sm: "1 1 200px" },
+                minWidth: { xs: "100%", sm: "200px" }
+              }}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Class</InputLabel>
+                  <Select
+                    value={classFilter}
+                    label="Class"
+                    onChange={(e) => setClassFilter(e.target.value)}
+                    sx={{ height: { xs: "48px", sm: "40px" } }}
+                  >
+                    <MenuItem value="">All Classes</MenuItem>
+                    {getUniqueClasses().map((className) => (
+                      <MenuItem key={className} value={className}>
+                        {className}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
+              <Box sx={{ 
+                flex: { xs: "1 1 100%", sm: "1 1 200px" },
+                minWidth: { xs: "100%", sm: "200px" }
+              }}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Department</InputLabel>
+                  <Select
+                    value={departmentFilter}
+                    label="Department"
+                    onChange={(e) => setDepartmentFilter(e.target.value)}
+                    sx={{ height: { xs: "48px", sm: "40px" } }}
+                  >
+                    <MenuItem value="">All Departments</MenuItem>
+                    {getUniqueDepartments().map((department) => (
+                      <MenuItem key={department} value={department}>
+                        {department}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
+              <Box sx={{ 
+                flex: { xs: "1 1 100%", sm: "0 0 auto" },
+                minWidth: { xs: "100%", sm: "auto" }
+              }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    setClassFilter("");
+                    setDepartmentFilter("");
+                  }}
+                  sx={{ 
+                    height: { xs: "48px", sm: "40px" },
+                    width: { xs: "100%", sm: "auto" },
+                    minWidth: { xs: "auto", sm: "120px" }
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              </Box>
+            </Box>
+          </Box>
+
+          {/* Results Summary */}
+          <Box sx={{ mb: 2 }}>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ 
+                fontSize: { xs: "0.875rem", sm: "0.875rem" },
+                lineHeight: 1.4
+              }}
+            >
+              Showing {filteredPeople.length} of {people.length} people
+              {classFilter && ` in class "${classFilter}"`}
+              {departmentFilter && ` in department "${departmentFilter}"`}
+            </Typography>
+          </Box>
+
+          <TableContainer 
+            component={Paper} 
+            sx={{ 
+              overflowX: "auto",
+              borderRadius: { xs: 1, sm: 2 },
+              boxShadow: { xs: 1, sm: 2 }
+            }}
+          >
+            <Table sx={{ minWidth: { xs: 400, sm: 650 } }} size="small">
               <TableHead>
                 <TableRow sx={{ backgroundColor: "#f0f0f0" }}>
-                  <TableCell>Name</TableCell>
-                  <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>Department</TableCell>
-                  <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>Gender</TableCell>
-                  <TableCell>Class</TableCell>
-                  <TableCell>Actions</TableCell>
+                  <TableCell sx={{ 
+                    fontWeight: 600,
+                    fontSize: { xs: "0.875rem", sm: "0.875rem" }
+                  }}>
+                    Name
+                  </TableCell>
+                  <TableCell sx={{ 
+                    display: { xs: "none", md: "table-cell" },
+                    fontWeight: 600,
+                    fontSize: { xs: "0.875rem", sm: "0.875rem" }
+                  }}>
+                    Department
+                  </TableCell>
+                  <TableCell sx={{ 
+                    display: { xs: "none", sm: "table-cell" },
+                    fontWeight: 600,
+                    fontSize: { xs: "0.875rem", sm: "0.875rem" }
+                  }}>
+                    Gender
+                  </TableCell>
+                  <TableCell sx={{ 
+                    fontWeight: 600,
+                    fontSize: { xs: "0.875rem", sm: "0.875rem" }
+                  }}>
+                    Class
+                  </TableCell>
+                  <TableCell sx={{ 
+                    fontWeight: 600,
+                    fontSize: { xs: "0.875rem", sm: "0.875rem" },
+                    width: { xs: "80px", sm: "auto" }
+                  }}>
+                    Actions
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {people.map((person) => (
-                  <TableRow key={person.id}>
-                    <TableCell>
-                      {person.firstName} {person.middleName} {person.surname}
+                {filteredPeople.map((person) => (
+                  <TableRow 
+                    key={person.id}
+                    sx={{ 
+                      '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+                      '&:last-child td, &:last-child th': { border: 0 }
+                    }}
+                  >
+                    <TableCell sx={{ 
+                      fontSize: { xs: "0.875rem", sm: "0.875rem" },
+                      fontWeight: 500
+                    }}>
+                      <Box>
+                        <Box sx={{ fontWeight: 600 }}>
+                          {person.firstName} {person.middleName} {person.surname}
+                        </Box>
+                        {/* Show department and gender on mobile in the name cell */}
+                        <Box sx={{ 
+                          display: { xs: "block", md: "none" },
+                          fontSize: "0.75rem",
+                          color: "text.secondary",
+                          mt: 0.5
+                        }}>
+                          {person.department} • {person.gender}
+                        </Box>
+                      </Box>
                     </TableCell>
-                    <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>{person.department}</TableCell>
-                    <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>{person.gender}</TableCell>
-                    <TableCell>{person.class}</TableCell>
-                    <TableCell>
-                      <RoleGuard allowedRoles="it">
-                        <IconButton onClick={() => handleEdit(person)}>
-                          <Edit color="primary" />
-                        </IconButton>
-                        <IconButton onClick={() => handleDelete(person.id!)}>
-                          <Delete color="error" />
-                        </IconButton>
-                      </RoleGuard>
+                    <TableCell sx={{ 
+                      display: { xs: "none", md: "table-cell" },
+                      fontSize: { xs: "0.875rem", sm: "0.875rem" }
+                    }}>
+                      {person.department}
+                    </TableCell>
+                    <TableCell sx={{ 
+                      display: { xs: "none", sm: "table-cell" },
+                      fontSize: { xs: "0.875rem", sm: "0.875rem" }
+                    }}>
+                      {person.gender}
+                    </TableCell>
+                    <TableCell sx={{ 
+                      fontSize: { xs: "0.875rem", sm: "0.875rem" },
+                      fontWeight: 500
+                    }}>
+                      {person.class}
+                    </TableCell>
+                    <TableCell sx={{ 
+                      width: { xs: "80px", sm: "auto" },
+                      padding: { xs: "8px", sm: "16px" }
+                    }}>
+                      {hasRole("it") && (
+                        <Box sx={{ display: "flex", gap: { xs: 0.5, sm: 1 } }}>
+                          <IconButton 
+                            onClick={() => handleEdit(person)}
+                            size="small"
+                            sx={{ 
+                              padding: { xs: "4px", sm: "8px" }
+                            }}
+                          >
+                            <Edit 
+                              color="primary" 
+                              sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }}
+                            />
+                          </IconButton>
+                          <IconButton 
+                            onClick={() => handleDelete(person.id!)}
+                            size="small"
+                            sx={{ 
+                              padding: { xs: "4px", sm: "8px" }
+                            }}
+                          >
+                            <Delete 
+                              color="error" 
+                              sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }}
+                            />
+                          </IconButton>
+                        </Box>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -241,10 +476,31 @@ export default function PeoplePage() {
             fullWidth
             maxWidth="sm"
             fullScreen={isMobile}
+            sx={{
+              '& .MuiDialog-paper': {
+                margin: { xs: 1, sm: 2 },
+                width: { xs: 'calc(100% - 16px)', sm: 'auto' }
+              }
+            }}
           >
-            <DialogTitle>{isEdit ? "Edit Person" : "Add New Person"}</DialogTitle>
-            <DialogContent>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}>
+            <DialogTitle sx={{ 
+              fontSize: { xs: "1.125rem", sm: "1.25rem" },
+              fontWeight: 600
+            }}>
+              {isEdit ? "Edit Person" : "Add New Person"}
+            </DialogTitle>
+            <DialogContent sx={{ 
+              padding: { xs: 2, sm: 3 },
+              '& .MuiTextField-root': { 
+                marginBottom: { xs: 1, sm: 2 } 
+              }
+            }}>
+              <Box sx={{ 
+                display: "flex", 
+                flexDirection: "column", 
+                gap: { xs: 1.5, sm: 2 }, 
+                pt: { xs: 1, sm: 2 } 
+              }}>
                 <TextField
                   name="firstName"
                   label="First Name"
@@ -301,16 +557,39 @@ export default function PeoplePage() {
                 />
               </Box>
             </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setOpen(false)}>Cancel</Button>
+            <DialogActions sx={{ 
+              padding: { xs: 2, sm: 3 },
+              gap: { xs: 1, sm: 2 },
+              flexDirection: { xs: "column", sm: "row" }
+            }}>
+              <Button 
+                onClick={() => setOpen(false)}
+                variant="outlined"
+                fullWidth={isMobile}
+                sx={{ 
+                  order: { xs: 2, sm: 1 },
+                  minWidth: { xs: "auto", sm: "80px" }
+                }}
+              >
+                Cancel
+              </Button>
               <Button
                 onClick={handleSubmit}
-                sx={{ backgroundColor: "#144404", color: "white" }}
+                variant="contained"
+                fullWidth={isMobile}
+                sx={{ 
+                  backgroundColor: "#144404", 
+                  color: "white",
+                  order: { xs: 1, sm: 2 },
+                  minWidth: { xs: "auto", sm: "80px" },
+                  "&:hover": { backgroundColor: "#0d3002" }
+                }}
               >
                 {isEdit ? "Update" : "Add"}
               </Button>
             </DialogActions>
           </Dialog>
+          </RoleGuard>
         </Box>
       </Box>
     </ProtectedRoute>

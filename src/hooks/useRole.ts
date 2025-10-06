@@ -17,7 +17,7 @@ export const useRole = () => {
   const canCreateEvents = () => hasRole('event-organizer');
   const canEditEvents = () => hasRole('event-organizer');
   const canEndEvents = () => hasRole('event-organizer');
-  const canManagePeople = () => hasRole('it');
+  const canManagePeople = () => hasRole(['it', 'admin']);
   const canManageFinance = () => hasRole('finance-manager');
   const canViewReports = () => hasRole('admin');
   const canManageUsers = () => hasRole('it');
