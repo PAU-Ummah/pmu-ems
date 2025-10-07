@@ -162,7 +162,16 @@ export default function FinancePage() {
 
     // Update event's amount spent
     const eventInvoices = invoices.filter(inv => inv.eventId === currentInvoice.eventId);
-    const totalAmount = eventInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0) + (currentInvoice.totalAmount || 0);
+    
+    let totalAmount;
+    if (isEdit && currentInvoice.id) {
+      // For editing: exclude the current invoice from the sum, then add the new amount
+      const otherInvoices = eventInvoices.filter(inv => inv.id !== currentInvoice.id);
+      totalAmount = otherInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0) + (currentInvoice.totalAmount || 0);
+    } else {
+      // For new invoices: sum all existing invoices plus the new one
+      totalAmount = eventInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0) + (currentInvoice.totalAmount || 0);
+    }
     
     await updateDoc(doc(db, "events", currentInvoice.eventId), {
       amountSpent: totalAmount,
@@ -189,8 +198,23 @@ export default function FinancePage() {
   };
 
   const handleDelete = async (id: string) => {
+    // Find the invoice to get its eventId before deleting
+    const invoiceToDelete = invoices.find(inv => inv.id === id);
+    
     await deleteDoc(doc(db, "invoices", id));
+    
+    // Update event's amount spent after deletion
+    if (invoiceToDelete) {
+      const eventInvoices = invoices.filter(inv => inv.eventId === invoiceToDelete.eventId && inv.id !== id);
+      const totalAmount = eventInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
+      
+      await updateDoc(doc(db, "events", invoiceToDelete.eventId), {
+        amountSpent: totalAmount,
+      });
+    }
+    
     fetchInvoices();
+    fetchEvents();
   };
 
   const getEventName = (eventId: string) => {
