@@ -149,7 +149,7 @@ export default function AttendancePage() {
     );
   });
 
-  // Filter events that are starting within 1 hour
+  // Filter events that are starting within 1 hour or have already started but not ended
   const getUpcomingEvents = () => {
     const now = dayjs();
     const oneHourFromNow = now.add(1, 'hour');
@@ -158,8 +158,11 @@ export default function AttendancePage() {
       if (!event.startTime || event.isEnded) return false;
       
       const eventStartTime = dayjs(event.startTime);
-      // Show events that start within the next hour
-      return eventStartTime.isAfter(now) && eventStartTime.isBefore(oneHourFromNow);
+      // Show events that:
+      // 1. Start within the next hour, OR
+      // 2. Have already started (but not ended)
+      return (eventStartTime.isAfter(now) && eventStartTime.isBefore(oneHourFromNow)) ||
+             (eventStartTime.isBefore(now) || eventStartTime.isSame(now, 'minute'));
     });
   };
 
@@ -230,12 +233,12 @@ export default function AttendancePage() {
 
             {upcomingEvents.length === 0 ? (
               <Alert severity="info" sx={{ mt: 2 }}>
-                No events starting within the next hour. Events will appear here 1 hour before they start.
+                No events available for attendance. Events will appear here 1 hour before they start and remain visible until they end.
               </Alert>
             ) : (
               <>
                 <Typography variant="h6" sx={{ mb: 2, color: "text.secondary" }}>
-                  Events starting within 1 hour ({upcomingEvents.length})
+                  Events Available for Attendance ({upcomingEvents.length})
                 </Typography>
 
                 {/* Desktop Table View */}
@@ -260,10 +263,13 @@ export default function AttendancePage() {
                     <TableBody>
                       {upcomingEvents.map((event) => {
                         const eventStartTime = dayjs(event.startTime);
-                        const timeUntilStart = eventStartTime.diff(dayjs(), 'minute');
+                        const now = dayjs();
+                        const timeUntilStart = eventStartTime.diff(now, 'minute');
                         const timeDisplay = timeUntilStart > 0 
                           ? `${timeUntilStart} minutes` 
-                          : 'Starting now';
+                          : timeUntilStart === 0 
+                          ? 'Starting now'
+                          : `Started ${Math.abs(timeUntilStart)} minutes ago`;
                         
                         return (
                           <TableRow key={event.id}>
@@ -275,7 +281,7 @@ export default function AttendancePage() {
                             <TableCell>
                               <Chip
                                 label={timeDisplay}
-                                color={timeUntilStart <= 15 ? "error" : timeUntilStart <= 30 ? "warning" : "success"}
+                                color={timeUntilStart < 0 ? "info" : timeUntilStart <= 15 ? "error" : timeUntilStart <= 30 ? "warning" : "success"}
                                 size="small"
                               />
                             </TableCell>
@@ -320,10 +326,13 @@ export default function AttendancePage() {
                 <Box sx={{ display: { xs: "block", md: "none" } }}>
                   {upcomingEvents.map((event) => {
                     const eventStartTime = dayjs(event.startTime);
-                    const timeUntilStart = eventStartTime.diff(dayjs(), 'minute');
+                    const now = dayjs();
+                    const timeUntilStart = eventStartTime.diff(now, 'minute');
                     const timeDisplay = timeUntilStart > 0 
                       ? `${timeUntilStart} minutes` 
-                      : 'Starting now';
+                      : timeUntilStart === 0 
+                      ? 'Starting now'
+                      : `Started ${Math.abs(timeUntilStart)} minutes ago`;
                     
                     return (
                       <Paper
@@ -351,11 +360,11 @@ export default function AttendancePage() {
                           
                           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                             <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                              Time Until Start:
+                              Status:
                             </Typography>
                             <Chip
                               label={timeDisplay}
-                              color={timeUntilStart <= 15 ? "error" : timeUntilStart <= 30 ? "warning" : "success"}
+                              color={timeUntilStart < 0 ? "info" : timeUntilStart <= 15 ? "error" : timeUntilStart <= 30 ? "warning" : "success"}
                               size="small"
                             />
                           </Box>
@@ -429,7 +438,7 @@ export default function AttendancePage() {
               }}>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   <Alert severity="info" sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}>
-                    Mark attendance for people attending this event. Only events starting within 1 hour are shown.
+                    Mark attendance for people attending this event. Events are shown 1 hour before they start and remain visible until they end.
                   </Alert>
                   
                   {updateError && (
