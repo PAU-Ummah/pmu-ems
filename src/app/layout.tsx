@@ -1,14 +1,15 @@
-// src/app/layout.tsx
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import { AuthProvider } from "@/context/AuthContext";
+import type { Metadata } from 'next';
+import { Outfit } from 'next/font/google';
+import './globals.css';
+import Providers from './Providers';
 
-const inter = Inter({ subsets: ["latin"] });
+const outfit = Outfit({
+  subsets: ['latin'],
+});
 
 export const metadata: Metadata = {
-  title: "PAU Ummah - EMS ",
-  description: "PAU Muslim Ummah Event Management System",
+  title: 'PMU EMS - Event Management System',
+  description: 'PAU Muslim Ummah Event Management System',
 };
 
 export default function RootLayout({
@@ -17,9 +18,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <AuthProvider>{children}</AuthProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${outfit.className} dark:bg-gray-900`}>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
