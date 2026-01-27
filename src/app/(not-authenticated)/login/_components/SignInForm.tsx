@@ -38,13 +38,14 @@ export default function SignInForm() {
       await login(email, password);
       // Only navigate on successful login
       router.push('/');
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Handle Firebase authentication errors
       let errorMessage = 'Invalid email or password';
       
       // Firebase errors have a code property
-      if (err?.code) {
-        switch (err.code) {
+      const firebaseError = err as { code?: string; message?: string };
+      if (firebaseError?.code) {
+        switch (firebaseError.code) {
           case 'auth/user-not-found':
             errorMessage = 'No account found with this email address.';
             break;
@@ -67,10 +68,10 @@ export default function SignInForm() {
             errorMessage = 'Invalid email or password. Please try again.';
             break;
           default:
-            errorMessage = err.message || 'An error occurred during login. Please try again.';
+            errorMessage = firebaseError.message || 'An error occurred during login. Please try again.';
         }
-      } else if (err?.message) {
-        errorMessage = err.message;
+      } else if (firebaseError?.message) {
+        errorMessage = firebaseError.message;
       } else {
         // Fallback for any other error type
         errorMessage = 'Failed to sign in. Please check your credentials and try again.';
