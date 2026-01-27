@@ -16,6 +16,7 @@ import dayjs from "dayjs";
 import Button from "@/components/ui/button/Button";
 import Alert from "@/components/ui/alert/Alert";
 import Badge from "@/components/ui/badge/Badge";
+import ComponentCard from "@/components/common/ComponentCard";
 import {
   Table,
   TableBody,
@@ -332,28 +333,27 @@ export default function AttendancePage() {
                   : `Started ${Math.abs(timeUntilStart)} minutes ago`;
                 
                 return (
-                  <div
+                  <ComponentCard
                     key={event.id}
-                    className="rounded-xl border border-gray-200 bg-white p-4 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]"
+                    title={event.name}
                   >
-                    <div className="flex flex-col gap-3">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white/90">
-                        {event.name}
-                      </h3>
-                      
-                      <div className="flex flex-col gap-1">
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          <strong>Date:</strong> {event.date}
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          <strong>Start Time:</strong> {event.startTime ? new Date(event.startTime).toLocaleString() : "Not set"}
-                        </p>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Date</span>
+                        <span className="text-sm font-medium text-gray-800 dark:text-white/90">
+                          {event.date}
+                        </span>
                       </div>
                       
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Status:
-                        </p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Start Time</span>
+                        <span className="text-sm font-medium text-gray-800 dark:text-white/90">
+                          {event.startTime ? new Date(event.startTime).toLocaleString() : "Not set"}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Status</span>
                         <Badge
                           color={getTimeColor(timeUntilStart)}
                           variant="light"
@@ -398,7 +398,7 @@ export default function AttendancePage() {
                         Mark Attendance
                       </Button>
                     </div>
-                  </div>
+                  </ComponentCard>
                 );
               })}
             </div>

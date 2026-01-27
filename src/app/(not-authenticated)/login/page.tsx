@@ -18,14 +18,6 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, isLoading, router]);
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loading />
-      </div>
-    );
-  }
-
   if (isAuthenticated) {
     return null;
   }
@@ -35,19 +27,15 @@ export default function LoginPage() {
       title="PMU EMS"
       description="PAU Muslim Ummah Event Management System"
       subtitle="Sign in to your account"
-      footer={
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Forgot your password?{' '}
-          <a
-            href="/reset-password"
-            className="font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300"
-          >
-            Reset it here
-          </a>
-        </p>
-      }
     >
-      <SignInForm />
+      <div className="relative">
+        {isLoading && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/80 dark:bg-gray-900/80">
+            <Loading />
+          </div>
+        )}
+        <SignInForm />
+      </div>
     </AuthPageLayout>
   );
 }

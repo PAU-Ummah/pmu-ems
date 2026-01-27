@@ -6,6 +6,7 @@ import { db } from "@/firebase";
 import RoleGuard from "@/components/auth/RoleGuard";
 import Select from "@/components/form/Select";
 import Label from "@/components/form/Label";
+import ComponentCard from "@/components/common/ComponentCard";
 import {
   Table,
   TableBody,
@@ -96,7 +97,37 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
+              {selectedEventData.attendees.map((attendeeId) => {
+                const person = people.find((p) => p.id === attendeeId);
+                if (!person) return null;
+                return (
+                  <ComponentCard
+                    key={attendeeId}
+                    title={`${person.firstName} ${person.middleName} ${person.surname}`}
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Department</span>
+                        <span className="text-sm font-medium text-gray-800 dark:text-white/90">
+                          {person.department}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Class</span>
+                        <span className="text-sm font-medium text-gray-800 dark:text-white/90">
+                          {person.class}
+                        </span>
+                      </div>
+                    </div>
+                  </ComponentCard>
+                );
+              })}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
               <div className="max-w-full overflow-x-auto">
                 <div className="min-w-[650px]">
                   <Table>
@@ -110,7 +141,7 @@ export default function ReportsPage() {
                         </TableCell>
                         <TableCell
                           isHeader
-                          className="hidden text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90 sm:table-cell"
+                          className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
                         >
                           Department
                         </TableCell>
@@ -134,7 +165,7 @@ export default function ReportsPage() {
                             <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">
                               {person.firstName} {person.middleName} {person.surname}
                             </TableCell>
-                            <TableCell className="hidden px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400 sm:table-cell">
+                            <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400">
                               {person.department}
                             </TableCell>
                             <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400">

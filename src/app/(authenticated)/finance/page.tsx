@@ -16,6 +16,7 @@ import { db } from "@/firebase";
 import Button from "@/components/ui/button/Button";
 import Badge from "@/components/ui/badge/Badge";
 import MetricCard from "@/components/common/MetricCard";
+import ComponentCard from "@/components/common/ComponentCard";
 import {
   Table,
   TableBody,
@@ -250,7 +251,74 @@ export default function FinancePage() {
           </Button>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
+        {/* Mobile Card View */}
+        <div className="md:hidden space-y-4">
+          {invoices.map((invoice) => (
+            <ComponentCard
+              key={invoice.id}
+              title={invoice.invoiceNumber || `INV-${invoice.id?.slice(-6)}`}
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Event</span>
+                  <Badge
+                    color="primary"
+                    variant="light"
+                    size="sm"
+                  >
+                    {getEventName(invoice.eventId)}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Vendor</span>
+                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
+                    {invoice.vendor || "N/A"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Items</span>
+                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
+                    {invoice.items?.length || 0} item(s)
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Total Amount</span>
+                  <div className="flex items-center gap-1">
+                    <AttachMoney className="!h-4 !w-4 text-success-500" />
+                    <span className="text-sm font-medium text-gray-800 dark:text-white/90">
+                      ₦{invoice.totalAmount.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Date</span>
+                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
+                    {invoice.date}
+                  </span>
+                </div>
+                <div className="flex items-center justify-end gap-1 pt-2">
+                  <button
+                    onClick={() => handleEdit(invoice)}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-900/20"
+                    aria-label="Edit invoice"
+                  >
+                    <Edit fontSize="small" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(invoice.id!)}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-error-500 hover:bg-error-50 dark:hover:bg-error-900/20"
+                    aria-label="Delete invoice"
+                  >
+                    <Delete fontSize="small" />
+                  </button>
+                </div>
+              </div>
+            </ComponentCard>
+          ))}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
           <div className="max-w-full overflow-x-auto">
             <div className="min-w-[650px]">
               <Table>
@@ -264,19 +332,19 @@ export default function FinancePage() {
                     </TableCell>
                     <TableCell
                       isHeader
-                      className="hidden text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90 sm:table-cell"
+                      className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
                     >
                       Event
                     </TableCell>
                     <TableCell
                       isHeader
-                      className="hidden text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90 md:table-cell"
+                      className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
                     >
                       Vendor
                     </TableCell>
                     <TableCell
                       isHeader
-                      className="hidden text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90 lg:table-cell"
+                      className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
                     >
                       Items
                     </TableCell>
@@ -288,7 +356,7 @@ export default function FinancePage() {
                     </TableCell>
                     <TableCell
                       isHeader
-                      className="hidden text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90 sm:table-cell"
+                      className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
                     >
                       Date
                     </TableCell>
@@ -307,22 +375,11 @@ export default function FinancePage() {
                       className="hover:bg-gray-50 transition-colors dark:hover:bg-gray-800/50"
                     >
                       <TableCell className="px-5 py-4 text-start">
-                        <div>
-                          <p className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">
-                            {invoice.invoiceNumber || `INV-${invoice.id?.slice(-6)}`}
-                          </p>
-                          <div className="mt-1 sm:hidden">
-                            <Badge
-                              color="primary"
-                              variant="light"
-                              size="sm"
-                            >
-                              {getEventName(invoice.eventId)}
-                            </Badge>
-                          </div>
-                        </div>
+                        <p className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">
+                          {invoice.invoiceNumber || `INV-${invoice.id?.slice(-6)}`}
+                        </p>
                       </TableCell>
-                      <TableCell className="hidden px-5 py-4 sm:table-cell">
+                      <TableCell className="px-5 py-4">
                         <Badge
                           color="primary"
                           variant="light"
@@ -331,26 +388,21 @@ export default function FinancePage() {
                           {getEventName(invoice.eventId)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="hidden px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400 md:table-cell">
+                      <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400">
                         {invoice.vendor || "N/A"}
                       </TableCell>
-                      <TableCell className="hidden px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400 lg:table-cell">
+                      <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400">
                         {invoice.items?.length || 0} item(s)
                       </TableCell>
                       <TableCell className="px-5 py-4 text-start">
-                        <div>
-                          <div className="flex items-center gap-1">
-                            <AttachMoney className="!h-4 !w-4 text-success-500" />
-                            <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                              ₦{invoice.totalAmount.toLocaleString()}
-                            </p>
-                          </div>
-                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 sm:hidden">
-                            {invoice.vendor || "N/A"} • {invoice.date}
+                        <div className="flex items-center gap-1">
+                          <AttachMoney className="!h-4 !w-4 text-success-500" />
+                          <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">
+                            ₦{invoice.totalAmount.toLocaleString()}
                           </p>
                         </div>
                       </TableCell>
-                      <TableCell className="hidden px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400 sm:table-cell">
+                      <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400">
                         {invoice.date}
                       </TableCell>
                       <TableCell className="px-5 py-4">

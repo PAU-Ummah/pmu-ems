@@ -14,21 +14,71 @@ import Alert from '@/components/ui/alert/Alert';
 
 export default function SignInForm() {
   const router = useRouter();
-  const { login, loading } = useAuth();
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     setError('');
+    
+    // Basic validation
+    if (!email || !password) {
+      setError('Please enter both email and password.');
+      setIsLoading(false);
+      return;
+    }
+    
     try {
       await login(email, password);
+      // Only navigate on successful login
       router.push('/');
-    } catch {
-      setError('Invalid email or password');
+    } catch (err: any) {
+      // Handle Firebase authentication errors
+      let errorMessage = 'Invalid email or password';
+      
+      // Firebase errors have a code property
+      if (err?.code) {
+        switch (err.code) {
+          case 'auth/user-not-found':
+            errorMessage = 'No account found with this email address.';
+            break;
+          case 'auth/wrong-password':
+            errorMessage = 'Incorrect password. Please try again.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Invalid email address format.';
+            break;
+          case 'auth/user-disabled':
+            errorMessage = 'This account has been disabled. Please contact support.';
+            break;
+          case 'auth/too-many-requests':
+            errorMessage = 'Too many failed login attempts. Please try again later.';
+            break;
+          case 'auth/network-request-failed':
+            errorMessage = 'Network error. Please check your connection and try again.';
+            break;
+          case 'auth/invalid-credential':
+            errorMessage = 'Invalid email or password. Please try again.';
+            break;
+          default:
+            errorMessage = err.message || 'An error occurred during login. Please try again.';
+        }
+      } else if (err?.message) {
+        errorMessage = err.message;
+      } else {
+        // Fallback for any other error type
+        errorMessage = 'Failed to sign in. Please check your credentials and try again.';
+      }
+      
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -36,8 +86,9 @@ export default function SignInForm() {
     <div className="w-full max-w-md mx-auto">
       <form onSubmit={handleSubmit}>
         <div className="space-y-6">
-          {error && (
-            <div className="mb-6">
+          {/* Always render Alert when error exists - ensure it's visible */}
+          {error && error.trim() !== '' && (
+            <div className="mb-4">
               <Alert
                 variant="error"
                 title="Authentication Error"
@@ -56,7 +107,7 @@ export default function SignInForm() {
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              disabled={loading}
+              disabled={isLoading}
               autoComplete="email"
               required
             />
@@ -73,7 +124,7 @@ export default function SignInForm() {
                 placeholder="Enter your password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                disabled={loading}
+                disabled={isLoading}
                 autoComplete="current-password"
                 required
               />
@@ -98,7 +149,7 @@ export default function SignInForm() {
               </span>
             </div>
             <Link
-              href="/reset-password"
+              href="/"
               className="text-brand-500 hover:text-brand-600 dark:text-brand-400 text-sm"
             >
               Forgot password?
@@ -106,8 +157,8 @@ export default function SignInForm() {
           </div>
 
           <div>
-            <Button type="submit" className="w-full" disabled={loading} size="full">
-              {loading ? 'Signing In...' : 'Sign In'}
+            <Button type="submit" className="w-full" disabled={isLoading} size="full">
+              {isLoading ? 'Signing In...' : 'Sign In'}
             </Button>
           </div>
         </div>

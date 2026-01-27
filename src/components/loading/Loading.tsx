@@ -1,10 +1,10 @@
 import React from 'react';
-import Spinner from '@/components/ui/spinner/Spinner';
+import { Commet } from 'react-loading-indicators';
 
 const Loading = () => {
   return (
     <div className="flex items-center justify-center py-8">
-      <Spinner size="md" color="text-[#00AFEF]" />
+      <Commet color="#4b9f4b" size="medium" />
     </div>
   );
 };

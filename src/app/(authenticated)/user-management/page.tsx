@@ -10,6 +10,7 @@ import { db } from '@/firebase';
 import Button from '@/components/ui/button/Button';
 import Alert from '@/components/ui/alert/Alert';
 import Badge from '@/components/ui/badge/Badge';
+import ComponentCard from '@/components/common/ComponentCard';
 import {
   Table,
   TableBody,
@@ -182,7 +183,43 @@ export default function UserManagementPage() {
           </Button>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
+        {/* Mobile Card View */}
+        <div className="md:hidden space-y-4">
+          {users.map((user) => (
+            <ComponentCard
+              key={user.id}
+              title={user.email}
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Display Name</span>
+                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
+                    {user.displayName || 'N/A'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Role</span>
+                  <Badge
+                    color={getRoleColor(user.role)}
+                    variant="light"
+                    size="sm"
+                  >
+                    {getRoleLabel(user.role)}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">User ID</span>
+                  <span className="text-xs font-mono text-gray-600 dark:text-gray-400 break-all text-right max-w-[60%]">
+                    {user.id}
+                  </span>
+                </div>
+              </div>
+            </ComponentCard>
+          ))}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
           <div className="max-w-full overflow-x-auto">
             <div className="min-w-[650px]">
               <Table>
@@ -196,7 +233,7 @@ export default function UserManagementPage() {
                     </TableCell>
                     <TableCell
                       isHeader
-                      className="hidden text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90 sm:table-cell"
+                      className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
                     >
                       Display Name
                     </TableCell>
@@ -208,7 +245,7 @@ export default function UserManagementPage() {
                     </TableCell>
                     <TableCell
                       isHeader
-                      className="hidden text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90 md:table-cell"
+                      className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
                     >
                       User ID
                     </TableCell>
@@ -223,7 +260,7 @@ export default function UserManagementPage() {
                       <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">
                         {user.email}
                       </TableCell>
-                      <TableCell className="hidden px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400 sm:table-cell">
+                      <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400">
                         {user.displayName || 'N/A'}
                       </TableCell>
                       <TableCell className="px-5 py-4">
@@ -235,7 +272,7 @@ export default function UserManagementPage() {
                           {getRoleLabel(user.role)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="hidden px-5 py-4 text-start font-mono text-xs text-gray-600 dark:text-gray-400 md:table-cell">
+                      <TableCell className="px-5 py-4 text-start font-mono text-xs text-gray-600 dark:text-gray-400">
                         {user.id}
                       </TableCell>
                     </TableRow>

@@ -27,6 +27,7 @@ import { useRole } from "@/hooks/useRole";
 import Button from "@/components/ui/button/Button";
 import Select from '@/components/form/Select';
 import Label from '@/components/form/Label';
+import ComponentCard from "@/components/common/ComponentCard";
 
 import AddPersonForm from "./_component/AddPersonForm";
 import ProcessingProgress from "./_component/ProcessingProgress";
@@ -361,7 +362,63 @@ export default function PeoplePage() {
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-sm">
+        {/* Mobile Card View */}
+        <div className="md:hidden space-y-4">
+          {filteredPeople.map((person) => (
+            <ComponentCard
+              key={person.id}
+              title={`${person.firstName} ${person.middleName} ${person.surname}`}
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Department</span>
+                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
+                    {person.department}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Gender</span>
+                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
+                    {person.gender}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Class</span>
+                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
+                    {person.class}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Living</span>
+                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
+                    {person.living || "-"}
+                  </span>
+                </div>
+                {hasRole("it") && (
+                  <div className="flex items-center justify-end gap-2 pt-2">
+                    <IconButton
+                      onClick={() => handleEdit(person)}
+                      size="small"
+                      sx={{ padding: "8px" }}
+                    >
+                      <Edit color="primary" />
+                    </IconButton>
+                    <IconButton
+                      onClick={() => handleDelete(person.id!)}
+                      size="small"
+                      sx={{ padding: "8px" }}
+                    >
+                      <Delete color="error" />
+                    </IconButton>
+                  </div>
+                )}
+              </div>
+            </ComponentCard>
+          ))}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-sm">
           <div className="max-w-full overflow-x-auto">
             <div className="min-w-[650px]">
               <Table>
@@ -375,13 +432,13 @@ export default function PeoplePage() {
                     </TableCell>
                     <TableCell
                       isHeader
-                      className="hidden text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 md:table-cell"
+                      className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700"
                     >
                       Department
                     </TableCell>
                     <TableCell
                       isHeader
-                      className="hidden text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 sm:table-cell"
+                      className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700"
                     >
                       Gender
                     </TableCell>
@@ -393,7 +450,7 @@ export default function PeoplePage() {
                     </TableCell>
                     <TableCell
                       isHeader
-                      className="hidden text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 md:table-cell"
+                      className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700"
                     >
                       Living
                     </TableCell>
@@ -412,26 +469,20 @@ export default function PeoplePage() {
                       className="hover:bg-gray-50 transition-colors"
                     >
                       <TableCell className="px-5 py-4 text-start">
-                        <div>
-                          <div className="text-theme-sm font-semibold text-gray-800">
-                            {person.firstName} {person.middleName} {person.surname}
-                          </div>
-                          <div className="mt-1 text-xs text-gray-500 md:hidden">
-                            {person.department} • {person.gender}
-                            {person.living && ` • ${person.living}`}
-                          </div>
+                        <div className="text-theme-sm font-semibold text-gray-800">
+                          {person.firstName} {person.middleName} {person.surname}
                         </div>
                       </TableCell>
-                      <TableCell className="hidden px-5 py-4 text-start text-theme-sm text-gray-600 md:table-cell">
+                      <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600">
                         {person.department}
                       </TableCell>
-                      <TableCell className="hidden px-5 py-4 text-start text-theme-sm text-gray-600 sm:table-cell">
+                      <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600">
                         {person.gender}
                       </TableCell>
                       <TableCell className="px-5 py-4 text-start text-theme-sm font-medium text-gray-800">
                         {person.class}
                       </TableCell>
-                      <TableCell className="hidden px-5 py-4 text-start text-theme-sm text-gray-600 md:table-cell">
+                      <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600">
                         {person.living || "-"}
                       </TableCell>
                       <TableCell className="px-5 py-4">
