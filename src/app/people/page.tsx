@@ -36,6 +36,8 @@ import {
   deleteDoc,
   doc,
   updateDoc,
+  query,
+  where,
 } from "firebase/firestore";
 import { db } from "@/firebase";
 import RoleGuard from "@/components/RoleGuard";
@@ -50,6 +52,7 @@ export default function PeoplePage() {
   const [file, setFile] = useState<File | null>(null);
   const [classFilter, setClassFilter] = useState<string>("");
   const [departmentFilter, setDepartmentFilter] = useState<string>("");
+  const [livingFilter, setLivingFilter] = useState<string>("");
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { hasRole } = useRole();
@@ -74,8 +77,12 @@ export default function PeoplePage() {
       filtered = filtered.filter(person => person.department === departmentFilter);
     }
     
+    if (livingFilter) {
+      filtered = filtered.filter(person => person.living === livingFilter);
+    }
+    
     setFilteredPeople(filtered);
-  }, [people, classFilter, departmentFilter]);
+  }, [people, classFilter, departmentFilter, livingFilter]);
 
   useEffect(() => {
     fetchPeople();
@@ -138,6 +145,22 @@ export default function PeoplePage() {
       const worksheet = workbook.Sheets[sheetName];
       const jsonData = XLSX.utils.sheet_to_json<Record<string, string>>(worksheet);
 
+      // Helper function to normalize living value
+      const normalizeLiving = (value: string): string => {
+        const normalized = value.trim();
+        if (!normalized) return "";
+        
+        const lower = normalized.toLowerCase();
+        if (lower === "on campus" || lower === "oncampus" || lower === "on-campus") {
+          return "On Campus";
+        }
+        if (lower === "off campus" || lower === "offcampus" || lower === "off-campus") {
+          return "Off Campus";
+        }
+        // Return as-is if it doesn't match common variations
+        return normalized;
+      };
+
       const peopleData: Omit<Person, "id">[] = jsonData.map((row) => ({
         firstName: row["FIRST NAME"] || "",
         middleName: row["MIDDLENAME"] || "",
@@ -145,13 +168,54 @@ export default function PeoplePage() {
         department: row["DEPARTMENT"] || "",
         gender: row["GENDER"] || "",
         class: row["CLASS"] || "",
+        living: normalizeLiving(row["LIVING"] || ""),
       }));
 
-      const batchPromises = peopleData.map((person) =>
-        addDoc(collection(db, "people"), person)
-      );
+      // Process each person: check if exists, update or create
+      const processPromises = peopleData.map(async (person) => {
+        try {
+          // Search for existing user by firstName and surname
+          const peopleRef = collection(db, "people");
+          const q = query(
+            peopleRef,
+            where("firstName", "==", person.firstName),
+            where("surname", "==", person.surname)
+          );
+          
+          const querySnapshot = await getDocs(q);
+          
+          if (!querySnapshot.empty) {
+            // User exists - update the living field and other fields
+            const existingDoc = querySnapshot.docs[0];
+            
+            // Prepare update data - always update living if provided in Excel
+            const updateData: Partial<Person> = {};
+            
+            // Update living field if provided in Excel, otherwise keep existing
+            if (person.living) {
+              updateData.living = person.living;
+            }
+            
+            // Update other fields if provided in Excel (non-empty values)
+            if (person.department) updateData.department = person.department;
+            if (person.gender) updateData.gender = person.gender;
+            if (person.class) updateData.class = person.class;
+            if (person.middleName) updateData.middleName = person.middleName;
+            
+            // Only update if there are changes
+            if (Object.keys(updateData).length > 0) {
+              await updateDoc(doc(db, "people", existingDoc.id), updateData);
+            }
+          } else {
+            // User doesn't exist - create new user
+            await addDoc(collection(db, "people"), person);
+          }
+        } catch {
+          // Continue processing other records even if one fails
+        }
+      });
 
-      await Promise.all(batchPromises);
+      await Promise.all(processPromises);
       fetchPeople();
       setFile(null);
     };
@@ -302,6 +366,24 @@ export default function PeoplePage() {
                 </FormControl>
               </Box>
               <Box sx={{ 
+                flex: { xs: "1 1 100%", sm: "1 1 200px" },
+                minWidth: { xs: "100%", sm: "200px" }
+              }}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Living</InputLabel>
+                  <Select
+                    value={livingFilter}
+                    label="Living"
+                    onChange={(e) => setLivingFilter(e.target.value)}
+                    sx={{ height: { xs: "48px", sm: "40px" } }}
+                  >
+                    <MenuItem value="">All Living</MenuItem>
+                    <MenuItem value="On Campus">On Campus</MenuItem>
+                    <MenuItem value="Off Campus">Off Campus</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
+              <Box sx={{ 
                 flex: { xs: "1 1 100%", sm: "0 0 auto" },
                 minWidth: { xs: "100%", sm: "auto" }
               }}>
@@ -310,6 +392,7 @@ export default function PeoplePage() {
                   onClick={() => {
                     setClassFilter("");
                     setDepartmentFilter("");
+                    setLivingFilter("");
                   }}
                   sx={{ 
                     height: { xs: "48px", sm: "40px" },
@@ -336,6 +419,7 @@ export default function PeoplePage() {
               Showing {filteredPeople.length} of {people.length} people
               {classFilter && ` in class "${classFilter}"`}
               {departmentFilter && ` in department "${departmentFilter}"`}
+              {livingFilter && ` living "${livingFilter}"`}
             </Typography>
           </Box>
 
@@ -377,6 +461,13 @@ export default function PeoplePage() {
                     Class
                   </TableCell>
                   <TableCell sx={{ 
+                    display: { xs: "none", md: "table-cell" },
+                    fontWeight: 600,
+                    fontSize: { xs: "0.875rem", sm: "0.875rem" }
+                  }}>
+                    Living
+                  </TableCell>
+                  <TableCell sx={{ 
                     fontWeight: 600,
                     fontSize: { xs: "0.875rem", sm: "0.875rem" },
                     width: { xs: "80px", sm: "auto" }
@@ -402,14 +493,14 @@ export default function PeoplePage() {
                         <Box sx={{ fontWeight: 600 }}>
                           {person.firstName} {person.middleName} {person.surname}
                         </Box>
-                        {/* Show department and gender on mobile in the name cell */}
+                        {/* Show department, gender, and living on mobile in the name cell */}
                         <Box sx={{ 
                           display: { xs: "block", md: "none" },
                           fontSize: "0.75rem",
                           color: "text.secondary",
                           mt: 0.5
                         }}>
-                          {person.department} • {person.gender}
+                          {person.department} • {person.gender}{person.living && ` • ${person.living}`}
                         </Box>
                       </Box>
                     </TableCell>
@@ -430,6 +521,12 @@ export default function PeoplePage() {
                       fontWeight: 500
                     }}>
                       {person.class}
+                    </TableCell>
+                    <TableCell sx={{ 
+                      display: { xs: "none", md: "table-cell" },
+                      fontSize: { xs: "0.875rem", sm: "0.875rem" }
+                    }}>
+                      {person.living || "-"}
                     </TableCell>
                     <TableCell sx={{ 
                       width: { xs: "80px", sm: "auto" },
@@ -555,6 +652,19 @@ export default function PeoplePage() {
                   margin="normal"
                   size="small"
                 />
+                <FormControl fullWidth margin="normal" size="small">
+                  <InputLabel>Living</InputLabel>
+                  <Select
+                    name="living"
+                    value={currentPerson.living || ""}
+                    label="Living"
+                    onChange={(e) => setCurrentPerson({ ...currentPerson, living: e.target.value })}
+                  >
+                    <MenuItem value="">Select...</MenuItem>
+                    <MenuItem value="On Campus">On Campus</MenuItem>
+                    <MenuItem value="Off Campus">Off Campus</MenuItem>
+                  </Select>
+                </FormControl>
               </Box>
             </DialogContent>
             <DialogActions sx={{ 

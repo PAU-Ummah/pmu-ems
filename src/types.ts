@@ -7,6 +7,7 @@ export interface Person {
     department: string;
     gender: string;
     class: string;
+    living?: string; // "On Campus" or "Off Campus"
   }
   
   export interface Event {
