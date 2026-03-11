@@ -6,6 +6,7 @@ import Alert from "@/components/ui/alert/Alert";
 import AccountInformationCard from "./_component/AccountInformationCard";
 import SecurityCard from "./_component/SecurityCard";
 import AppInformationCard from "./_component/AppInformationCard";
+import SessionManagementCard from "./_component/SessionManagementCard";
 
 export default function SettingsPage() {
   const { userData } = useAuth();
@@ -39,7 +40,7 @@ export default function SettingsPage() {
           text: 'Password reset email sent! Please check your inbox and follow the instructions to reset your password.' 
         });
       } else {
-        setMessage({ type: 'error', text: result.error || 'Failed to send password reset email' });
+        setMessage({ type: 'error', text: result.error ?? 'Failed to send password reset email' });
       }
     } catch {
       setMessage({ type: 'error', text: 'Network error. Please try again.' });
@@ -68,7 +69,7 @@ export default function SettingsPage() {
         <AccountInformationCard
           email={userData?.email}
           displayName={userData?.displayName}
-          role={userRole || ''}
+          role={userRole ?? ''}
         />
 
         <SecurityCard
@@ -77,6 +78,8 @@ export default function SettingsPage() {
         />
 
         <AppInformationCard userId={userData?.id} />
+
+        <SessionManagementCard />
       </div>
     </div>
   );

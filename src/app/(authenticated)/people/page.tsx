@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import * as XLSX from "xlsx";
-import { Person } from "@/types";
+import { Person, normalizeYear } from "@/types";
 import {
   collection,
   addDoc,
@@ -24,6 +24,8 @@ import {
 import { db } from "@/firebase";
 import RoleGuard from "@/components/auth/RoleGuard";
 import { useRole } from "@/hooks/useRole";
+import { useCurrentSession } from "@/hooks/useCurrentSession";
+import { usePeople } from "@/hooks/usePeople";
 import Button from "@/components/ui/button/Button";
 import Select from '@/components/form/Select';
 import Label from '@/components/form/Label';
@@ -31,36 +33,34 @@ import ComponentCard from "@/components/common/ComponentCard";
 
 import AddPersonForm from "./_component/AddPersonForm";
 import ProcessingProgress from "./_component/ProcessingProgress";
+import DeletePersonModal from "./_component/DeletePersonModal";
 
 export default function PeoplePage() {
-  const [people, setPeople] = useState<Person[]>([]);
+  const { currentSessionId } = useCurrentSession();
+  const { people, loading: peopleLoading, refresh: fetchPeople } = usePeople(currentSessionId);
   const [filteredPeople, setFilteredPeople] = useState<Person[]>([]);
   const [open, setOpen] = useState(false);
   const [currentPerson, setCurrentPerson] = useState<Partial<Person>>({});
   const [isEdit, setIsEdit] = useState(false);
   const [, setFile] = useState<File | null>(null);
-  const [classFilter, setClassFilter] = useState<string>("");
+  const [yearFilter, setYearFilter] = useState<string>("");
   const [departmentFilter, setDepartmentFilter] = useState<string>("");
   const [livingFilter, setLivingFilter] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
+  const [personToDelete, setPersonToDelete] = useState<Person | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { hasRole } = useRole();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchPeople = async () => {
-    const querySnapshot = await getDocs(collection(db, "people"));
-    const peopleData: Person[] = [];
-    querySnapshot.forEach((doc) => {
-      peopleData.push({ id: doc.id, ...doc.data() } as Person);
-    });
-    setPeople(peopleData);
-  };
+  const canAddEditDelete = hasRole("it") || hasRole("admin");
+  const canUploadExcel = hasRole("it");
 
   const applyFilters = useCallback(() => {
     let filtered = people;
     
-    if (classFilter) {
-      filtered = filtered.filter(person => person.class === classFilter);
+    if (yearFilter) {
+      filtered = filtered.filter(person => String(person.year) === yearFilter);
     }
     
     if (departmentFilter) {
@@ -72,18 +72,17 @@ export default function PeoplePage() {
     }
     
     setFilteredPeople(filtered);
-  }, [people, classFilter, departmentFilter, livingFilter]);
-
-  useEffect(() => {
-    fetchPeople();
-  }, []);
+  }, [people, yearFilter, departmentFilter, livingFilter]);
 
   useEffect(() => {
     applyFilters();
   }, [applyFilters]);
 
-  const getUniqueClasses = () => {
-    return Array.from(new Set(people.map(person => person.class))).sort();
+  const getUniqueYears = () => {
+    const years = Array.from(new Set(people.map(person => person.year))).filter(
+      (potentialYear): potentialYear is number => typeof potentialYear === "number"
+    );
+    return years.sort((firstYear, secondYear) => firstYear - secondYear);
   };
 
   const getUniqueDepartments = () => {
@@ -92,7 +91,12 @@ export default function PeoplePage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setCurrentPerson({ ...currentPerson, [name]: value });
+    if (name === "class") {
+      const year = normalizeYear(value);
+      setCurrentPerson({ ...currentPerson, class: value, year });
+    } else {
+      setCurrentPerson({ ...currentPerson, [name]: value });
+    }
   };
 
   const handleLivingChange = (value: string) => {
@@ -100,10 +104,35 @@ export default function PeoplePage() {
   };
 
   const handleSubmit = async () => {
+    // Only persist the fields we care about; do not save `class`.
+    const baseYear =
+      typeof currentPerson.year === "number"
+        ? currentPerson.year
+        : normalizeYear(currentPerson.class as string | undefined);
+
+    // Build payload without any undefined fields (Firestore does not allow them).
+    const payload: Partial<Person> = {
+      firstName: currentPerson.firstName ?? "",
+      surname: currentPerson.surname ?? "",
+      department: currentPerson.department ?? "",
+      gender: currentPerson.gender ?? "",
+      academicSessionId:
+        currentPerson.academicSessionId ?? currentSessionId ?? "",
+      year: baseYear ?? 1,
+      status: currentPerson.status ?? "active",
+    };
+
+    if (currentPerson.middleName) {
+      payload.middleName = currentPerson.middleName;
+    }
+    if (currentPerson.living) {
+      payload.living = currentPerson.living;
+    }
+
     if (isEdit && currentPerson.id) {
-      await updateDoc(doc(db, "people", currentPerson.id), currentPerson);
+      await updateDoc(doc(db, "people", currentPerson.id), payload);
     } else {
-      await addDoc(collection(db, "people"), currentPerson);
+      await addDoc(collection(db, "people"), payload);
     }
     setOpen(false);
     fetchPeople();
@@ -116,9 +145,25 @@ export default function PeoplePage() {
     setOpen(true);
   };
 
+  const handleAddClick = () => {
+    setCurrentPerson({
+      academicSessionId: currentSessionId ?? "",
+      year: 1,
+      status: "active",
+    });
+    setIsEdit(false);
+    setOpen(true);
+  };
+
   const handleDelete = async (id: string) => {
-    await deleteDoc(doc(db, "people", id));
-    fetchPeople();
+    setIsDeleting(true);
+    try {
+      await deleteDoc(doc(db, "people", id));
+      fetchPeople();
+      setPersonToDelete(null);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -135,9 +180,9 @@ export default function PeoplePage() {
     setProcessingProgress(0);
 
     const reader = new FileReader();
-    reader.onload = async (e) => {
+    reader.onload = async (loadEvent) => {
       try {
-        const data = e.target?.result;
+        const data = loadEvent.target?.result;
         const workbook = XLSX.read(data, { type: "array" });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
@@ -157,15 +202,25 @@ export default function PeoplePage() {
           return normalized;
         };
 
-        const peopleData: Omit<Person, "id">[] = jsonData.map((row) => ({
-          firstName: row["FIRST NAME"] || "",
-          middleName: row["MIDDLENAME"] || "",
-          surname: row["SURNAME"] || "",
-          department: row["DEPARTMENT"] || "",
-          gender: row["GENDER"] || "",
-          class: row["CLASS"] || "",
-          living: normalizeLiving(row["LIVING"] || ""),
-        }));
+        if (!currentSessionId) {
+          setIsProcessing(false);
+          setProcessingProgress(0);
+          return;
+        }
+        const peopleData = jsonData.map((row) => {
+          const classVal = row["CLASS"] ?? "";
+          return {
+            firstName: row["FIRST NAME"] ?? "",
+            middleName: row["MIDDLENAME"] ?? "",
+            surname: row["SURNAME"] ?? "",
+            department: row["DEPARTMENT"] ?? "",
+            gender: row["GENDER"] ?? "",
+            living: normalizeLiving(row["LIVING"] ?? ""),
+            academicSessionId: currentSessionId,
+            year: normalizeYear(classVal),
+            status: "active",
+          };
+        });
 
         const totalRecords = peopleData.length;
         let processedCount = 0;
@@ -174,32 +229,38 @@ export default function PeoplePage() {
         for (const person of peopleData) {
           try {
             const peopleRef = collection(db, "people");
-            const q = query(
+            const duplicateCheckQuery = query(
               peopleRef,
               where("firstName", "==", person.firstName),
               where("surname", "==", person.surname)
             );
             
-            const querySnapshot = await getDocs(q);
+            const querySnapshot = await getDocs(duplicateCheckQuery);
             
             if (!querySnapshot.empty) {
               const existingDoc = querySnapshot.docs[0];
               const updateData: Partial<Person> = {};
-              
-              if (person.living) {
-                updateData.living = person.living;
-              }
-              
+              if (person.living) updateData.living = person.living;
               if (person.department) updateData.department = person.department;
               if (person.gender) updateData.gender = person.gender;
-              if (person.class) updateData.class = person.class;
               if (person.middleName) updateData.middleName = person.middleName;
-              
+              if (person.year != null) updateData.year = person.year;
+              if (person.academicSessionId) updateData.academicSessionId = person.academicSessionId;
               if (Object.keys(updateData).length > 0) {
                 await updateDoc(doc(db, "people", existingDoc.id), updateData);
               }
             } else {
-              await addDoc(collection(db, "people"), person);
+              await addDoc(collection(db, "people"), {
+                firstName: person.firstName,
+                middleName: person.middleName,
+                surname: person.surname,
+                department: person.department,
+                gender: person.gender,
+                living: person.living,
+                academicSessionId: person.academicSessionId,
+                year: person.year,
+                status: person.status,
+              });
             }
           } catch {
             // Continue processing other records even if one fails
@@ -238,9 +299,9 @@ export default function PeoplePage() {
   };
 
 
-  const classOptions = [
-    { value: "", label: "All Classes" },
-    ...getUniqueClasses().map(className => ({ value: className, label: className }))
+  const yearOptions = [
+    { value: "", label: "All Years" },
+    ...getUniqueYears().map(year => ({ value: String(year), label: `YR${year}` }))
   ];
 
   const departmentOptions = [
@@ -267,39 +328,49 @@ export default function PeoplePage() {
           People Management
         </h1>
 
-        {hasRole("it") && (
+        {!currentSessionId && (
+          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+            <p className="font-medium">No academic session configured</p>
+            <p className="mt-1 text-sm">Configure a session in Settings → Session management to add or view people.</p>
+          </div>
+        )}
+
+        {peopleLoading && (
+          <div className="mb-6 text-sm text-gray-500">Loading people…</div>
+        )}
+
+        {canAddEditDelete && (
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:gap-2">
             <Button
               variant="primary"
               startIcon={<Add />}
-              onClick={() => {
-                setOpen(true);
-                setIsEdit(false);
-                setCurrentPerson({});
-              }}
+              onClick={handleAddClick}
+              disabled={!currentSessionId}
               className="w-full sm:w-auto"
             >
               Add Person
             </Button>
 
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Button
-                variant="outline"
-                className="w-full sm:w-auto"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isProcessing}
-              >
-                Upload Excel
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                className="hidden"
-                accept=".xlsx, .xls"
-                onChange={handleFileUpload}
-                disabled={isProcessing}
-              />
-            </div>
+            {canUploadExcel && (
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isProcessing || !currentSessionId}
+                >
+                  Upload Excel
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  accept=".xlsx, .xls"
+                  onChange={handleFileUpload}
+                  disabled={isProcessing}
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -310,20 +381,20 @@ export default function PeoplePage() {
           </h2>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-2">
             <div className="flex-1 sm:min-w-[200px]">
-              <Label htmlFor="class-filter">Class</Label>
-              <Select
-                options={classOptions}
-                defaultValue={classFilter}
-                onChange={(e) => setClassFilter(e.target.value)}
-                placeholder="All Classes"
-              />
+              <Label htmlFor="year-filter">Year</Label>
+            <Select
+              options={yearOptions}
+              defaultValue={yearFilter}
+              onChange={(changeEvent) => setYearFilter(changeEvent.target.value)}
+              placeholder="All Years"
+            />
             </div>
             <div className="flex-1 sm:min-w-[200px]">
               <Label htmlFor="department-filter">Department</Label>
               <Select
                 options={departmentOptions}
                 defaultValue={departmentFilter}
-                onChange={(e) => setDepartmentFilter(e.target.value)}
+                onChange={(changeEvent) => setDepartmentFilter(changeEvent.target.value)}
                 placeholder="All Departments"
               />
             </div>
@@ -332,7 +403,7 @@ export default function PeoplePage() {
               <Select
                 options={livingOptions}
                 defaultValue={livingFilter}
-                onChange={(e) => setLivingFilter(e.target.value)}
+                onChange={(changeEvent) => setLivingFilter(changeEvent.target.value)}
                 placeholder="All Living"
               />
             </div>
@@ -340,7 +411,7 @@ export default function PeoplePage() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setClassFilter("");
+                  setYearFilter("");
                   setDepartmentFilter("");
                   setLivingFilter("");
                 }}
@@ -356,7 +427,7 @@ export default function PeoplePage() {
         <div className="mb-4">
           <p className="text-sm text-gray-600">
             Showing {filteredPeople.length} of {people.length} people
-            {classFilter && ` in class "${classFilter}"`}
+            {yearFilter && ` in year "YR${yearFilter}"`}
             {departmentFilter && ` in department "${departmentFilter}"`}
             {livingFilter && ` living "${livingFilter}"`}
           </p>
@@ -383,18 +454,18 @@ export default function PeoplePage() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Class</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Year</span>
                   <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {person.class}
+                    {person.year ? `YR${person.year}` : "-"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500 dark:text-gray-400">Living</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {person.living || "-"}
-                  </span>
+                      <span className="text-sm font-medium text-gray-800 dark:text-white/90">
+                        {person.living ?? "-"}
+                      </span>
                 </div>
-                {hasRole("it") && (
+                {canAddEditDelete && (
                   <div className="flex items-center justify-end gap-2 pt-2">
                     <IconButton
                       onClick={() => handleEdit(person)}
@@ -404,7 +475,7 @@ export default function PeoplePage() {
                       <Edit color="primary" />
                     </IconButton>
                     <IconButton
-                      onClick={() => handleDelete(person.id!)}
+                      onClick={() => setPersonToDelete(person)}
                       size="small"
                       sx={{ padding: "8px" }}
                     >
@@ -445,8 +516,8 @@ export default function PeoplePage() {
                     <TableCell
                       isHeader
                       className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700"
-                    >
-                      Class
+                      >
+                      Year
                     </TableCell>
                     <TableCell
                       isHeader
@@ -480,13 +551,13 @@ export default function PeoplePage() {
                         {person.gender}
                       </TableCell>
                       <TableCell className="px-5 py-4 text-start text-theme-sm font-medium text-gray-800">
-                        {person.class}
+                        {person.year ? `YR${person.year}` : "-"}
                       </TableCell>
                       <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600">
-                        {person.living || "-"}
+                        {person.living ?? "-"}
                       </TableCell>
                       <TableCell className="px-5 py-4">
-                        {hasRole("it") && (
+                        {canAddEditDelete && (
                           <div className="flex gap-2">
                             <IconButton
                               onClick={() => handleEdit(person)}
@@ -496,7 +567,7 @@ export default function PeoplePage() {
                               <Edit color="primary" />
                             </IconButton>
                             <IconButton
-                              onClick={() => handleDelete(person.id!)}
+                              onClick={() => setPersonToDelete(person)}
                               size="small"
                               sx={{ padding: "8px" }}
                             >
@@ -522,11 +593,20 @@ export default function PeoplePage() {
           onLivingChange={handleLivingChange}
           onSubmit={handleSubmit}
           livingFormOptions={livingFormOptions}
+          currentSessionId={currentSessionId}
         />
 
         <ProcessingProgress
           isOpen={isProcessing}
           progress={processingProgress}
+        />
+
+        <DeletePersonModal
+          isOpen={!!personToDelete}
+          onClose={() => setPersonToDelete(null)}
+          person={personToDelete}
+          onConfirm={handleDelete}
+          isDeleting={isDeleting}
         />
       </div>
     </RoleGuard>

@@ -76,7 +76,7 @@ export default function AttendanceDialog({
             {filteredPeople.length > 0 ? (
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
                 {filteredPeople.map((person) => {
-                  const isAttending = currentEvent?.attendees?.includes(person.id!) || false;
+                const isAttending = currentEvent?.attendees?.includes(person.id!) ?? false;
                   return (
                     <div
                       key={person.id}
@@ -87,7 +87,7 @@ export default function AttendanceDialog({
                           {person.firstName} {person.middleName} {person.surname}
                         </p>
                         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate">
-                          {person.department} - {person.class}
+                          {person.department} - {person.year ? `YR${person.year}` : "-"}
                         </p>
                       </div>
                       <div className="flex-shrink-0">

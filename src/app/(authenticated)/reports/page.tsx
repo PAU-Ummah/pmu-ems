@@ -1,8 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
-import { Event, Person } from "@/types";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/firebase";
+import { useState } from "react";
 import RoleGuard from "@/components/auth/RoleGuard";
 import Select from "@/components/form/Select";
 import Label from "@/components/form/Label";
@@ -14,39 +11,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useCurrentSession } from "@/hooks/useCurrentSession";
+import { useEvents } from "@/hooks/useEvents";
+import { usePeople } from "@/hooks/usePeople";
 
 export default function ReportsPage() {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [people, setPeople] = useState<Person[]>([]);
+  const { currentSessionId } = useCurrentSession();
+  const { events } = useEvents(currentSessionId);
+  const { people } = usePeople(currentSessionId);
   const [selectedEvent, setSelectedEvent] = useState<string>("");
 
-  useEffect(() => {
-    const fetchEvents = async () => {
-      const querySnapshot = await getDocs(collection(db, "events"));
-      const eventsData: Event[] = [];
-      querySnapshot.forEach((doc) => {
-        eventsData.push({ id: doc.id, ...doc.data() } as Event);
-      });
-      setEvents(eventsData);
-    };
-
-    const fetchPeople = async () => {
-      const querySnapshot = await getDocs(collection(db, "people"));
-      const peopleData: Person[] = [];
-      querySnapshot.forEach((doc) => {
-        peopleData.push({ id: doc.id, ...doc.data() } as Person);
-      });
-      setPeople(peopleData);
-    };
-
-    fetchEvents();
-    fetchPeople();
-  }, []);
-
-  const selectedEventData = events.find((e) => e.id === selectedEvent);
+  const selectedEventData = events.find((event) => event.id === selectedEvent);
 
   const eventOptions = events.map((event) => ({
-    value: event.id || '',
+    value: event.id ?? '',
     label: `${event.name} - ${event.date}`,
   }));
 
@@ -65,7 +43,7 @@ export default function ReportsPage() {
               ...eventOptions,
             ]}
             defaultValue={selectedEvent}
-            onChange={(e) => setSelectedEvent(e.target.value)}
+            onChange={(changeEvent) => setSelectedEvent(changeEvent.target.value)}
             placeholder="Select an event"
           />
         </div>
@@ -81,7 +59,7 @@ export default function ReportsPage() {
                   <strong>Total Attendees:</strong> {selectedEventData.attendees.length}
                 </p>
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  <strong>Amount Spent:</strong> ₦{selectedEventData.amountSpent?.toLocaleString() || "0"}
+                  <strong>Amount Spent:</strong> ₦{selectedEventData.amountSpent?.toLocaleString() ?? "0"}
                 </p>
                 {(selectedEventData.startTime || selectedEventData.endTime) && (
                   <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -100,7 +78,7 @@ export default function ReportsPage() {
             {/* Mobile Card View */}
             <div className="md:hidden space-y-4">
               {selectedEventData.attendees.map((attendeeId) => {
-                const person = people.find((p) => p.id === attendeeId);
+                const person = people.find((personItem) => personItem.id === attendeeId);
                 if (!person) return null;
                 return (
                   <ComponentCard
@@ -115,9 +93,9 @@ export default function ReportsPage() {
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">Class</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Year</span>
                         <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                          {person.class}
+                          {person.year ? `YR${person.year}` : "-"}
                         </span>
                       </div>
                     </div>
@@ -149,13 +127,13 @@ export default function ReportsPage() {
                           isHeader
                           className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
                         >
-                          Class
+                          Year
                         </TableCell>
                       </TableRow>
                     </TableHeader>
                     <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
                       {selectedEventData.attendees.map((attendeeId) => {
-                        const person = people.find((p) => p.id === attendeeId);
+                        const person = people.find((personItem) => personItem.id === attendeeId);
                         if (!person) return null;
                         return (
                           <TableRow
@@ -169,7 +147,7 @@ export default function ReportsPage() {
                               {person.department}
                             </TableCell>
                             <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400">
-                              {person.class}
+                              {person.year ? `YR${person.year}` : "-"}
                             </TableCell>
                           </TableRow>
                         );

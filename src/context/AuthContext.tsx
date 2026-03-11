@@ -43,9 +43,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // If user document doesn't exist, create a default one
             setUserData({
               id: firebaseUser.uid,
-              email: firebaseUser.email || "",
+              email: firebaseUser.email ?? "",
               role: "event-organizer", // Default role
-              displayName: firebaseUser.displayName || firebaseUser.email || "",
+              displayName: firebaseUser.displayName ?? firebaseUser.email ?? "",
             });
           }
         } catch (error) {

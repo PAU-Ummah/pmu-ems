@@ -31,10 +31,10 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    function handleClickOutside(mouseEvent: MouseEvent) {
       if (
         containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
+        !containerRef.current.contains(mouseEvent.target as Node)
       ) {
         setShowSuggestions(false);
       }
@@ -56,23 +56,23 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
         type="text"
         placeholder={placeholder}
         defaultValue={value}
-        onChange={e => {
-          onChange(e.target.value);
+        onChange={(changeEvent) => {
+          onChange(changeEvent.target.value);
           setShowSuggestions(true);
         }}
       />
       {showSuggestions && showDropdown && (
         <div className="absolute top-[3rem] z-10 w-full rounded-lg border border-gray-200 bg-white shadow">
-          {suggestions.map(s => (
+          {suggestions.map((suggestionItem) => (
             <p
-              key={s.id}
+              key={suggestionItem.id}
               className="hover:bg-brand-50 cursor-pointer px-4 py-2.5 text-sm text-gray-500 dark:text-gray-300"
               onClick={() => {
-                onSelectSuggestion(s);
+                onSelectSuggestion(suggestionItem);
                 setShowSuggestions(false);
               }}
             >
-              {s.label}
+              {suggestionItem.label}
             </p>
           ))}
           {onCreateOption && suggestions.length === 0 && (

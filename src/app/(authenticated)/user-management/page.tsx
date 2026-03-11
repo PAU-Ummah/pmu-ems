@@ -48,8 +48,8 @@ export default function UserManagementPage() {
     try {
       const querySnapshot = await getDocs(collection(db, 'users'));
       const usersData: User[] = [];
-      querySnapshot.forEach((doc) => {
-        usersData.push({ id: doc.id, ...doc.data() } as User);
+      querySnapshot.forEach((userDoc) => {
+        usersData.push({ id: userDoc.id, ...userDoc.data() } as User);
       });
       setUsers(usersData);
     } catch (error) {
@@ -87,7 +87,7 @@ export default function UserManagementPage() {
         setOpen(false);
         fetchUsers(); // Refresh the users list
       } else {
-        setMessage({ type: 'error', text: result.error || 'Failed to register user' });
+        setMessage({ type: 'error', text: result.error ?? 'Failed to register user' });
       }
     } catch {
       setMessage({ type: 'error', text: 'Network error. Please try again.' });
@@ -194,7 +194,7 @@ export default function UserManagementPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500 dark:text-gray-400">Display Name</span>
                   <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {user.displayName || 'N/A'}
+                    {user.displayName ?? 'N/A'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -261,7 +261,7 @@ export default function UserManagementPage() {
                         {user.email}
                       </TableCell>
                       <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400">
-                        {user.displayName || 'N/A'}
+                        {user.displayName ?? 'N/A'}
                       </TableCell>
                       <TableCell className="px-5 py-4">
                         <Badge

@@ -13,7 +13,7 @@ export default function RoleGuard({ allowedRoles, children, fallback }: RoleGuar
   const { hasRole } = useRole();
   
   if (!hasRole(allowedRoles)) {
-    return fallback || (
+    return fallback ?? (
       <div className="p-6">
         <Alert 
           variant="error" 

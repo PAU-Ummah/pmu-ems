@@ -27,9 +27,9 @@ export default function UserDropdown() {
   };
 
   // Get user's display name and initial
-  const displayName = userData?.displayName || userData?.email || user?.email || 'User';
-  const userInitial = userData?.displayName?.[0] || userData?.email?.[0] || user?.email?.[0] || 'U';
-  const userEmail = userData?.email || user?.email || 'user@example.com';
+  const displayName = userData?.displayName ?? userData?.email ?? user?.email ?? 'User';
+  const userInitial = userData?.displayName?.[0] ?? userData?.email?.[0] ?? user?.email?.[0] ?? 'U';
+  const userEmail = userData?.email ?? user?.email ?? 'user@example.com';
 
   return (
     <div className="relative ml-[100px] lg:ml-0">

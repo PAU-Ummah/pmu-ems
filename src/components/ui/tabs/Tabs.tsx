@@ -119,7 +119,7 @@ export default function Tabs({
           >
             {validChildren.map((child, idx) => {
               if (!React.isValidElement(child)) return null;
-              const tabTitle = (child.props as TabPaneProps).tab || `step ${idx + 1}`;
+              const tabTitle = (child.props as TabPaneProps).tab ?? `step ${idx + 1}`;
               return (
                 <React.Fragment key={`step-${idx}`}>
                   <button

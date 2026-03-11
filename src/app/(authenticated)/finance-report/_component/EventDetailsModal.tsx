@@ -92,7 +92,7 @@ export default function EventDetailsModal({
                 >
                   <div className="mb-3 sm:mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white/90 break-words">
-                      Invoice #{invoice.invoiceNumber || `INV-${invoice.id?.slice(-6)}`}
+                      Invoice #{invoice.invoiceNumber ?? `INV-${invoice.id?.slice(-6)}`}
                     </h4>
                     <p className="text-base sm:text-lg font-semibold text-brand-500 whitespace-nowrap">
                       ₦{invoice.totalAmount.toLocaleString()}
@@ -101,7 +101,7 @@ export default function EventDetailsModal({
 
                   <div className="mb-3 sm:mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <p className="text-sm text-gray-700 dark:text-gray-300 break-words">
-                      <strong>Vendor:</strong> {invoice.vendor || "N/A"}
+                      <strong>Vendor:</strong> {invoice.vendor ?? "N/A"}
                     </p>
                     <p className="text-sm text-gray-700 dark:text-gray-300">
                       <strong>Date:</strong> {invoice.date}

@@ -39,24 +39,24 @@ export default function InvoiceForm({
   isEdit,
 }: InvoiceFormProps) {
   // Handle textarea changes - convert to input change format for consistency
-  const handleTextAreaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleTextAreaChange = (changeEvent: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (onTextAreaChange) {
-      onTextAreaChange(e);
+      onTextAreaChange(changeEvent);
     } else {
       // Fallback: create a synthetic input event
       const syntheticEvent = {
-        ...e,
+        ...changeEvent,
         target: {
-          ...e.target,
-          name: e.target.name,
-          value: e.target.value,
+          ...changeEvent.target,
+          name: changeEvent.target.name,
+          value: changeEvent.target.value,
         },
       } as unknown as React.ChangeEvent<HTMLInputElement>;
       onInputChange(syntheticEvent);
     }
   };
   const eventOptions = events.map((event) => ({
-    value: event.id || '',
+    value: event.id ?? '',
     label: `${event.name} - ${event.date}`,
   }));
 
@@ -74,7 +74,7 @@ export default function InvoiceForm({
               <select
                 id="eventId"
                 name="eventId"
-                value={currentInvoice.eventId || ''}
+                value={currentInvoice.eventId ?? ''}
                 onChange={onSelectChange}
                 className="h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-11 text-sm shadow-theme-xs text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
               >
@@ -92,7 +92,7 @@ export default function InvoiceForm({
               <InputField
                 id="invoiceNumber"
                 name="invoiceNumber"
-                value={currentInvoice.invoiceNumber || ''}
+                value={currentInvoice.invoiceNumber ?? ''}
                 onChange={onInputChange}
               />
             </div>
@@ -102,7 +102,7 @@ export default function InvoiceForm({
               <InputField
                 id="vendor"
                 name="vendor"
-                value={currentInvoice.vendor || ''}
+                value={currentInvoice.vendor ?? ''}
                 onChange={onInputChange}
               />
             </div>
@@ -113,7 +113,7 @@ export default function InvoiceForm({
                 id="date"
                 name="date"
                 type="date"
-                value={currentInvoice.date || ''}
+                value={currentInvoice.date ?? ''}
                 onChange={onInputChange}
               />
             </div>
@@ -147,7 +147,7 @@ export default function InvoiceForm({
                     <InputField
                       id={`desc-${item.id}`}
                       value={item.description}
-                      onChange={(e) => onUpdateItem(item.id, 'description', e.target.value)}
+                      onChange={(changeEvent) => onUpdateItem(item.id, 'description', changeEvent.target.value)}
                     />
                   </div>
                   <div className="md:col-span-2">
@@ -156,7 +156,7 @@ export default function InvoiceForm({
                       id={`qty-${item.id}`}
                       type="number"
                       value={item.quantity}
-                      onChange={(e) => onUpdateItem(item.id, 'quantity', Number(e.target.value))}
+                      onChange={(changeEvent) => onUpdateItem(item.id, 'quantity', Number(changeEvent.target.value))}
                     />
                   </div>
                   <div className="md:col-span-2">
@@ -165,7 +165,7 @@ export default function InvoiceForm({
                       id={`unit-${item.id}`}
                       type="number"
                       value={item.unitPrice}
-                      onChange={(e) => onUpdateItem(item.id, 'unitPrice', Number(e.target.value))}
+                      onChange={(changeEvent) => onUpdateItem(item.id, 'unitPrice', Number(changeEvent.target.value))}
                     />
                   </div>
                   <div className="md:col-span-2">
@@ -203,7 +203,7 @@ export default function InvoiceForm({
             <TextArea
               id="notes"
               name="notes"
-              value={currentInvoice.notes || ''}
+              value={currentInvoice.notes ?? ''}
               onChange={handleTextAreaChange}
               rows={3}
             />
@@ -211,7 +211,7 @@ export default function InvoiceForm({
 
           <div className="flex justify-end">
             <p className="text-lg font-semibold text-brand-500">
-              Total: ₦{(currentInvoice.totalAmount || 0).toLocaleString()}
+              Total: ₦{(currentInvoice.totalAmount ?? 0).toLocaleString()}
             </p>
           </div>
 

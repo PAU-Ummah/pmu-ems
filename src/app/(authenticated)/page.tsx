@@ -13,11 +13,14 @@ import {
   CalendarToday,
   CheckCircle,
 } from "@mui/icons-material";
-import { Event, Person, Invoice } from "@/types";
+import { Invoice } from "@/types";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useRole } from "@/hooks/useRole";
+import { useCurrentSession } from "@/hooks/useCurrentSession";
+import { useEvents } from "@/hooks/useEvents";
+import { usePeople } from "@/hooks/usePeople";
 import MetricCard from "@/components/common/MetricCard";
 import ComponentCard from "@/components/common/ComponentCard";
 import Button from "@/components/ui/button/Button";
@@ -28,50 +31,36 @@ import Loading from "@/components/loading/Loading";
 export default function Home() {
   const { userData } = useAuth();
   const { userRole, hasRole } = useRole();
+  const { currentSessionId, currentSession, loading: sessionLoading } = useCurrentSession();
+  const { events, loading: eventsLoading } = useEvents(currentSessionId);
+  const { people, loading: peopleLoading } = usePeople(currentSessionId);
 
-  const [events, setEvents] = useState<Event[]>([]);
-  const [people, setPeople] = useState<Person[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [invoicesLoading, setInvoicesLoading] = useState(true);
 
   useEffect(() => {
-    fetchDashboardData();
+    const fetchInvoices = async () => {
+      try {
+        setInvoicesLoading(true);
+        const snapshot = await getDocs(collection(db, "invoices"));
+        const data: Invoice[] = [];
+        snapshot.forEach((invoiceDoc) => {
+          data.push({ id: invoiceDoc.id, ...invoiceDoc.data() } as Invoice);
+        });
+        setInvoices(data);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error("Error fetching invoices:", err);
+      } finally {
+        setInvoicesLoading(false);
+      }
+    };
+    fetchInvoices();
   }, []);
 
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      const [eventsSnapshot, peopleSnapshot, invoicesSnapshot] = await Promise.all([
-        getDocs(collection(db, "events")),
-        getDocs(collection(db, "people")),
-        getDocs(collection(db, "invoices")),
-      ]);
-
-      const eventsData: Event[] = [];
-      eventsSnapshot.forEach((doc) => {
-        eventsData.push({ id: doc.id, ...doc.data() } as Event);
-      });
-
-      const peopleData: Person[] = [];
-      peopleSnapshot.forEach((doc) => {
-        peopleData.push({ id: doc.id, ...doc.data() } as Person);
-      });
-
-      const invoicesData: Invoice[] = [];
-      invoicesSnapshot.forEach((doc) => {
-        invoicesData.push({ id: doc.id, ...doc.data() } as Invoice);
-      });
-
-      setEvents(eventsData);
-      setPeople(peopleData);
-      setInvoices(invoicesData);
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("Error fetching dashboard data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loading = sessionLoading || eventsLoading || peopleLoading || invoicesLoading;
+  const eventIds = new Set(events.map((event) => event.id));
+  const sessionInvoices = invoices.filter((inv) => inv.eventId && eventIds.has(inv.eventId));
 
   // Calculate statistics
   const totalEvents = events.length;
@@ -80,16 +69,16 @@ export default function Home() {
   ).length;
   const activeEvents = events.filter((event) => !event.isEnded).length;
   const totalPeople = people.length;
-  const totalInvoices = invoices.length;
-  const totalSpent = invoices.reduce((sum, invoice) => sum + (invoice.totalAmount || 0), 0);
-  const totalAttendees = events.reduce((sum, event) => sum + (event.attendees?.length || 0), 0);
+  const totalInvoices = sessionInvoices.length;
+  const totalSpent = sessionInvoices.reduce((sum, invoice) => sum + (invoice.totalAmount ?? 0), 0);
+  const totalAttendees = events.reduce((sum, event) => sum + (event.attendees?.length ?? 0), 0);
 
   // Get upcoming events (next 5)
   const upcomingEventsList = events
     .filter((event) => !event.isEnded && event.startTime && dayjs(event.startTime).isAfter(dayjs()))
-    .sort((a, b) => {
-      const timeA = a.startTime ? dayjs(a.startTime).valueOf() : 0;
-      const timeB = b.startTime ? dayjs(b.startTime).valueOf() : 0;
+    .sort((eventA, eventB) => {
+      const timeA = eventA.startTime ? dayjs(eventA.startTime).valueOf() : 0;
+      const timeB = eventB.startTime ? dayjs(eventB.startTime).valueOf() : 0;
       return timeA - timeB;
     })
     .slice(0, 5);
@@ -97,9 +86,9 @@ export default function Home() {
   // Get recent events (last 5)
   const recentEvents = events
     .filter((event) => event.isEnded)
-    .sort((a, b) => {
-      const timeA = a.endTime ? dayjs(a.endTime).valueOf() : 0;
-      const timeB = b.endTime ? dayjs(b.endTime).valueOf() : 0;
+    .sort((eventA, eventB) => {
+      const timeA = eventA.endTime ? dayjs(eventA.endTime).valueOf() : 0;
+      const timeB = eventB.endTime ? dayjs(eventB.endTime).valueOf() : 0;
       return timeB - timeA;
     })
     .slice(0, 5);
@@ -117,7 +106,7 @@ export default function Home() {
       admin: "Administrator",
       registrar: "Registrar",
     };
-    return role ? roleMap[role] || role : "User";
+    return role ? roleMap[role] ?? role : "User";
   };
 
   if (loading) {
@@ -130,6 +119,15 @@ export default function Home() {
 
   return (
     <div className="w-full space-y-6">
+      {!currentSessionId && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+          <p className="font-medium">No academic session configured</p>
+          <p className="mt-1 text-sm">
+            Ask an administrator to run the initial session setup (Settings → Session management) so you can view events and people.
+          </p>
+        </div>
+      )}
+
       {/* Welcome Section */}
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] md:p-8">
         <h1 className="mb-2 text-2xl font-semibold text-gray-900 dark:text-white/90 sm:text-3xl md:text-4xl">
@@ -138,6 +136,11 @@ export default function Home() {
         <p className="text-sm text-gray-600 dark:text-gray-400 sm:text-base">
           You are logged in as <span className="font-medium">{getRoleDisplayName(userRole)}</span>
         </p>
+        {currentSession && (
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 sm:text-base">
+            Current session: <span className="font-medium">{currentSession.name}</span>
+          </p>
+        )}
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 sm:text-base">
           Here's an overview of your dashboard
         </p>

@@ -66,7 +66,7 @@ export default function EventForm({
             <InputField
               id="name"
               name="name"
-              value={currentEvent.name || ''}
+              value={currentEvent.name ?? ''}
               onChange={onInputChange}
               required
             />

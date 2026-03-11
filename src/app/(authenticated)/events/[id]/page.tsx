@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Stop } from "@mui/icons-material";
-import { Person, Event } from "@/types";
-import { doc, getDoc, getDocs, collection, updateDoc } from "firebase/firestore";
+import { Event } from "@/types";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/firebase";
 import Link from "next/link";
 import RoleGuard from "@/components/auth/RoleGuard";
@@ -17,12 +17,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useCurrentSession } from "@/hooks/useCurrentSession";
+import { usePeople } from "@/hooks/usePeople";
 
 export default function EventDetailPage() {
   const params = useParams();
   const eventId = params.id as string;
+  const { currentSessionId } = useCurrentSession();
+  const { people } = usePeople(currentSessionId);
   const [event, setEvent] = useState<Event | null>(null);
-  const [people, setPeople] = useState<Person[]>([]);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -32,18 +35,7 @@ export default function EventDetailPage() {
         setEvent({ id: docSnap.id, ...docSnap.data() } as Event);
       }
     };
-
-    const fetchPeople = async () => {
-      const querySnapshot = await getDocs(collection(db, "people"));
-      const peopleData: Person[] = [];
-      querySnapshot.forEach((doc) => {
-        peopleData.push({ id: doc.id, ...doc.data() } as Person);
-      });
-      setPeople(peopleData);
-    };
-
     fetchEvent();
-    fetchPeople();
   }, [eventId]);
 
   const handleEndEvent = async () => {
@@ -139,7 +131,7 @@ export default function EventDetailPage() {
       {/* Mobile Card View */}
       <div className="md:hidden space-y-4">
         {event.attendees.map((attendeeId) => {
-          const person = people.find((p) => p.id === attendeeId);
+          const person = people.find((personItem) => personItem.id === attendeeId);
           if (!person) return null;
           return (
             <ComponentCard
@@ -154,9 +146,9 @@ export default function EventDetailPage() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Class</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Year</span>
                   <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {person.class}
+                    {person.year ? `YR${person.year}` : "-"}
                   </span>
                 </div>
               </div>
@@ -194,7 +186,7 @@ export default function EventDetailPage() {
               </TableHeader>
               <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {event.attendees.map((attendeeId) => {
-                  const person = people.find((p) => p.id === attendeeId);
+                  const person = people.find((personItem) => personItem.id === attendeeId);
                   if (!person) return null;
                   return (
                     <TableRow
@@ -208,7 +200,7 @@ export default function EventDetailPage() {
                         {person.department}
                       </TableCell>
                       <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400">
-                        {person.class}
+                        {person.year ? `YR${person.year}` : "-"}
                       </TableCell>
                     </TableRow>
                   );
