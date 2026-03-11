@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import RoleGuard from "@/components/auth/RoleGuard";
 import { Add, Delete, Edit, AttachMoney } from "@mui/icons-material";
-import { Event, Invoice, InvoiceItem } from "@/types";
+import { Invoice, InvoiceItem } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 import {
   collection,
@@ -24,13 +24,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useCurrentSession } from "@/hooks/useCurrentSession";
+import { useEvents } from "@/hooks/useEvents";
 import InvoiceForm from "./_component/InvoiceForm";
 
 // Simple ID generator
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
 export default function FinancePage() {
-  const [events, setEvents] = useState<Event[]>([]);
+  const { currentSessionId } = useCurrentSession();
+  const { events, refresh: refreshEvents } = useEvents(currentSessionId);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [open, setOpen] = useState(false);
   const [currentInvoice, setCurrentInvoice] = useState<Partial<Invoice>>({
@@ -45,28 +48,18 @@ export default function FinancePage() {
   const [isEdit, setIsEdit] = useState(false);
   const { user } = useAuth();
 
-  useEffect(() => {
-    fetchEvents();
-    fetchInvoices();
-  }, []);
-
-  const fetchEvents = async () => {
-    const querySnapshot = await getDocs(collection(db, "events"));
-    const eventsData: Event[] = [];
-    querySnapshot.forEach((doc) => {
-      eventsData.push({ id: doc.id, ...doc.data() } as Event);
-    });
-    setEvents(eventsData);
-  };
-
   const fetchInvoices = async () => {
     const querySnapshot = await getDocs(collection(db, "invoices"));
     const invoicesData: Invoice[] = [];
-    querySnapshot.forEach((doc) => {
-      invoicesData.push({ id: doc.id, ...doc.data() } as Invoice);
+    querySnapshot.forEach((d) => {
+      invoicesData.push({ id: d.id, ...d.data() } as Invoice);
     });
     setInvoices(invoicesData);
   };
+
+  useEffect(() => {
+    fetchInvoices();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -163,7 +156,7 @@ export default function FinancePage() {
 
     setOpen(false);
     fetchInvoices();
-    fetchEvents();
+    refreshEvents();
     setCurrentInvoice({
       eventId: "",
       items: [],
@@ -198,8 +191,11 @@ export default function FinancePage() {
     }
     
     fetchInvoices();
-    fetchEvents();
+    refreshEvents();
   };
+
+  const eventIds = new Set(events.map((e) => e.id));
+  const sessionInvoices = invoices.filter((inv) => inv.eventId && eventIds.has(inv.eventId));
 
   const getEventName = (eventId: string) => {
     const event = events.find((e) => e.id === eventId);
@@ -207,7 +203,7 @@ export default function FinancePage() {
   };
 
   const getTotalSpending = () => {
-    return invoices.reduce((sum, invoice) => sum + invoice.totalAmount, 0);
+    return sessionInvoices.reduce((sum, invoice) => sum + invoice.totalAmount, 0);
   };
 
   return (
@@ -221,7 +217,7 @@ export default function FinancePage() {
         <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <MetricCard
             title="Total Invoices"
-            value={invoices.length}
+            value={sessionInvoices.length}
           />
           <MetricCard
             title="Total Spending"
@@ -229,11 +225,11 @@ export default function FinancePage() {
           />
           <MetricCard
             title="Events with Spending"
-            value={new Set(invoices.map(inv => inv.eventId)).size}
+            value={new Set(sessionInvoices.map(inv => inv.eventId)).size}
           />
           <MetricCard
             title="Average per Invoice"
-            value={`₦${invoices.length > 0 ? Math.round(getTotalSpending() / invoices.length).toLocaleString() : "0"}`}
+            value={`₦${sessionInvoices.length > 0 ? Math.round(getTotalSpending() / sessionInvoices.length).toLocaleString() : "0"}`}
           />
         </div>
 
@@ -253,7 +249,7 @@ export default function FinancePage() {
 
         {/* Mobile Card View */}
         <div className="md:hidden space-y-4">
-          {invoices.map((invoice) => (
+          {sessionInvoices.map((invoice) => (
             <ComponentCard
               key={invoice.id}
               title={invoice.invoiceNumber || `INV-${invoice.id?.slice(-6)}`}
@@ -369,7 +365,7 @@ export default function FinancePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {invoices.map((invoice) => (
+                  {sessionInvoices.map((invoice) => (
                     <TableRow
                       key={invoice.id}
                       className="hover:bg-gray-50 transition-colors dark:hover:bg-gray-800/50"

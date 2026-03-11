@@ -1,12 +1,11 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import dayjs, { Dayjs } from "dayjs";
 import { Add, Delete, Edit, People } from "@mui/icons-material";
-import { Event, Person } from "@/types";
+import { Event } from "@/types";
 import {
   collection,
   addDoc,
-  getDocs,
   deleteDoc,
   doc,
   updateDoc,
@@ -14,6 +13,9 @@ import {
 import { db } from "@/firebase";
 import Link from "next/link";
 import RoleGuard from "@/components/auth/RoleGuard";
+import { useCurrentSession } from "@/hooks/useCurrentSession";
+import { useEvents } from "@/hooks/useEvents";
+import { usePeople } from "@/hooks/usePeople";
 import Button from "@/components/ui/button/Button";
 import Badge from "@/components/ui/badge/Badge";
 import {
@@ -26,8 +28,9 @@ import {
 import EventForm from "./_component/EventForm";
 
 export default function EventsPage() {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [people, setPeople] = useState<Person[]>([]);
+  const { currentSessionId } = useCurrentSession();
+  const { events, loading: eventsLoading, refresh: fetchEvents } = useEvents(currentSessionId);
+  const { people } = usePeople(currentSessionId);
   const [open, setOpen] = useState(false);
   const [currentEvent, setCurrentEvent] = useState<Partial<Event>>({
     name: "",
@@ -39,41 +42,20 @@ export default function EventsPage() {
   const [selectedDateTime, setSelectedDateTime] = useState<Dayjs | null>(dayjs());
   const [isEdit, setIsEdit] = useState(false);
 
-  useEffect(() => {
-    fetchEvents();
-    fetchPeople();
-  }, []);
-
-  const fetchEvents = async () => {
-    const querySnapshot = await getDocs(collection(db, "events"));
-    const eventsData: Event[] = [];
-    querySnapshot.forEach((doc) => {
-      eventsData.push({ id: doc.id, ...doc.data() } as Event);
-    });
-    setEvents(eventsData);
-  };
-
-  const fetchPeople = async () => {
-    const querySnapshot = await getDocs(collection(db, "people"));
-    const peopleData: Person[] = [];
-    querySnapshot.forEach((doc) => {
-      peopleData.push({ id: doc.id, ...doc.data() } as Person);
-    });
-    setPeople(peopleData);
-  };
-
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setCurrentEvent({ ...currentEvent, [name]: value });
   };
 
   const handleSubmit = async () => {
-    const eventData = {
+    const eventData: Partial<Event> = {
       ...currentEvent,
       date: selectedDate ? selectedDate.format("YYYY-MM-DD") : currentEvent.date,
       startTime: selectedDateTime ? selectedDateTime.toISOString() : currentEvent.startTime,
     };
+    if (!isEdit && currentSessionId) {
+      eventData.academicSessionId = currentSessionId;
+    }
 
     if (isEdit && currentEvent.id) {
       await updateDoc(doc(db, "events", currentEvent.id), eventData);
@@ -123,10 +105,24 @@ export default function EventsPage() {
     return person ? `${person.firstName} ${person.surname}` : "Unknown";
   };
 
-  if (!events) {
+  const handleAddClick = () => {
+    setCurrentEvent({
+      name: "",
+      date: new Date().toISOString().split("T")[0],
+      startTime: new Date().toISOString(),
+      attendees: [],
+      academicSessionId: currentSessionId ?? "",
+    });
+    setSelectedDate(dayjs());
+    setSelectedDateTime(dayjs());
+    setIsEdit(false);
+    setOpen(true);
+  };
+
+  if (eventsLoading) {
     return (
       <div className="w-full">
-        <p className="text-gray-900 dark:text-white/90">Loading...</p>
+        <p className="text-gray-900 dark:text-white/90">Loading events…</p>
       </div>
     );
   }
@@ -137,15 +133,20 @@ export default function EventsPage() {
         Events Management
       </h1>
 
+      {!currentSessionId && (
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+          <p className="font-medium">No academic session configured</p>
+          <p className="mt-1 text-sm">Configure a session in Settings → Session management to create or view events.</p>
+        </div>
+      )}
+
       <RoleGuard allowedRoles={['event-organizer']}>
         <div className="mb-6">
           <Button
             variant="primary"
             startIcon={<Add />}
-            onClick={() => {
-              setOpen(true);
-              setIsEdit(false);
-            }}
+            onClick={handleAddClick}
+            disabled={!currentSessionId}
             className="w-full sm:w-auto"
           >
             Create Event

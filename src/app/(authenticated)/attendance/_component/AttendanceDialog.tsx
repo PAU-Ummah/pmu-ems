@@ -87,7 +87,7 @@ export default function AttendanceDialog({
                           {person.firstName} {person.middleName} {person.surname}
                         </p>
                         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate">
-                          {person.department} - {person.class}
+                          {person.department} - {person.year ? `YR${person.year}` : "-"}
                         </p>
                       </div>
                       <div className="flex-shrink-0">

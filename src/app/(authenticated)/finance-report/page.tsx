@@ -16,6 +16,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useCurrentSession } from "@/hooks/useCurrentSession";
+import { useEvents } from "@/hooks/useEvents";
 import EventDetailsModal from "./_component/EventDetailsModal";
 
 export interface EventFinanceData {
@@ -26,49 +28,30 @@ export interface EventFinanceData {
 }
 
 export default function FinanceReportPage() {
-  const [events, setEvents] = useState<Event[]>([]);
+  const { currentSessionId } = useCurrentSession();
+  const { events } = useEvents(currentSessionId);
   const [eventFinanceData, setEventFinanceData] = useState<EventFinanceData[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<EventFinanceData | null>(null);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    const fetchData = async () => {
+      const invoicesSnapshot = await getDocs(collection(db, "invoices"));
+      const invoicesData: Invoice[] = [];
+      invoicesSnapshot.forEach((d) => {
+        invoicesData.push({ id: d.id, ...d.data() } as Invoice);
+      });
 
-  const fetchData = async () => {
-    const [eventsSnapshot, invoicesSnapshot] = await Promise.all([
-      getDocs(collection(db, "events")),
-      getDocs(collection(db, "invoices"))
-    ]);
-
-    const eventsData: Event[] = [];
-    eventsSnapshot.forEach((doc) => {
-      eventsData.push({ id: doc.id, ...doc.data() } as Event);
-    });
-
-    const invoicesData: Invoice[] = [];
-    invoicesSnapshot.forEach((doc) => {
-      invoicesData.push({ id: doc.id, ...doc.data() } as Invoice);
-    });
-
-    setEvents(eventsData);
-
-    // Process finance data
-    const financeData: EventFinanceData[] = eventsData.map(event => {
-      const eventInvoices = invoicesData.filter(invoice => invoice.eventId === event.id);
-      const totalSpent = eventInvoices.reduce((sum, invoice) => sum + invoice.totalAmount, 0);
-      const itemCount = eventInvoices.reduce((sum, invoice) => sum + (invoice.items?.length || 0), 0);
-
-      return {
-        event,
-        invoices: eventInvoices,
-        totalSpent,
-        itemCount,
-      };
-    });
-
-    setEventFinanceData(financeData);
-  };
+      const financeData: EventFinanceData[] = events.map((event) => {
+        const eventInvoices = invoicesData.filter((inv) => inv.eventId === event.id);
+        const totalSpent = eventInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
+        const itemCount = eventInvoices.reduce((sum, inv) => sum + (inv.items?.length || 0), 0);
+        return { event, invoices: eventInvoices, totalSpent, itemCount };
+      });
+      setEventFinanceData(financeData);
+    };
+    if (events.length >= 0) fetchData();
+  }, [events]);
 
   const getTotalSpending = () => {
     return eventFinanceData.reduce((sum, data) => sum + data.totalSpent, 0);

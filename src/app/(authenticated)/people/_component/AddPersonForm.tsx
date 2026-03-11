@@ -7,6 +7,14 @@ import Label from '@/components/form/Label';
 import Button from '@/components/ui/button/Button';
 import { Person } from '@/types';
 
+const YEAR_OPTIONS = [
+  { value: "1", label: "YR1" },
+  { value: "2", label: "YR2" },
+  { value: "3", label: "YR3" },
+  { value: "4", label: "YR4" },
+  { value: "5", label: "YR5" },
+];
+
 interface AddPersonFormProps {
   isOpen: boolean;
   onClose: () => void;
@@ -14,8 +22,10 @@ interface AddPersonFormProps {
   isEdit: boolean;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onLivingChange: (value: string) => void;
+  onYearChange?: (value: string) => void;
   onSubmit: () => void;
   livingFormOptions: { value: string; label: string }[];
+  currentSessionId?: string | null;
 }
 
 export default function AddPersonForm({
@@ -25,8 +35,10 @@ export default function AddPersonForm({
   isEdit,
   onInputChange,
   onLivingChange,
+  onYearChange,
   onSubmit,
   livingFormOptions,
+  currentSessionId,
 }: AddPersonFormProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="!max-w-[1000px] p-6 lg:p-10">
@@ -87,6 +99,7 @@ export default function AddPersonForm({
               name="class"
               value={currentPerson.class || ''}
               onChange={onInputChange}
+              placeholder="e.g. YR2, 200 Level"
             />
           </div>
           <div>

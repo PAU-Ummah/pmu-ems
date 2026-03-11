@@ -6,6 +6,7 @@ import Alert from "@/components/ui/alert/Alert";
 import AccountInformationCard from "./_component/AccountInformationCard";
 import SecurityCard from "./_component/SecurityCard";
 import AppInformationCard from "./_component/AppInformationCard";
+import SessionManagementCard from "./_component/SessionManagementCard";
 
 export default function SettingsPage() {
   const { userData } = useAuth();
@@ -77,6 +78,8 @@ export default function SettingsPage() {
         />
 
         <AppInformationCard userId={userData?.id} />
+
+        <SessionManagementCard />
       </div>
     </div>
   );

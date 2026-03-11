@@ -1,8 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
-import { Event, Person } from "@/types";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/firebase";
+import { useState } from "react";
 import RoleGuard from "@/components/auth/RoleGuard";
 import Select from "@/components/form/Select";
 import Label from "@/components/form/Label";
@@ -14,34 +11,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useCurrentSession } from "@/hooks/useCurrentSession";
+import { useEvents } from "@/hooks/useEvents";
+import { usePeople } from "@/hooks/usePeople";
 
 export default function ReportsPage() {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [people, setPeople] = useState<Person[]>([]);
+  const { currentSessionId } = useCurrentSession();
+  const { events } = useEvents(currentSessionId);
+  const { people } = usePeople(currentSessionId);
   const [selectedEvent, setSelectedEvent] = useState<string>("");
-
-  useEffect(() => {
-    const fetchEvents = async () => {
-      const querySnapshot = await getDocs(collection(db, "events"));
-      const eventsData: Event[] = [];
-      querySnapshot.forEach((doc) => {
-        eventsData.push({ id: doc.id, ...doc.data() } as Event);
-      });
-      setEvents(eventsData);
-    };
-
-    const fetchPeople = async () => {
-      const querySnapshot = await getDocs(collection(db, "people"));
-      const peopleData: Person[] = [];
-      querySnapshot.forEach((doc) => {
-        peopleData.push({ id: doc.id, ...doc.data() } as Person);
-      });
-      setPeople(peopleData);
-    };
-
-    fetchEvents();
-    fetchPeople();
-  }, []);
 
   const selectedEventData = events.find((e) => e.id === selectedEvent);
 
@@ -115,9 +93,9 @@ export default function ReportsPage() {
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">Class</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Year</span>
                         <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                          {person.class}
+                          {person.year ? `YR${person.year}` : "-"}
                         </span>
                       </div>
                     </div>
@@ -149,7 +127,7 @@ export default function ReportsPage() {
                           isHeader
                           className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
                         >
-                          Class
+                          Year
                         </TableCell>
                       </TableRow>
                     </TableHeader>
@@ -169,7 +147,7 @@ export default function ReportsPage() {
                               {person.department}
                             </TableCell>
                             <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400">
-                              {person.class}
+                              {person.year ? `YR${person.year}` : "-"}
                             </TableCell>
                           </TableRow>
                         );

@@ -1,10 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import RoleGuard from "@/components/auth/RoleGuard";
-import { Event, Person } from "@/types";
+import { Event } from "@/types";
 import {
-  collection,
-  getDocs,
   doc,
   updateDoc,
   onSnapshot,
@@ -24,61 +22,36 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useCurrentSession } from "@/hooks/useCurrentSession";
+import { useEvents } from "@/hooks/useEvents";
+import { usePeople } from "@/hooks/usePeople";
 import AttendanceDialog from "./_component/AttendanceDialog";
 
 export default function AttendancePage() {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [people, setPeople] = useState<Person[]>([]);
+  const { currentSessionId } = useCurrentSession();
+  const { events, refresh: refreshEvents } = useEvents(currentSessionId);
+  const { people } = usePeople(currentSessionId);
   const [open, setOpen] = useState(false);
   const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchEvents();
-    fetchPeople();
-  }, []);
-
   // Set up real-time listener for events when attendance dialog is open
   useEffect(() => {
     if (!open || !currentEvent) return;
 
     const eventRef = doc(db, "events", currentEvent.id);
-    const unsubscribe = onSnapshot(eventRef, (doc) => {
-      if (doc.exists()) {
-        const updatedEvent = { id: doc.id, ...doc.data() } as Event;
+    const unsubscribe = onSnapshot(eventRef, (snap) => {
+      if (snap.exists()) {
+        const updatedEvent = { id: snap.id, ...snap.data() } as Event;
         setCurrentEvent(updatedEvent);
-        
-        // Also update the events list
-        setEvents(prevEvents => 
-          prevEvents.map(event => 
-            event.id === updatedEvent.id ? updatedEvent : event
-          )
-        );
+        refreshEvents();
       }
     });
 
     return () => unsubscribe();
-  }, [open, currentEvent]);
-
-  const fetchEvents = async () => {
-    const querySnapshot = await getDocs(collection(db, "events"));
-    const eventsData: Event[] = [];
-    querySnapshot.forEach((doc) => {
-      eventsData.push({ id: doc.id, ...doc.data() } as Event);
-    });
-    setEvents(eventsData);
-  };
-
-  const fetchPeople = async () => {
-    const querySnapshot = await getDocs(collection(db, "people"));
-    const peopleData: Person[] = [];
-    querySnapshot.forEach((doc) => {
-      peopleData.push({ id: doc.id, ...doc.data() } as Person);
-    });
-    setPeople(peopleData);
-  };
+  }, [open, currentEvent, refreshEvents]);
 
   const toggleAttendance = async (personId: string) => {
     if (!currentEvent || isUpdating) return;
