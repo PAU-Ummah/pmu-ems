@@ -33,6 +33,7 @@ import ComponentCard from "@/components/common/ComponentCard";
 
 import AddPersonForm from "./_component/AddPersonForm";
 import ProcessingProgress from "./_component/ProcessingProgress";
+import DeletePersonModal from "./_component/DeletePersonModal";
 
 export default function PeoplePage() {
   const { currentSessionId } = useCurrentSession();
@@ -47,8 +48,13 @@ export default function PeoplePage() {
   const [livingFilter, setLivingFilter] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
+  const [personToDelete, setPersonToDelete] = useState<Person | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { hasRole } = useRole();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const canAddEditDelete = hasRole("it") || hasRole("admin");
+  const canUploadExcel = hasRole("it");
 
   const applyFilters = useCallback(() => {
     let filtered = people;
@@ -104,17 +110,24 @@ export default function PeoplePage() {
         ? currentPerson.year
         : normalizeYear(currentPerson.class as string | undefined);
 
+    // Build payload without any undefined fields (Firestore does not allow them).
     const payload: Partial<Person> = {
-      firstName: currentPerson.firstName,
-      middleName: currentPerson.middleName,
-      surname: currentPerson.surname,
-      department: currentPerson.department,
-      gender: currentPerson.gender,
-      living: currentPerson.living,
-      academicSessionId: currentPerson.academicSessionId || currentSessionId || "",
+      firstName: currentPerson.firstName ?? "",
+      surname: currentPerson.surname ?? "",
+      department: currentPerson.department ?? "",
+      gender: currentPerson.gender ?? "",
+      academicSessionId:
+        currentPerson.academicSessionId || currentSessionId || "",
       year: baseYear || 1,
       status: currentPerson.status || "active",
     };
+
+    if (currentPerson.middleName) {
+      payload.middleName = currentPerson.middleName;
+    }
+    if (currentPerson.living) {
+      payload.living = currentPerson.living;
+    }
 
     if (isEdit && currentPerson.id) {
       await updateDoc(doc(db, "people", currentPerson.id), payload);
@@ -143,8 +156,14 @@ export default function PeoplePage() {
   };
 
   const handleDelete = async (id: string) => {
-    await deleteDoc(doc(db, "people", id));
-    fetchPeople();
+    setIsDeleting(true);
+    try {
+      await deleteDoc(doc(db, "people", id));
+      fetchPeople();
+      setPersonToDelete(null);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -320,7 +339,7 @@ export default function PeoplePage() {
           <div className="mb-6 text-sm text-gray-500">Loading people…</div>
         )}
 
-        {hasRole("it") && (
+        {canAddEditDelete && (
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:gap-2">
             <Button
               variant="primary"
@@ -332,24 +351,26 @@ export default function PeoplePage() {
               Add Person
             </Button>
 
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Button
-                variant="outline"
-                className="w-full sm:w-auto"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isProcessing || !currentSessionId}
-              >
-                Upload Excel
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                className="hidden"
-                accept=".xlsx, .xls"
-                onChange={handleFileUpload}
-                disabled={isProcessing}
-              />
-            </div>
+            {canUploadExcel && (
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isProcessing || !currentSessionId}
+                >
+                  Upload Excel
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  accept=".xlsx, .xls"
+                  onChange={handleFileUpload}
+                  disabled={isProcessing}
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -390,7 +411,7 @@ export default function PeoplePage() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setClassFilter("");
+                  setYearFilter("");
                   setDepartmentFilter("");
                   setLivingFilter("");
                 }}
@@ -444,7 +465,7 @@ export default function PeoplePage() {
                     {person.living || "-"}
                   </span>
                 </div>
-                {hasRole("it") && (
+                {canAddEditDelete && (
                   <div className="flex items-center justify-end gap-2 pt-2">
                     <IconButton
                       onClick={() => handleEdit(person)}
@@ -454,7 +475,7 @@ export default function PeoplePage() {
                       <Edit color="primary" />
                     </IconButton>
                     <IconButton
-                      onClick={() => handleDelete(person.id!)}
+                      onClick={() => setPersonToDelete(person)}
                       size="small"
                       sx={{ padding: "8px" }}
                     >
@@ -536,7 +557,7 @@ export default function PeoplePage() {
                         {person.living || "-"}
                       </TableCell>
                       <TableCell className="px-5 py-4">
-                        {hasRole("it") && (
+                        {canAddEditDelete && (
                           <div className="flex gap-2">
                             <IconButton
                               onClick={() => handleEdit(person)}
@@ -546,7 +567,7 @@ export default function PeoplePage() {
                               <Edit color="primary" />
                             </IconButton>
                             <IconButton
-                              onClick={() => handleDelete(person.id!)}
+                              onClick={() => setPersonToDelete(person)}
                               size="small"
                               sx={{ padding: "8px" }}
                             >
@@ -578,6 +599,14 @@ export default function PeoplePage() {
         <ProcessingProgress
           isOpen={isProcessing}
           progress={processingProgress}
+        />
+
+        <DeletePersonModal
+          isOpen={!!personToDelete}
+          onClose={() => setPersonToDelete(null)}
+          person={personToDelete}
+          onConfirm={handleDelete}
+          isDeleting={isDeleting}
         />
       </div>
     </RoleGuard>
