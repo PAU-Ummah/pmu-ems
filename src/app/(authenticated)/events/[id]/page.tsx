@@ -131,7 +131,7 @@ export default function EventDetailPage() {
       {/* Mobile Card View */}
       <div className="md:hidden space-y-4">
         {event.attendees.map((attendeeId) => {
-          const person = people.find((p) => p.id === attendeeId);
+          const person = people.find((personItem) => personItem.id === attendeeId);
           if (!person) return null;
           return (
             <ComponentCard
@@ -186,7 +186,7 @@ export default function EventDetailPage() {
               </TableHeader>
               <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {event.attendees.map((attendeeId) => {
-                  const person = people.find((p) => p.id === attendeeId);
+                  const person = people.find((personItem) => personItem.id === attendeeId);
                   if (!person) return null;
                   return (
                     <TableRow

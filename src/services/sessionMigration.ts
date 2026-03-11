@@ -44,8 +44,8 @@ export async function runInitialSessionMigration(
   const peopleSnap = await getDocs(collection(db, "people"));
   let peopleUpdated = 0;
   const peopleBatch = writeBatch(db);
-  for (const d of peopleSnap.docs) {
-    const data = d.data();
+  for (const personDoc of peopleSnap.docs) {
+    const data = personDoc.data();
     const update: UpdateData<DocumentData> = {
       academicSessionId: sessionId,
       status: "active",
@@ -53,7 +53,7 @@ export async function runInitialSessionMigration(
     if (data.year === undefined || data.year === null) {
       update.year = normalizeYear(data.class ?? data.year ?? 1);
     }
-    peopleBatch.update(doc(db, "people", d.id), update);
+    peopleBatch.update(doc(db, "people", personDoc.id), update);
     peopleUpdated++;
   }
   if (peopleUpdated > 0) await peopleBatch.commit();
@@ -61,10 +61,10 @@ export async function runInitialSessionMigration(
   const eventsSnap = await getDocs(collection(db, "events"));
   let eventsUpdated = 0;
   const eventsBatch = writeBatch(db);
-  for (const d of eventsSnap.docs) {
-    const data = d.data();
+  for (const eventDoc of eventsSnap.docs) {
+    const data = eventDoc.data();
     if (data.academicSessionId === undefined || data.academicSessionId === null) {
-      eventsBatch.update(doc(db, "events", d.id), { academicSessionId: sessionId });
+      eventsBatch.update(doc(db, "events", eventDoc.id), { academicSessionId: sessionId });
       eventsUpdated++;
     }
   }

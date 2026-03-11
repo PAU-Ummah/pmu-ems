@@ -101,7 +101,7 @@ export default function EventsPage() {
   };
 
   const getPersonName = (id: string) => {
-    const person = people.find((p) => p.id === id);
+    const person = people.find((personItem) => personItem.id === id);
     return person ? `${person.firstName} ${person.surname}` : "Unknown";
   };
 

@@ -40,51 +40,51 @@ export async function runSessionRollover(
   newSessionName: string
 ): Promise<RolloverResult> {
   const peopleRef = collection(db, "people");
-  const q = query(
+  const peopleQuery = query(
     peopleRef,
     where("academicSessionId", "==", currentSessionId)
   );
-  const snapshot = await getDocs(q);
+  const snapshot = await getDocs(peopleQuery);
   const people: (Person & { id: string })[] = [];
-  snapshot.forEach((d) => {
-    people.push({ id: d.id, ...d.data() } as Person & { id: string });
+  snapshot.forEach((personDoc) => {
+    people.push({ id: personDoc.id, ...personDoc.data() } as Person & { id: string });
   });
 
   const graduatedIds = new Set<string>();
   const activePeople: (Person & { id: string })[] = [];
 
-  for (const p of people) {
-    const year = typeof p.year === "number" ? p.year : 1;
-    const dept = p.department || "";
+  for (const person of people) {
+    const year = typeof person.year === "number" ? person.year : 1;
+    const dept = person.department ?? "";
     const isEng = isEngineeringDepartment(dept);
     const shouldGraduate =
       (year === 4 && !isEng) || (year === 5 && isEng);
     if (shouldGraduate) {
-      graduatedIds.add(p.id);
+      graduatedIds.add(person.id);
     } else {
-      activePeople.push(p);
+      activePeople.push(person);
     }
   }
 
   // 1. Mark graduates (in chunks)
-  const toGraduate = people.filter((p) => graduatedIds.has(p.id));
-  for (let i = 0; i < toGraduate.length; i += BATCH_SIZE) {
+  const toGraduate = people.filter((person) => graduatedIds.has(person.id));
+  for (let batchIndex = 0; batchIndex < toGraduate.length; batchIndex += BATCH_SIZE) {
     const batch = writeBatch(db);
-    const chunk = toGraduate.slice(i, i + BATCH_SIZE);
-    for (const p of chunk) {
-      batch.update(doc(db, "people", p.id), { status: "graduated" });
+    const chunk = toGraduate.slice(batchIndex, batchIndex + BATCH_SIZE);
+    for (const person of chunk) {
+      batch.update(doc(db, "people", person.id), { status: "graduated" });
     }
     await batch.commit();
   }
 
   // 2. Year progression for active people (in chunks)
-  for (let i = 0; i < activePeople.length; i += BATCH_SIZE) {
+  for (let batchIndex = 0; batchIndex < activePeople.length; batchIndex += BATCH_SIZE) {
     const batch = writeBatch(db);
-    const chunk = activePeople.slice(i, i + BATCH_SIZE);
-    for (const p of chunk) {
-      const year = typeof p.year === "number" ? p.year : 1;
+    const chunk = activePeople.slice(batchIndex, batchIndex + BATCH_SIZE);
+    for (const person of chunk) {
+      const year = typeof person.year === "number" ? person.year : 1;
       const newYear = Math.min(year + 1, 5);
-      batch.update(doc(db, "people", p.id), { year: newYear });
+      batch.update(doc(db, "people", person.id), { year: newYear });
     }
     if (chunk.length > 0) await batch.commit();
   }
@@ -103,11 +103,11 @@ export async function runSessionRollover(
   await setDoc(configRef, { [CURRENT_SESSION_ID_KEY]: newSessionId }, { merge: true });
 
   // 4. Reassign active people to new session (in chunks)
-  for (let i = 0; i < activePeople.length; i += BATCH_SIZE) {
+  for (let batchIndex = 0; batchIndex < activePeople.length; batchIndex += BATCH_SIZE) {
     const batch = writeBatch(db);
-    const chunk = activePeople.slice(i, i + BATCH_SIZE);
-    for (const p of chunk) {
-      batch.update(doc(db, "people", p.id), {
+    const chunk = activePeople.slice(batchIndex, batchIndex + BATCH_SIZE);
+    for (const person of chunk) {
+      batch.update(doc(db, "people", person.id), {
         academicSessionId: newSessionId,
       });
     }

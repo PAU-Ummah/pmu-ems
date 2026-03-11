@@ -80,9 +80,9 @@ export default function PeoplePage() {
 
   const getUniqueYears = () => {
     const years = Array.from(new Set(people.map(person => person.year))).filter(
-      (y): y is number => typeof y === "number"
+      (potentialYear): potentialYear is number => typeof potentialYear === "number"
     );
-    return years.sort((a, b) => a - b);
+    return years.sort((firstYear, secondYear) => firstYear - secondYear);
   };
 
   const getUniqueDepartments = () => {
@@ -117,9 +117,9 @@ export default function PeoplePage() {
       department: currentPerson.department ?? "",
       gender: currentPerson.gender ?? "",
       academicSessionId:
-        currentPerson.academicSessionId || currentSessionId || "",
-      year: baseYear || 1,
-      status: currentPerson.status || "active",
+        currentPerson.academicSessionId ?? currentSessionId ?? "",
+      year: baseYear ?? 1,
+      status: currentPerson.status ?? "active",
     };
 
     if (currentPerson.middleName) {
@@ -180,9 +180,9 @@ export default function PeoplePage() {
     setProcessingProgress(0);
 
     const reader = new FileReader();
-    reader.onload = async (e) => {
+    reader.onload = async (loadEvent) => {
       try {
-        const data = e.target?.result;
+        const data = loadEvent.target?.result;
         const workbook = XLSX.read(data, { type: "array" });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
@@ -208,14 +208,14 @@ export default function PeoplePage() {
           return;
         }
         const peopleData = jsonData.map((row) => {
-          const classVal = row["CLASS"] || "";
+          const classVal = row["CLASS"] ?? "";
           return {
-            firstName: row["FIRST NAME"] || "",
-            middleName: row["MIDDLENAME"] || "",
-            surname: row["SURNAME"] || "",
-            department: row["DEPARTMENT"] || "",
-            gender: row["GENDER"] || "",
-            living: normalizeLiving(row["LIVING"] || ""),
+            firstName: row["FIRST NAME"] ?? "",
+            middleName: row["MIDDLENAME"] ?? "",
+            surname: row["SURNAME"] ?? "",
+            department: row["DEPARTMENT"] ?? "",
+            gender: row["GENDER"] ?? "",
+            living: normalizeLiving(row["LIVING"] ?? ""),
             academicSessionId: currentSessionId,
             year: normalizeYear(classVal),
             status: "active",
@@ -229,13 +229,13 @@ export default function PeoplePage() {
         for (const person of peopleData) {
           try {
             const peopleRef = collection(db, "people");
-            const q = query(
+            const duplicateCheckQuery = query(
               peopleRef,
               where("firstName", "==", person.firstName),
               where("surname", "==", person.surname)
             );
             
-            const querySnapshot = await getDocs(q);
+            const querySnapshot = await getDocs(duplicateCheckQuery);
             
             if (!querySnapshot.empty) {
               const existingDoc = querySnapshot.docs[0];
@@ -382,19 +382,19 @@ export default function PeoplePage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-2">
             <div className="flex-1 sm:min-w-[200px]">
               <Label htmlFor="year-filter">Year</Label>
-              <Select
-                options={yearOptions}
-                defaultValue={yearFilter}
-                onChange={(e) => setYearFilter(e.target.value)}
-                placeholder="All Years"
-              />
+            <Select
+              options={yearOptions}
+              defaultValue={yearFilter}
+              onChange={(changeEvent) => setYearFilter(changeEvent.target.value)}
+              placeholder="All Years"
+            />
             </div>
             <div className="flex-1 sm:min-w-[200px]">
               <Label htmlFor="department-filter">Department</Label>
               <Select
                 options={departmentOptions}
                 defaultValue={departmentFilter}
-                onChange={(e) => setDepartmentFilter(e.target.value)}
+                onChange={(changeEvent) => setDepartmentFilter(changeEvent.target.value)}
                 placeholder="All Departments"
               />
             </div>
@@ -403,7 +403,7 @@ export default function PeoplePage() {
               <Select
                 options={livingOptions}
                 defaultValue={livingFilter}
-                onChange={(e) => setLivingFilter(e.target.value)}
+                onChange={(changeEvent) => setLivingFilter(changeEvent.target.value)}
                 placeholder="All Living"
               />
             </div>
@@ -461,9 +461,9 @@ export default function PeoplePage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500 dark:text-gray-400">Living</span>
-                  <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {person.living || "-"}
-                  </span>
+                      <span className="text-sm font-medium text-gray-800 dark:text-white/90">
+                        {person.living ?? "-"}
+                      </span>
                 </div>
                 {canAddEditDelete && (
                   <div className="flex items-center justify-end gap-2 pt-2">
@@ -554,7 +554,7 @@ export default function PeoplePage() {
                         {person.year ? `YR${person.year}` : "-"}
                       </TableCell>
                       <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600">
-                        {person.living || "-"}
+                        {person.living ?? "-"}
                       </TableCell>
                       <TableCell className="px-5 py-4">
                         {canAddEditDelete && (

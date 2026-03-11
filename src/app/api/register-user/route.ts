@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       id: user.uid,
       email: user.email!,
       role,
-      displayName: displayName || user.email!,
+      displayName: displayName ?? user.email!,
     };
 
     await setDoc(doc(db, 'users', user.uid), userData);

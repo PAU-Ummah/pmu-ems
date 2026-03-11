@@ -19,7 +19,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
     // Apply theme immediately on mount to prevent flash
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('theme') as Theme | null;
-      const initialTheme = savedTheme || 'light';
+      const initialTheme = savedTheme ?? 'light';
       
       // Apply theme class immediately
       if (initialTheme === 'dark') {

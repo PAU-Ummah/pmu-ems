@@ -42,7 +42,7 @@ export default function AddPersonForm({
             <InputField
               id="firstName"
               name="firstName"
-              value={currentPerson.firstName || ''}
+              value={currentPerson.firstName ?? ''}
               onChange={onInputChange}
             />
           </div>
@@ -51,7 +51,7 @@ export default function AddPersonForm({
             <InputField
               id="middleName"
               name="middleName"
-              value={currentPerson.middleName || ''}
+              value={currentPerson.middleName ?? ''}
               onChange={onInputChange}
             />
           </div>
@@ -60,7 +60,7 @@ export default function AddPersonForm({
             <InputField
               id="surname"
               name="surname"
-              value={currentPerson.surname || ''}
+              value={currentPerson.surname ?? ''}
               onChange={onInputChange}
             />
           </div>
@@ -69,7 +69,7 @@ export default function AddPersonForm({
             <InputField
               id="department"
               name="department"
-              value={currentPerson.department || ''}
+              value={currentPerson.department ?? ''}
               onChange={onInputChange}
             />
           </div>
@@ -78,7 +78,7 @@ export default function AddPersonForm({
             <InputField
               id="gender"
               name="gender"
-              value={currentPerson.gender || ''}
+              value={currentPerson.gender ?? ''}
               onChange={onInputChange}
             />
           </div>
@@ -87,7 +87,7 @@ export default function AddPersonForm({
             <InputField
               id="class"
               name="class"
-              value={currentPerson.class || ''}
+              value={currentPerson.class ?? ''}
               onChange={onInputChange}
               placeholder="e.g. YR2, 200 Level"
               disabled={!currentSessionId && !isEdit}
@@ -97,8 +97,8 @@ export default function AddPersonForm({
             <Label htmlFor="living">Living</Label>
             <Select
               options={livingFormOptions}
-              defaultValue={currentPerson.living || ''}
-              onChange={(e) => onLivingChange(e.target.value)}
+              defaultValue={currentPerson.living ?? ''}
+              onChange={(changeEvent) => onLivingChange(changeEvent.target.value)}
               placeholder="Select..."
             />
           </div>

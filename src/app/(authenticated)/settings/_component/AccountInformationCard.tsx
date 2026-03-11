@@ -64,7 +64,7 @@ export default function AccountInformationCard({
             <InputField
               id="email"
               name="email"
-              value={email || ''}
+              value={email ?? ''}
               disabled
               className="pl-10"
             />
@@ -78,7 +78,7 @@ export default function AccountInformationCard({
             <InputField
               id="displayName"
               name="displayName"
-              value={displayName || 'Not set'}
+              value={displayName ?? 'Not set'}
               disabled
               className="pl-10"
             />

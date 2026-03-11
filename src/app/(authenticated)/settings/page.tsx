@@ -40,7 +40,7 @@ export default function SettingsPage() {
           text: 'Password reset email sent! Please check your inbox and follow the instructions to reset your password.' 
         });
       } else {
-        setMessage({ type: 'error', text: result.error || 'Failed to send password reset email' });
+        setMessage({ type: 'error', text: result.error ?? 'Failed to send password reset email' });
       }
     } catch {
       setMessage({ type: 'error', text: 'Network error. Please try again.' });
@@ -69,7 +69,7 @@ export default function SettingsPage() {
         <AccountInformationCard
           email={userData?.email}
           displayName={userData?.displayName}
-          role={userRole || ''}
+          role={userRole ?? ''}
         />
 
         <SecurityCard

@@ -38,14 +38,14 @@ export default function FinanceReportPage() {
     const fetchData = async () => {
       const invoicesSnapshot = await getDocs(collection(db, "invoices"));
       const invoicesData: Invoice[] = [];
-      invoicesSnapshot.forEach((d) => {
-        invoicesData.push({ id: d.id, ...d.data() } as Invoice);
+      invoicesSnapshot.forEach((invoiceDoc) => {
+        invoicesData.push({ id: invoiceDoc.id, ...invoiceDoc.data() } as Invoice);
       });
 
       const financeData: EventFinanceData[] = events.map((event) => {
         const eventInvoices = invoicesData.filter((inv) => inv.eventId === event.id);
         const totalSpent = eventInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
-        const itemCount = eventInvoices.reduce((sum, inv) => sum + (inv.items?.length || 0), 0);
+        const itemCount = eventInvoices.reduce((sum, inv) => sum + (inv.items?.length ?? 0), 0);
         return { event, invoices: eventInvoices, totalSpent, itemCount };
       });
       setEventFinanceData(financeData);

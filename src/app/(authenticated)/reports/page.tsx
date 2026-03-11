@@ -21,10 +21,10 @@ export default function ReportsPage() {
   const { people } = usePeople(currentSessionId);
   const [selectedEvent, setSelectedEvent] = useState<string>("");
 
-  const selectedEventData = events.find((e) => e.id === selectedEvent);
+  const selectedEventData = events.find((event) => event.id === selectedEvent);
 
   const eventOptions = events.map((event) => ({
-    value: event.id || '',
+    value: event.id ?? '',
     label: `${event.name} - ${event.date}`,
   }));
 
@@ -43,7 +43,7 @@ export default function ReportsPage() {
               ...eventOptions,
             ]}
             defaultValue={selectedEvent}
-            onChange={(e) => setSelectedEvent(e.target.value)}
+            onChange={(changeEvent) => setSelectedEvent(changeEvent.target.value)}
             placeholder="Select an event"
           />
         </div>
@@ -59,7 +59,7 @@ export default function ReportsPage() {
                   <strong>Total Attendees:</strong> {selectedEventData.attendees.length}
                 </p>
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  <strong>Amount Spent:</strong> ₦{selectedEventData.amountSpent?.toLocaleString() || "0"}
+                  <strong>Amount Spent:</strong> ₦{selectedEventData.amountSpent?.toLocaleString() ?? "0"}
                 </p>
                 {(selectedEventData.startTime || selectedEventData.endTime) && (
                   <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -78,7 +78,7 @@ export default function ReportsPage() {
             {/* Mobile Card View */}
             <div className="md:hidden space-y-4">
               {selectedEventData.attendees.map((attendeeId) => {
-                const person = people.find((p) => p.id === attendeeId);
+                const person = people.find((personItem) => personItem.id === attendeeId);
                 if (!person) return null;
                 return (
                   <ComponentCard
@@ -133,7 +133,7 @@ export default function ReportsPage() {
                     </TableHeader>
                     <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
                       {selectedEventData.attendees.map((attendeeId) => {
-                        const person = people.find((p) => p.id === attendeeId);
+                        const person = people.find((personItem) => personItem.id === attendeeId);
                         if (!person) return null;
                         return (
                           <TableRow

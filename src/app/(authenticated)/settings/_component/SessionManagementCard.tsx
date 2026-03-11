@@ -36,12 +36,12 @@ export default function SessionManagementCard() {
         setInitialSessionName("");
         await refresh();
       } else {
-        setMessage({ type: "error", text: result.error || "Migration failed." });
+        setMessage({ type: "error", text: result.error ?? "Migration failed." });
       }
-    } catch (e) {
+    } catch (error) {
       setMessage({
         type: "error",
-        text: e instanceof Error ? e.message : "Migration failed.",
+        text: error instanceof Error ? error.message : "Migration failed.",
       });
     } finally {
       setMigrating(false);
@@ -65,12 +65,12 @@ export default function SessionManagementCard() {
         setNewSessionName("");
         await refresh();
       } else {
-        setMessage({ type: "error", text: result.error || "Rollover failed." });
+        setMessage({ type: "error", text: result.error ?? "Rollover failed." });
       }
-    } catch (e) {
+    } catch (error) {
       setMessage({
         type: "error",
-        text: e instanceof Error ? e.message : "Rollover failed.",
+        text: error instanceof Error ? error.message : "Rollover failed.",
       });
     } finally {
       setRollingOver(false);
@@ -119,7 +119,7 @@ export default function SessionManagementCard() {
                   id="initial-session-name"
                   name="initialSessionName"
                   value={initialSessionName}
-                  onChange={(e) => setInitialSessionName(e.target.value)}
+                  onChange={(changeEvent) => setInitialSessionName(changeEvent.target.value)}
                   placeholder="e.g. 2024/2025"
                 />
               </div>
@@ -141,7 +141,7 @@ export default function SessionManagementCard() {
                   id="new-session-name"
                   name="newSessionName"
                   value={newSessionName}
-                  onChange={(e) => setNewSessionName(e.target.value)}
+                  onChange={(changeEvent) => setNewSessionName(changeEvent.target.value)}
                   placeholder="e.g. 2025/2026"
                 />
               </div>

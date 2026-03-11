@@ -42,9 +42,9 @@ export default function AttendancePage() {
     if (!open || !currentEvent) return;
 
     const eventRef = doc(db, "events", currentEvent.id);
-    const unsubscribe = onSnapshot(eventRef, (snap) => {
-      if (snap.exists()) {
-        const updatedEvent = { id: snap.id, ...snap.data() } as Event;
+    const unsubscribe = onSnapshot(eventRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const updatedEvent = { id: snapshot.id, ...snapshot.data() } as Event;
         setCurrentEvent(updatedEvent);
         refreshEvents();
       }
@@ -61,7 +61,7 @@ export default function AttendancePage() {
     
     try {
       const eventRef = doc(db, "events", currentEvent.id);
-      const attendees = currentEvent.attendees || [];
+      const attendees = currentEvent.attendees ?? [];
       const isAttending = attendees.includes(personId);
       
       if (isAttending) {
@@ -95,13 +95,13 @@ export default function AttendancePage() {
   };
 
   const getPersonName = (id: string) => {
-    const person = people.find((p) => p.id === id);
+    const person = people.find((personItem) => personItem.id === id);
     return person ? `${person.firstName} ${person.surname}` : "Unknown";
   };
 
   const filteredPeople = people.filter((person) => {
-    const fullName = `${person.firstName} ${person.middleName || ""} ${person.surname}`.toLowerCase();
-    const department = person.department?.toLowerCase() || "";
+    const fullName = `${person.firstName} ${person.middleName ?? ""} ${person.surname}`.toLowerCase();
+    const department = person.department?.toLowerCase() ?? "";
     return (
       fullName.includes(searchTerm.toLowerCase()) ||
       department.includes(searchTerm.toLowerCase())
@@ -383,7 +383,7 @@ export default function AttendancePage() {
           onClose={handleCloseAttendance}
           currentEvent={currentEvent}
           searchTerm={searchTerm}
-          onSearchChange={(e) => setSearchTerm(e.target.value)}
+          onSearchChange={(changeEvent) => setSearchTerm(changeEvent.target.value)}
           filteredPeople={filteredPeople}
           onToggleAttendance={toggleAttendance}
           isUpdating={isUpdating}

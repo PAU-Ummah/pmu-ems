@@ -24,7 +24,7 @@ export function useCurrentSession() {
       const configRef = doc(db, CONFIG_COLLECTION, SETTINGS_DOC_ID);
       const configSnap = await getDoc(configRef);
       const sessionId =
-        (configSnap.exists() && configSnap.data()?.[CURRENT_SESSION_ID_KEY]) || null;
+        (configSnap.exists() && configSnap.data()?.[CURRENT_SESSION_ID_KEY]) ?? null;
       setCurrentSessionId(sessionId);
 
       if (sessionId) {
@@ -41,8 +41,8 @@ export function useCurrentSession() {
       } else {
         setCurrentSession(null);
       }
-    } catch (e) {
-      setError(e instanceof Error ? e : new Error(String(e)));
+    } catch (error) {
+      setError(error instanceof Error ? error : new Error(String(error)));
       setCurrentSessionId(null);
       setCurrentSession(null);
     } finally {

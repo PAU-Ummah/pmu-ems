@@ -20,18 +20,18 @@ export function useEvents(sessionId: string | null) {
     setLoading(true);
     setError(null);
     try {
-      const q = query(
+      const eventsQuery = query(
         collection(db, "events"),
         where("academicSessionId", "==", sessionId)
       );
-      const snapshot = await getDocs(q);
+      const snapshot = await getDocs(eventsQuery);
       const data: Event[] = [];
-      snapshot.forEach((d) => {
-        data.push({ id: d.id, ...d.data() } as Event);
+      snapshot.forEach((eventDoc) => {
+        data.push({ id: eventDoc.id, ...eventDoc.data() } as Event);
       });
       setEvents(data);
-    } catch (e) {
-      setError(e instanceof Error ? e : new Error(String(e)));
+    } catch (error) {
+      setError(error instanceof Error ? error : new Error(String(error)));
       setEvents([]);
     } finally {
       setLoading(false);

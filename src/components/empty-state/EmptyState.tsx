@@ -23,7 +23,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
       <div className="flex max-w-md flex-col items-center space-y-4 text-center">
         {/* Icon */}
         <div className="flex items-center justify-center">
-          {icon || defaultIcon}
+          {icon ?? defaultIcon}
         </div>
 
         {/* Title */}

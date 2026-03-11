@@ -48,8 +48,8 @@ export const generateInvoicePDF = (eventData: { event: Event; invoices: Invoice[
       ${invoices.map((invoice) => `
         <div class="invoice-section">
           <div class="invoice-header">
-            <h3>Invoice #${invoice.invoiceNumber || `INV-${invoice.id?.slice(-6)}`}</h3>
-            <p><strong>Vendor:</strong> ${invoice.vendor || 'N/A'} | <strong>Date:</strong> ${invoice.date}</p>
+            <h3>Invoice #${invoice.invoiceNumber ?? `INV-${invoice.id?.slice(-6)}`}</h3>
+            <p><strong>Vendor:</strong> ${invoice.vendor ?? 'N/A'} | <strong>Date:</strong> ${invoice.date}</p>
           </div>
           
           <table>
@@ -86,7 +86,7 @@ export const generateInvoicePDF = (eventData: { event: Event; invoices: Invoice[
       <div class="summary">
         <h3>Summary</h3>
         <p><strong>Total Invoices:</strong> ${invoices.length}</p>
-        <p><strong>Total Items:</strong> ${invoices.reduce((sum, inv) => sum + (inv.items?.length || 0), 0)}</p>
+        <p><strong>Total Items:</strong> ${invoices.reduce((sum, inv) => sum + (inv.items?.length ?? 0), 0)}</p>
         <p><strong>Total Amount Spent:</strong> ₦${invoices.reduce((sum, inv) => sum + inv.totalAmount, 0).toLocaleString()}</p>
         <p><strong>Average per Invoice:</strong> ₦${invoices.length > 0 ? Math.round(invoices.reduce((sum, inv) => sum + inv.totalAmount, 0) / invoices.length).toLocaleString() : '0'}</p>
       </div>
@@ -121,15 +121,15 @@ export const generateCSVData = (eventData: { event: Event; invoices: Invoice[] }
     invoice.items?.map(item => ({
       'Event Name': event.name,
       'Event Date': event.date,
-      'Invoice Number': invoice.invoiceNumber || `INV-${invoice.id?.slice(-6)}`,
-      'Vendor': invoice.vendor || 'N/A',
+      'Invoice Number': invoice.invoiceNumber ?? `INV-${invoice.id?.slice(-6)}`,
+      'Vendor': invoice.vendor ?? 'N/A',
       'Invoice Date': invoice.date,
       'Item Description': item.description,
       'Quantity': item.quantity,
       'Unit Price': item.unitPrice,
       'Total Price': item.totalPrice,
-      'Notes': invoice.notes || ''
-    })) || []
+      'Notes': invoice.notes ?? ''
+    })) ?? []
   );
   
   return csvData;
@@ -137,7 +137,7 @@ export const generateCSVData = (eventData: { event: Event; invoices: Invoice[] }
 
 export const downloadCSV = (data: Record<string, unknown>[], filename: string) => {
   const csvContent = [
-    Object.keys(data[0] || {}).join(','),
+    Object.keys(data[0] ?? {}).join(','),
     ...data.map(row => Object.values(row).map(value => 
       typeof value === 'string' && value.includes(',') ? `"${value}"` : value
     ).join(','))

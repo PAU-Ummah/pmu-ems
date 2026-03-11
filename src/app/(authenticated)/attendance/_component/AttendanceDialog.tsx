@@ -76,7 +76,7 @@ export default function AttendanceDialog({
             {filteredPeople.length > 0 ? (
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
                 {filteredPeople.map((person) => {
-                  const isAttending = currentEvent?.attendees?.includes(person.id!) || false;
+                const isAttending = currentEvent?.attendees?.includes(person.id!) ?? false;
                   return (
                     <div
                       key={person.id}

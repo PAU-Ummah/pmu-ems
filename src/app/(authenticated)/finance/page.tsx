@@ -51,8 +51,8 @@ export default function FinancePage() {
   const fetchInvoices = async () => {
     const querySnapshot = await getDocs(collection(db, "invoices"));
     const invoicesData: Invoice[] = [];
-    querySnapshot.forEach((d) => {
-      invoicesData.push({ id: d.id, ...d.data() } as Invoice);
+    querySnapshot.forEach((invoiceDoc) => {
+      invoicesData.push({ id: invoiceDoc.id, ...invoiceDoc.data() } as Invoice);
     });
     setInvoices(invoicesData);
   };
@@ -86,7 +86,7 @@ export default function FinancePage() {
     };
     setCurrentInvoice({
       ...currentInvoice,
-      items: [...(currentInvoice.items || []), newItem],
+      items: [...(currentInvoice.items ?? []), newItem],
     });
   };
 
@@ -100,7 +100,7 @@ export default function FinancePage() {
         return updatedItem;
       }
       return item;
-    }) || [];
+    }) ?? [];
     
     const totalAmount = updatedItems.reduce((sum, item) => sum + item.totalPrice, 0);
     
@@ -112,7 +112,7 @@ export default function FinancePage() {
   };
 
   const removeInvoiceItem = (itemId: string) => {
-    const updatedItems = currentInvoice.items?.filter(item => item.id !== itemId) || [];
+    const updatedItems = currentInvoice.items?.filter(item => item.id !== itemId) ?? [];
     const totalAmount = updatedItems.reduce((sum, item) => sum + item.totalPrice, 0);
     
     setCurrentInvoice({
@@ -128,7 +128,7 @@ export default function FinancePage() {
     const invoiceData = {
       ...currentInvoice,
       createdBy: user.uid,
-      totalAmount: currentInvoice.totalAmount || 0,
+      totalAmount: currentInvoice.totalAmount ?? 0,
     };
 
     if (isEdit && currentInvoice.id) {
@@ -144,10 +144,10 @@ export default function FinancePage() {
     if (isEdit && currentInvoice.id) {
       // For editing: exclude the current invoice from the sum, then add the new amount
       const otherInvoices = eventInvoices.filter(inv => inv.id !== currentInvoice.id);
-      totalAmount = otherInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0) + (currentInvoice.totalAmount || 0);
+      totalAmount = otherInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0) + (currentInvoice.totalAmount ?? 0);
     } else {
       // For new invoices: sum all existing invoices plus the new one
-      totalAmount = eventInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0) + (currentInvoice.totalAmount || 0);
+      totalAmount = eventInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0) + (currentInvoice.totalAmount ?? 0);
     }
     
     await updateDoc(doc(db, "events", currentInvoice.eventId), {
@@ -194,12 +194,12 @@ export default function FinancePage() {
     refreshEvents();
   };
 
-  const eventIds = new Set(events.map((e) => e.id));
+  const eventIds = new Set(events.map((event) => event.id));
   const sessionInvoices = invoices.filter((inv) => inv.eventId && eventIds.has(inv.eventId));
 
   const getEventName = (eventId: string) => {
-    const event = events.find((e) => e.id === eventId);
-    return event ? event.name : "Unknown Event";
+    const foundEvent = events.find((event) => event.id === eventId);
+    return foundEvent ? foundEvent.name : "Unknown Event";
   };
 
   const getTotalSpending = () => {
@@ -252,7 +252,7 @@ export default function FinancePage() {
           {sessionInvoices.map((invoice) => (
             <ComponentCard
               key={invoice.id}
-              title={invoice.invoiceNumber || `INV-${invoice.id?.slice(-6)}`}
+              title={invoice.invoiceNumber ?? `INV-${invoice.id?.slice(-6)}`}
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -268,13 +268,13 @@ export default function FinancePage() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500 dark:text-gray-400">Vendor</span>
                   <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {invoice.vendor || "N/A"}
+                    {invoice.vendor ?? "N/A"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500 dark:text-gray-400">Items</span>
                   <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                    {invoice.items?.length || 0} item(s)
+                    {invoice.items?.length ?? 0} item(s)
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -372,7 +372,7 @@ export default function FinancePage() {
                     >
                       <TableCell className="px-5 py-4 text-start">
                         <p className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">
-                          {invoice.invoiceNumber || `INV-${invoice.id?.slice(-6)}`}
+                          {invoice.invoiceNumber ?? `INV-${invoice.id?.slice(-6)}`}
                         </p>
                       </TableCell>
                       <TableCell className="px-5 py-4">
@@ -385,10 +385,10 @@ export default function FinancePage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400">
-                        {invoice.vendor || "N/A"}
+                        {invoice.vendor ?? "N/A"}
                       </TableCell>
                       <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400">
-                        {invoice.items?.length || 0} item(s)
+                        {invoice.items?.length ?? 0} item(s)
                       </TableCell>
                       <TableCell className="px-5 py-4 text-start">
                         <div className="flex items-center gap-1">

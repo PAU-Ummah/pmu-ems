@@ -33,7 +33,7 @@ export default function AppInformationCard({ userId }: AppInformationCardProps) 
         <div className="flex items-center justify-between">
           <p className="text-sm text-gray-600 dark:text-gray-400">User ID:</p>
           <p className="font-mono text-xs text-gray-900 dark:text-white/90">
-            {userId || 'N/A'}
+            {userId ?? 'N/A'}
           </p>
         </div>
       </div>

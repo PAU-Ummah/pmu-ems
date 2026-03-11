@@ -46,7 +46,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
   };
 
   const selectedValuesText = selectedOptions.map(
-    value => options.find(option => option.value === value)?.text || ''
+    value => options.find(option => option.value === value)?.text ?? ''
   );
 
   return (
@@ -131,7 +131,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
           {isOpen && (
             <div
               className="max-h-select absolute top-full left-0 z-40 w-full overflow-y-auto rounded-lg bg-white shadow-sm dark:bg-gray-900"
-              onClick={e => e.stopPropagation()}
+              onClick={(clickEvent) => clickEvent.stopPropagation()}
             >
               <div className="flex flex-col">
                 {options.map((option, index) => (

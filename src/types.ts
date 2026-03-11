@@ -22,21 +22,21 @@ export const ENGINEERING_DEPARTMENTS_5_YEAR = [
 export type EngineeringDepartment5Year = (typeof ENGINEERING_DEPARTMENTS_5_YEAR)[number];
 
 export function isEngineeringDepartment(department: string): boolean {
-  const normalized = (department || "").trim().toLowerCase();
+  const normalized = (department ?? "").trim().toLowerCase();
   return ENGINEERING_DEPARTMENTS_5_YEAR.some(
-    (d) => d.toLowerCase() === normalized
+    (departmentName) => departmentName.toLowerCase() === normalized
   );
 }
 
 /** Map class/year input to normalized year 1-5 for progression and graduation. */
 export function normalizeYear(value: string | number | undefined): number {
   if (value === undefined || value === null) return 1;
-  const n = typeof value === "number" ? value : parseInt(String(value), 10);
-  if (!Number.isNaN(n) && n >= 1 && n <= 5) return n;
-  const s = String(value).trim().toUpperCase();
-  const yrMatch = s.match(/^YR\s*(\d)$/);
+  const numericValue = typeof value === "number" ? value : parseInt(String(value), 10);
+  if (!Number.isNaN(numericValue) && numericValue >= 1 && numericValue <= 5) return numericValue;
+  const stringValue = String(value).trim().toUpperCase();
+  const yrMatch = stringValue.match(/^YR\s*(\d)$/);
   if (yrMatch) return parseInt(yrMatch[1], 10);
-  const levelMatch = s.match(/^(\d)00\s*LEVEL$/);
+  const levelMatch = stringValue.match(/^(\d)00\s*LEVEL$/);
   if (levelMatch) return parseInt(levelMatch[1], 10);
   return 1;
 }

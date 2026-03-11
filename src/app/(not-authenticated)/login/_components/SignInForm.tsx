@@ -22,8 +22,8 @@ export default function SignInForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (submitEvent: React.FormEvent) => {
+    submitEvent.preventDefault();
     setIsLoading(true);
     setError('');
     
@@ -68,7 +68,7 @@ export default function SignInForm() {
             errorMessage = 'Invalid email or password. Please try again.';
             break;
           default:
-            errorMessage = firebaseError.message || 'An error occurred during login. Please try again.';
+            errorMessage = firebaseError.message ?? 'An error occurred during login. Please try again.';
         }
       } else if (firebaseError?.message) {
         errorMessage = firebaseError.message;
@@ -107,7 +107,7 @@ export default function SignInForm() {
               placeholder="Enter your email"
               type="email"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(changeEvent) => setEmail(changeEvent.target.value)}
               disabled={isLoading}
               autoComplete="email"
               required
@@ -124,7 +124,7 @@ export default function SignInForm() {
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Enter your password"
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={(changeEvent) => setPassword(changeEvent.target.value)}
                 disabled={isLoading}
                 autoComplete="current-password"
                 required

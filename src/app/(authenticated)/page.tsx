@@ -44,8 +44,8 @@ export default function Home() {
         setInvoicesLoading(true);
         const snapshot = await getDocs(collection(db, "invoices"));
         const data: Invoice[] = [];
-        snapshot.forEach((d) => {
-          data.push({ id: d.id, ...d.data() } as Invoice);
+        snapshot.forEach((invoiceDoc) => {
+          data.push({ id: invoiceDoc.id, ...invoiceDoc.data() } as Invoice);
         });
         setInvoices(data);
       } catch (err) {
@@ -59,7 +59,7 @@ export default function Home() {
   }, []);
 
   const loading = sessionLoading || eventsLoading || peopleLoading || invoicesLoading;
-  const eventIds = new Set(events.map((e) => e.id));
+  const eventIds = new Set(events.map((event) => event.id));
   const sessionInvoices = invoices.filter((inv) => inv.eventId && eventIds.has(inv.eventId));
 
   // Calculate statistics
@@ -70,15 +70,15 @@ export default function Home() {
   const activeEvents = events.filter((event) => !event.isEnded).length;
   const totalPeople = people.length;
   const totalInvoices = sessionInvoices.length;
-  const totalSpent = sessionInvoices.reduce((sum, invoice) => sum + (invoice.totalAmount || 0), 0);
-  const totalAttendees = events.reduce((sum, event) => sum + (event.attendees?.length || 0), 0);
+  const totalSpent = sessionInvoices.reduce((sum, invoice) => sum + (invoice.totalAmount ?? 0), 0);
+  const totalAttendees = events.reduce((sum, event) => sum + (event.attendees?.length ?? 0), 0);
 
   // Get upcoming events (next 5)
   const upcomingEventsList = events
     .filter((event) => !event.isEnded && event.startTime && dayjs(event.startTime).isAfter(dayjs()))
-    .sort((a, b) => {
-      const timeA = a.startTime ? dayjs(a.startTime).valueOf() : 0;
-      const timeB = b.startTime ? dayjs(b.startTime).valueOf() : 0;
+    .sort((eventA, eventB) => {
+      const timeA = eventA.startTime ? dayjs(eventA.startTime).valueOf() : 0;
+      const timeB = eventB.startTime ? dayjs(eventB.startTime).valueOf() : 0;
       return timeA - timeB;
     })
     .slice(0, 5);
@@ -86,9 +86,9 @@ export default function Home() {
   // Get recent events (last 5)
   const recentEvents = events
     .filter((event) => event.isEnded)
-    .sort((a, b) => {
-      const timeA = a.endTime ? dayjs(a.endTime).valueOf() : 0;
-      const timeB = b.endTime ? dayjs(b.endTime).valueOf() : 0;
+    .sort((eventA, eventB) => {
+      const timeA = eventA.endTime ? dayjs(eventA.endTime).valueOf() : 0;
+      const timeB = eventB.endTime ? dayjs(eventB.endTime).valueOf() : 0;
       return timeB - timeA;
     })
     .slice(0, 5);
@@ -106,7 +106,7 @@ export default function Home() {
       admin: "Administrator",
       registrar: "Registrar",
     };
-    return role ? roleMap[role] || role : "User";
+    return role ? roleMap[role] ?? role : "User";
   };
 
   if (loading) {

@@ -33,15 +33,15 @@ export function usePeople(
       if (activeOnly) {
         constraints.push(where("status", "==", "active"));
       }
-      const q = query(collection(db, "people"), ...constraints);
-      const snapshot = await getDocs(q);
+      const peopleQuery = query(collection(db, "people"), ...constraints);
+      const snapshot = await getDocs(peopleQuery);
       const data: Person[] = [];
-      snapshot.forEach((d) => {
-        data.push({ id: d.id, ...d.data() } as Person);
+      snapshot.forEach((personDoc) => {
+        data.push({ id: personDoc.id, ...personDoc.data() } as Person);
       });
       setPeople(data);
-    } catch (e) {
-      setError(e instanceof Error ? e : new Error(String(e)));
+    } catch (error) {
+      setError(error instanceof Error ? error : new Error(String(error)));
       setPeople([]);
     } finally {
       setLoading(false);
