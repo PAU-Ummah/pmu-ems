@@ -2,11 +2,11 @@ import {
   collection,
   getDocs,
   doc,
-  updateDoc,
   addDoc,
   setDoc,
   writeBatch,
 } from "firebase/firestore";
+import type { DocumentData, UpdateData } from "firebase/firestore";
 import { db } from "@/firebase";
 import { normalizeYear } from "@/types";
 import {
@@ -46,7 +46,7 @@ export async function runInitialSessionMigration(
   const peopleBatch = writeBatch(db);
   for (const d of peopleSnap.docs) {
     const data = d.data();
-    const update: Record<string, unknown> = {
+    const update: UpdateData<DocumentData> = {
       academicSessionId: sessionId,
       status: "active",
     };
