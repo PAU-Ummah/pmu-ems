@@ -6,7 +6,7 @@ import InputField from '@/components/form/input/InputField';
 import Select from '@/components/form/Select';
 import Label from '@/components/form/Label';
 import Button from '@/components/ui/button/Button';
-import { User } from '@/types';
+import { User } from '@/services/types';
 
 interface RegisterUserFormProps {
   isOpen: boolean;
@@ -17,7 +17,7 @@ interface RegisterUserFormProps {
     role: User['role'];
     displayName: string;
   };
-  onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onRoleChange: (role: User['role']) => void;
   onSubmit: () => void;
   loading: boolean;
@@ -44,8 +44,8 @@ export default function RegisterUserForm({
     onClose();
   };
 
-  const handleRoleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onRoleChange(e.target.value as User['role']);
+  const handleRoleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    onRoleChange(event.target.value as User['role']);
   };
 
   return (

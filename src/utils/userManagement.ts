@@ -1,7 +1,7 @@
 // src/utils/userManagement.ts
 import { doc, setDoc } from "firebase/firestore";
-import { db } from "@/firebase";
-import { User } from "@/types";
+import { db } from "@/services/firebase";
+import { User } from "@/services/types";
 
 export const createUserDocument = async (userId: string, userData: Partial<User>) => {
   try {

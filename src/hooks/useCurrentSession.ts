@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/firebase";
-import type { AcademicSession } from "@/types";
+import { db } from "@/services/firebase";
+import type { AcademicSession } from "@/services/types";
 import {
   CONFIG_COLLECTION,
   SETTINGS_DOC_ID,

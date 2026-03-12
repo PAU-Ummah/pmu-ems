@@ -9,13 +9,15 @@ import {
   Assessment as ReportsIcon,
   HowToReg as AttendanceIcon,
   PersonAdd as UserManagementIcon,
+  Description as FinanceReportIcon,
+  Summarize as SessionReportsIcon,
   TrendingUp,
   CalendarToday,
   CheckCircle,
 } from "@mui/icons-material";
-import { Invoice } from "@/types";
+import { Invoice } from "@/services/types";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/firebase";
+import { db } from "@/services/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useRole } from "@/hooks/useRole";
 import { useCurrentSession } from "@/hooks/useCurrentSession";
@@ -48,9 +50,9 @@ export default function Home() {
           data.push({ id: invoiceDoc.id, ...invoiceDoc.data() } as Invoice);
         });
         setInvoices(data);
-      } catch (err) {
+      } catch (error) {
         // eslint-disable-next-line no-console
-        console.error("Error fetching invoices:", err);
+        console.error("Error fetching invoices:", error);
       } finally {
         setInvoicesLoading(false);
       }
@@ -60,7 +62,7 @@ export default function Home() {
 
   const loading = sessionLoading || eventsLoading || peopleLoading || invoicesLoading;
   const eventIds = new Set(events.map((event) => event.id));
-  const sessionInvoices = invoices.filter((inv) => inv.eventId && eventIds.has(inv.eventId));
+  const sessionInvoices = invoices.filter((invoice) => invoice.eventId && eventIds.has(invoice.eventId));
 
   // Calculate statistics
   const totalEvents = events.length;
@@ -218,7 +220,7 @@ export default function Home() {
         hasRole(["registrar", "admin"])) && (
         <ComponentCard title="Quick Actions" desc="Navigate to key features based on your role">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {hasRole(["event-organizer", "admin"]) && (
+            {hasRole(["event-organizer"]) && (
               <Link href="/events">
                 <Button
                   variant="outline"
@@ -242,7 +244,7 @@ export default function Home() {
               </Link>
             )}
 
-            {hasRole(["it", "admin"]) && (
+            {hasRole(["it"]) && (
               <Link href="/user-management">
                 <Button
                   variant="outline"
@@ -265,7 +267,17 @@ export default function Home() {
                 </Button>
               </Link>
             )}
-
+            {hasRole(["finance-manager", "admin"]) && (
+              <Link href="/finance-report">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2 text-left"
+                >
+                  <FinanceReportIcon className="h-5 w-5" />
+                  View Finance Reports
+                </Button>
+              </Link>
+            )}
             {hasRole(["admin"]) && (
               <Link href="/reports">
                 <Button
@@ -277,8 +289,18 @@ export default function Home() {
                 </Button>
               </Link>
             )}
-
-            {hasRole(["registrar", "admin"]) && (
+            {hasRole(["admin"]) && (
+              <Link href="/session-reports">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2 text-left"
+                >
+                  <SessionReportsIcon className="h-5 w-5" />
+                  View Session Reports
+                </Button>
+              </Link>
+            )}
+            {hasRole(["registrar"]) && (
               <Link href="/attendance">
                 <Button
                   variant="outline"
@@ -404,7 +426,7 @@ export default function Home() {
             </div>
           </div>
           <div className="mt-4">
-            <Link href="/finance">
+            <Link href="/finance-reports">
               <Button variant="primary" className="w-full sm:w-auto">
                 View Finance Details
               </Button>

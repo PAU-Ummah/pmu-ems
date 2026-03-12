@@ -38,12 +38,12 @@ export default function SignInForm() {
       await login(email, password);
       // Only navigate on successful login
       router.push('/');
-    } catch (err: unknown) {
+    } catch (error: unknown) {
       // Handle Firebase authentication errors
       let errorMessage = 'Invalid email or password';
       
       // Firebase errors have a code property
-      const firebaseError = err as { code?: string; message?: string };
+      const firebaseError = error as { code?: string; message?: string };
       if (firebaseError?.code) {
         switch (firebaseError.code) {
           case 'auth/user-not-found':

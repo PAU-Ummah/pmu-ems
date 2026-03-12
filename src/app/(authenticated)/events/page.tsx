@@ -2,7 +2,7 @@
 import { useState } from "react";
 import dayjs, { Dayjs } from "dayjs";
 import { Add, Delete, Edit, People } from "@mui/icons-material";
-import { Event } from "@/types";
+import { Event } from "@/services/types";
 import {
   collection,
   addDoc,
@@ -10,7 +10,7 @@ import {
   doc,
   updateDoc,
 } from "firebase/firestore";
-import { db } from "@/firebase";
+import { db } from "@/services/firebase";
 import Link from "next/link";
 import RoleGuard from "@/components/auth/RoleGuard";
 import { useCurrentSession } from "@/hooks/useCurrentSession";
@@ -42,8 +42,8 @@ export default function EventsPage() {
   const [selectedDateTime, setSelectedDateTime] = useState<Dayjs | null>(dayjs());
   const [isEdit, setIsEdit] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
     setCurrentEvent({ ...currentEvent, [name]: value });
   };
 

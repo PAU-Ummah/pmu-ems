@@ -2,9 +2,9 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Stop } from "@mui/icons-material";
-import { Event } from "@/types";
+import { Event } from "@/services/types";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "@/firebase";
+import { db } from "@/services/firebase";
 import Link from "next/link";
 import RoleGuard from "@/components/auth/RoleGuard";
 import Button from "@/components/ui/button/Button";

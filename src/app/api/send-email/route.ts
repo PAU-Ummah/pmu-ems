@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '@/firebase';
+import { auth } from '@/services/firebase';
 
 export async function POST(request: NextRequest) {
   try {

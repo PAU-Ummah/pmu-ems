@@ -1,0 +1,26 @@
+---
+description: PMU-EMS project overview, structure, and run commands
+alwaysApply: true
+---
+
+# PMU-EMS overview
+
+- **Product**: PAU Muslim Ummah Event Management System (attendance-app). Manages people, events, attendance, finance, reports, and user management with academic-session support.
+- **Stack**: Next.js 15 (App Router), React 19, TypeScript, Tailwind, MUI (Material UI), Emotion, Firebase (Auth + Firestore). UI: FullCalendar, dayjs, xlsx.
+- **Paths**: All app code under `src/`. Use path alias `@/` for `src/` (e.g. `@/services/types`, `@/context/AuthContext`).
+- **Run**: `npm run dev` (or `yarn dev`). Env: `.env.local` (Firebase: `NEXT_PUBLIC_FIREBASE_*`).
+
+## Key folders
+
+- `src/app/` – App Router; groups: `(authenticated)` (dashboard, people, events, attendance, finance, finance-report, reports, user-management, settings), `(not-authenticated)` (login), `api/` (register-user, send-email).
+- `src/components/` – Shared UI (calendar, form, auth, common, header, loading, empty-state, ui).
+- `src/layout/` – AppSidebar, Backdrop.
+- `src/context/` – AuthContext, ThemeContext.
+- `src/hooks/`, `src/services/`, `src/utils/`, `src/constants/`.
+
+## Conventions
+
+- Single quotes, 2-space indent (ESLint). Run `npm run lint` and `npm run lint:fix`; `npm run check` for typecheck + lint.
+- Prefer existing patterns in the same feature area (e.g. people, events, finance).
+
+For API patterns see rule `api-routes`; for types/services see `types-and-services`; for React/pages see `react-and-pages`.

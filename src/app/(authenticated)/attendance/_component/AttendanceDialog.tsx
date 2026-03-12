@@ -6,14 +6,14 @@ import InputField from '@/components/form/input/InputField';
 import Label from '@/components/form/Label';
 import Button from '@/components/ui/button/Button';
 import Alert from '@/components/ui/alert/Alert';
-import { Event, Person } from '@/types';
+import { Event, Person } from '@/services/types';
 
 interface AttendanceDialogProps {
   isOpen: boolean;
   onClose: () => void;
   currentEvent: Event | null;
   searchTerm: string;
-  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   filteredPeople: Person[];
   onToggleAttendance: (personId: string) => void;
   isUpdating: boolean;

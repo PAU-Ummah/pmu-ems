@@ -1,12 +1,16 @@
 // src/utils/pdfGenerator.ts
-import { Event, Invoice } from "@/types";
+import { Event, Invoice } from "@/services/types";
+
+const getLogoUrl = (): string =>
+  typeof window !== 'undefined' ? `${window.location.origin}/Logo.png` : '';
 
 export const generateInvoicePDF = (eventData: { event: Event; invoices: Invoice[] }) => {
   // This is a placeholder for PDF generation
   // In a real implementation, you would use a library like jsPDF or react-pdf
-  
+
   const { event, invoices } = eventData;
-  
+  const logoUrl = getLogoUrl();
+
   // Create a simple HTML representation that can be printed
   const htmlContent = `
     <!DOCTYPE html>
@@ -16,6 +20,7 @@ export const generateInvoicePDF = (eventData: { event: Event; invoices: Invoice[
       <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         .header { text-align: center; margin-bottom: 30px; }
+        .pdf-logo { max-width: 180px; height: auto; margin-bottom: 16px; display: block; margin-left: auto; margin-right: auto; }
         .event-info { margin-bottom: 20px; }
         .invoice-section { margin-bottom: 30px; page-break-inside: avoid; }
         .invoice-header { background-color: #f5f5f5; padding: 10px; margin-bottom: 10px; }
@@ -32,10 +37,11 @@ export const generateInvoicePDF = (eventData: { event: Event; invoices: Invoice[
     </head>
     <body>
       <div class="header">
+        ${logoUrl ? `<img src="${logoUrl}" alt="Logo" class="pdf-logo" />` : ''}
         <h1>PMU EMS - Invoice Report</h1>
         <h2>${event.name}</h2>
       </div>
-      
+
       <div class="event-info">
         <h3>Event Information</h3>
         <p><strong>Event Name:</strong> ${event.name}</p>
@@ -113,6 +119,99 @@ export const generateInvoicePDF = (eventData: { event: Event; invoices: Invoice[
     }, 500);
   }
 };
+
+export interface SessionSummaryRow {
+  eventName: string;
+  date: string;
+  attendeeCount: number;
+  amountSpent: number;
+}
+
+export function generateSessionSummaryPDF(
+  sessionName: string,
+  rows: SessionSummaryRow[]
+): void {
+  const tableRows =
+    rows.length > 0
+      ? rows
+          .map(
+            (row) => `
+    <tr>
+      <td>${row.eventName}</td>
+      <td>${row.date}</td>
+      <td>${row.attendeeCount}</td>
+      <td>₦${row.amountSpent.toLocaleString()}</td>
+    </tr>
+  `
+          )
+          .join('')
+      : '<tr><td colspan="4">No events</td></tr>';
+
+  const totalAttendees = rows.reduce((sum, row) => sum + row.attendeeCount, 0);
+  const totalSpent = rows.reduce((sum, row) => sum + row.amountSpent, 0);
+  const logoUrl = getLogoUrl();
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Session Report - ${sessionName}</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .pdf-logo { max-width: 180px; height: auto; margin-bottom: 16px; display: block; margin-left: auto; margin-right: auto; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .total { font-weight: bold; text-align: right; }
+        .summary { background-color: #e8f5e8; padding: 15px; margin-top: 20px; }
+        @media print { body { margin: 0; } .no-print { display: none; } }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        ${logoUrl ? `<img src="${logoUrl}" alt="Logo" class="pdf-logo" />` : ''}
+        <h1>PMU EMS - Session Report</h1>
+        <h2>${sessionName}</h2>
+        <p>Summary by event (attendee count and amount spent only; no invoices or attendee names)</p>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Event Name</th>
+            <th>Date</th>
+            <th>Attendees Count</th>
+            <th>Amount Spent (₦)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRows}
+        </tbody>
+        <tfoot>
+          <tr class="total">
+            <td colspan="2">Total</td>
+            <td>${totalAttendees}</td>
+            <td>₦${totalSpent.toLocaleString()}</td>
+          </tr>
+        </tfoot>
+      </table>
+      <div class="no-print" style="margin-top: 30px; text-align: center;">
+        <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; background-color: #144404; color: white; border: none; border-radius: 4px; cursor: pointer;">
+          Print / Save as PDF
+        </button>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => printWindow.print(), 500);
+  }
+}
 
 export const generateCSVData = (eventData: { event: Event; invoices: Invoice[] }) => {
   const { event, invoices } = eventData;

@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "@/firebase";
-import type { Event } from "@/types";
+import { db } from "@/services/firebase";
+import type { Event } from "@/services/types";
 
 export function useEvents(sessionId: string | null) {
   const [events, setEvents] = useState<Event[]>([]);

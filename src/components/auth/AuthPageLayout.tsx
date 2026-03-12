@@ -6,12 +6,15 @@
  */
 
 import React from "react";
+import Image from "next/image";
 
 interface AuthPageLayoutProps {
   title: string;
   description?: string;
   subtitle?: string;
   devNote?: string;
+  /** Logo image src (e.g. /Logo.png). When set, shown above the title. */
+  logoSrc?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
 }
@@ -21,6 +24,7 @@ export function AuthPageLayout({
   description,
   subtitle,
   devNote,
+  logoSrc,
   children,
   footer,
 }: AuthPageLayoutProps) {
@@ -28,6 +32,16 @@ export function AuthPageLayout({
     <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 px-4 py-12 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
+          {logoSrc && (
+            <Image
+              src={logoSrc}
+              alt="Logo"
+              width={192}
+              height={192}
+              className="mx-auto mb-4 h-auto w-40 object-contain sm:w-48"
+              priority
+            />
+          )}
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
             {title}
           </h2>

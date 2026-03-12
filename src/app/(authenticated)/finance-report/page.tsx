@@ -2,9 +2,9 @@
 import { useState, useEffect } from "react";
 import RoleGuard from "@/components/auth/RoleGuard";
 import { AttachMoney, Print, Download, Visibility } from "@mui/icons-material";
-import { Event, Invoice } from "@/types";
+import { Event, Invoice } from "@/services/types";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/firebase";
+import { db } from "@/services/firebase";
 import { generateInvoicePDF, generateCSVData, downloadCSV } from "@/utils/pdfGenerator";
 import MetricCard from "@/components/common/MetricCard";
 import ComponentCard from "@/components/common/ComponentCard";
@@ -43,9 +43,9 @@ export default function FinanceReportPage() {
       });
 
       const financeData: EventFinanceData[] = events.map((event) => {
-        const eventInvoices = invoicesData.filter((inv) => inv.eventId === event.id);
-        const totalSpent = eventInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
-        const itemCount = eventInvoices.reduce((sum, inv) => sum + (inv.items?.length ?? 0), 0);
+        const eventInvoices = invoicesData.filter((invoice) => invoice.eventId === event.id);
+        const totalSpent = eventInvoices.reduce((sum, invoice) => sum + invoice.totalAmount, 0);
+        const itemCount = eventInvoices.reduce((sum, invoice) => sum + (invoice.items?.length ?? 0), 0);
         return { event, invoices: eventInvoices, totalSpent, itemCount };
       });
       setEventFinanceData(financeData);

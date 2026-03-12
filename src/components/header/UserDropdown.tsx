@@ -11,8 +11,8 @@ export default function UserDropdown() {
   const router = useRouter();
   const { logout, userData, user } = useAuth();
 
-  function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
-    e.stopPropagation();
+  function toggleDropdown(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    event.stopPropagation();
     setIsOpen(prev => !prev);
   }
 

@@ -20,6 +20,7 @@ import {
   Menu,
   ExpandMore,
   Description,
+  Summarize,
 } from '@mui/icons-material';
 
 type NavItem = {
@@ -84,6 +85,12 @@ const AppSidebar: React.FC = () => {
       path: '/reports',
       subItems: undefined,
     },
+    {
+      icon: <Summarize sx={{ fontSize: 20 }} />,
+      name: 'Session Reports',
+      path: '/session-reports',
+      subItems: undefined,
+    },
   ];
 
   const navItems = useMemo(() => {
@@ -96,6 +103,7 @@ const AppSidebar: React.FC = () => {
       if (item.path === '/finance' && !canManageFinance()) return false;
       if (item.path === '/finance-report' && !canManageFinance() && !canViewReports()) return false;
       if (item.path === '/reports' && !canViewReports()) return false;
+      if (item.path === '/session-reports' && !canViewReports()) return false;
       return true;
     });
   }, [canCreateEvents, canMarkAttendance, canManagePeople, canManageUsers, canManageFinance, canViewReports]);

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import RoleGuard from "@/components/auth/RoleGuard";
-import { Event } from "@/types";
+import { Event } from "@/services/types";
 import {
   doc,
   updateDoc,
@@ -9,7 +9,7 @@ import {
   arrayUnion,
   arrayRemove,
 } from "firebase/firestore";
-import { db } from "@/firebase";
+import { db } from "@/services/firebase";
 import dayjs from "dayjs";
 import Button from "@/components/ui/button/Button";
 import Alert from "@/components/ui/alert/Alert";

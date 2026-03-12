@@ -5,14 +5,14 @@ import InputField from '@/components/form/input/InputField';
 import Select from '@/components/form/Select';
 import Label from '@/components/form/Label';
 import Button from '@/components/ui/button/Button';
-import { Person } from '@/types';
+import { Person } from '@/services/types';
 
 interface AddPersonFormProps {
   isOpen: boolean;
   onClose: () => void;
   currentPerson: Partial<Person>;
   isEdit: boolean;
-  onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onLivingChange: (value: string) => void;
   onSubmit: () => void;
   livingFormOptions: { value: string; label: string }[];

@@ -2,7 +2,7 @@
 
 import { Modal } from "@/components/ui/modal";
 import Button from "@/components/ui/button/Button";
-import { Person } from "@/types";
+import { Person } from "@/services/types";
 
 interface DeletePersonModalProps {
   isOpen: boolean;

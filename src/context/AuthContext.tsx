@@ -3,9 +3,9 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { User as FirebaseUser, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/firebase";
+import { auth, db } from "@/services/firebase";
 import { useRouter } from "next/navigation";
-import { User } from "@/types";
+import { User } from "@/services/types";
 
 interface AuthContextType {
   user: FirebaseUser | null;
