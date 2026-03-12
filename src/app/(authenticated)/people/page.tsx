@@ -89,8 +89,8 @@ export default function PeoplePage() {
     return Array.from(new Set(people.map(person => person.department))).sort();
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
     if (name === "class") {
       const year = normalizeYear(value);
       setCurrentPerson({ ...currentPerson, class: value, year });
@@ -166,8 +166,8 @@ export default function PeoplePage() {
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (file) {
       setFile(file);
       // Start processing immediately

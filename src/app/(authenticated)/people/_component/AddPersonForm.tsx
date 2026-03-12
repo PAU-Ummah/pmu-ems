@@ -12,7 +12,7 @@ interface AddPersonFormProps {
   onClose: () => void;
   currentPerson: Partial<Person>;
   isEdit: boolean;
-  onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onLivingChange: (value: string) => void;
   onSubmit: () => void;
   livingFormOptions: { value: string; label: string }[];

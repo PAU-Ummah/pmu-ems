@@ -43,9 +43,9 @@ export default function FinanceReportPage() {
       });
 
       const financeData: EventFinanceData[] = events.map((event) => {
-        const eventInvoices = invoicesData.filter((inv) => inv.eventId === event.id);
-        const totalSpent = eventInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
-        const itemCount = eventInvoices.reduce((sum, inv) => sum + (inv.items?.length ?? 0), 0);
+        const eventInvoices = invoicesData.filter((invoice) => invoice.eventId === event.id);
+        const totalSpent = eventInvoices.reduce((sum, invoice) => sum + invoice.totalAmount, 0);
+        const itemCount = eventInvoices.reduce((sum, invoice) => sum + (invoice.items?.length ?? 0), 0);
         return { event, invoices: eventInvoices, totalSpent, itemCount };
       });
       setEventFinanceData(financeData);

@@ -48,9 +48,9 @@ export default function Home() {
           data.push({ id: invoiceDoc.id, ...invoiceDoc.data() } as Invoice);
         });
         setInvoices(data);
-      } catch (err) {
+      } catch (error) {
         // eslint-disable-next-line no-console
-        console.error("Error fetching invoices:", err);
+        console.error("Error fetching invoices:", error);
       } finally {
         setInvoicesLoading(false);
       }
@@ -60,7 +60,7 @@ export default function Home() {
 
   const loading = sessionLoading || eventsLoading || peopleLoading || invoicesLoading;
   const eventIds = new Set(events.map((event) => event.id));
-  const sessionInvoices = invoices.filter((inv) => inv.eventId && eventIds.has(inv.eventId));
+  const sessionInvoices = invoices.filter((invoice) => invoice.eventId && eventIds.has(invoice.eventId));
 
   // Calculate statistics
   const totalEvents = events.length;

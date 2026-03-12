@@ -13,7 +13,7 @@ interface AttendanceDialogProps {
   onClose: () => void;
   currentEvent: Event | null;
   searchTerm: string;
-  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   filteredPeople: Person[];
   onToggleAttendance: (personId: string) => void;
   isUpdating: boolean;

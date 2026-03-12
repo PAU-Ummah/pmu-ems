@@ -4,7 +4,7 @@ type TextareaProps = {
   placeholder?: string;
   rows?: number;
   value?: string;
-  onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  onChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
   className?: string;
   disabled?: boolean;
   error?: boolean;
@@ -25,9 +25,9 @@ const TextArea: React.FC<TextareaProps> = ({
   name,
   id,
 }) => {
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (onChange) {
-      onChange(e);
+      onChange(event);
     }
   };
 

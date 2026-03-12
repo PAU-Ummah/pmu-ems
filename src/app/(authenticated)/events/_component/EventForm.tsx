@@ -17,7 +17,7 @@ interface EventFormProps {
   selectedDateTime: Dayjs | null;
   onDateChange: (date: Dayjs | null) => void;
   onDateTimeChange: (dateTime: Dayjs | null) => void;
-  onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit: () => void;
   isEdit: boolean;
   isEnded?: boolean;
@@ -44,8 +44,8 @@ export default function EventForm({
     }
   };
 
-  const handleDateTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  const handleDateTimeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
     if (value) {
       onDateTimeChange(dayjs(value));
     } else {

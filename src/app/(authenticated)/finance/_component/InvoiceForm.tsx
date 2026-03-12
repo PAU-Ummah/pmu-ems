@@ -14,9 +14,9 @@ interface InvoiceFormProps {
   onClose: () => void;
   currentInvoice: Partial<Invoice>;
   events: Event[];
-  onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onTextAreaChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  onSelectChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  onInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onTextAreaChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  onSelectChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
   onAddItem: () => void;
   onUpdateItem: (itemId: string, field: keyof InvoiceItem, value: string | number) => void;
   onRemoveItem: (itemId: string) => void;
