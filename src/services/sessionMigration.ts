@@ -7,8 +7,8 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import type { DocumentData, UpdateData } from "firebase/firestore";
-import { db } from "@/firebase";
-import { normalizeYear } from "@/types";
+import { db } from "@/services/firebase";
+import { normalizeYear } from "@/services/types";
 import {
   CONFIG_COLLECTION,
   SETTINGS_DOC_ID,

@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import * as XLSX from "xlsx";
-import { Person, normalizeYear } from "@/types";
+import { Person, normalizeYear } from "@/services/types";
 import {
   collection,
   addDoc,
@@ -21,7 +21,7 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import { db } from "@/firebase";
+import { db } from "@/services/firebase";
 import RoleGuard from "@/components/auth/RoleGuard";
 import { useRole } from "@/hooks/useRole";
 import { useCurrentSession } from "@/hooks/useCurrentSession";

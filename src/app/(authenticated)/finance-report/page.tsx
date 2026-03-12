@@ -2,9 +2,9 @@
 import { useState, useEffect } from "react";
 import RoleGuard from "@/components/auth/RoleGuard";
 import { AttachMoney, Print, Download, Visibility } from "@mui/icons-material";
-import { Event, Invoice } from "@/types";
+import { Event, Invoice } from "@/services/types";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/firebase";
+import { db } from "@/services/firebase";
 import { generateInvoicePDF, generateCSVData, downloadCSV } from "@/utils/pdfGenerator";
 import MetricCard from "@/components/common/MetricCard";
 import ComponentCard from "@/components/common/ComponentCard";

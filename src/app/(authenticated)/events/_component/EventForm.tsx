@@ -6,7 +6,7 @@ import InputField from '@/components/form/input/InputField';
 import Label from '@/components/form/Label';
 import Button from '@/components/ui/button/Button';
 import DatePicker from '@/components/form/date-picker';
-import { Event } from '@/types';
+import { Event } from '@/services/types';
 import dayjs, { Dayjs } from 'dayjs';
 
 interface EventFormProps {

@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRole } from '@/hooks/useRole';
 import RoleGuard from '@/components/auth/RoleGuard';
-import { User } from '@/types';
+import { User } from '@/services/types';
 import { PersonAdd } from '@mui/icons-material';
 import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { db } from '@/services/firebase';
 import Button from '@/components/ui/button/Button';
 import Alert from '@/components/ui/alert/Alert';
 import Badge from '@/components/ui/badge/Badge';

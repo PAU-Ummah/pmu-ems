@@ -6,7 +6,7 @@ import InputField from '@/components/form/input/InputField';
 import Label from '@/components/form/Label';
 import Button from '@/components/ui/button/Button';
 import Alert from '@/components/ui/alert/Alert';
-import { Event, Person } from '@/types';
+import { Event, Person } from '@/services/types';
 
 interface AttendanceDialogProps {
   isOpen: boolean;

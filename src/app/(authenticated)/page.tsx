@@ -13,9 +13,9 @@ import {
   CalendarToday,
   CheckCircle,
 } from "@mui/icons-material";
-import { Invoice } from "@/types";
+import { Invoice } from "@/services/types";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/firebase";
+import { db } from "@/services/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useRole } from "@/hooks/useRole";
 import { useCurrentSession } from "@/hooks/useCurrentSession";

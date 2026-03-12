@@ -6,7 +6,7 @@ import InputField from '@/components/form/input/InputField';
 import Label from '@/components/form/Label';
 import Button from '@/components/ui/button/Button';
 import TextArea from '@/components/form/TextArea';
-import { Invoice, InvoiceItem, Event } from '@/types';
+import { Invoice, InvoiceItem, Event } from '@/services/types';
 import { Add, Delete } from '@mui/icons-material';
 
 interface InvoiceFormProps {

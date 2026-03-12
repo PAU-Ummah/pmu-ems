@@ -1,0 +1,59 @@
+---
+description: Prefer async/await over .then(); in React hooks use inner async function pattern
+alwaysApply: true
+---
+
+# Async/await preference
+
+## General rule
+
+Prefer **async/await** over **.then()** for async work. Use `.then()` only when necessary (e.g. returning a promise without awaiting, or chaining in a way that is clearer than async/await).
+
+```typescript
+// ❌ BAD – .then() when async/await is clearer
+getCandidateById(candidateId)
+  .then(profile => { if (!cancelled) setCandidate(profile); })
+  .catch(() => { if (!cancelled) setError('Failed'); })
+  .finally(() => { if (!cancelled) setIsLoading(false); });
+
+// ✅ GOOD – async/await
+const profile = await getCandidateById(candidateId);
+if (!cancelled) setCandidate(profile);
+```
+
+## React hooks (useEffect, etc.)
+
+Inside a React hook, **do not** make the effect callback async. Define an **async function inside** the effect, use **try/catch/finally**, then **call** that function.
+
+Pattern (see `src/app/(authenticated)/_components/AdminDashboard.tsx`):
+
+1. Declare an async function inside the effect (e.g. `const fetchData = async () => { ... }`).
+2. In the function: set loading/clear error, **await** your calls (e.g. `await Promise.allSettled([...])`), handle results, then in **finally** clear loading.
+3. Call the function at the end of the effect (e.g. `fetchData()`).
+
+```typescript
+// ❌ BAD – effect callback async or .then in effect
+useEffect(() => {
+  getData(id).then(setData).catch(setError).finally(() => setIsLoading(false));
+}, [id]);
+
+// ✅ GOOD – inner async function + call
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      clearError('data');
+      const [result] = await Promise.allSettled([getData(id)]);
+      handleResult(result, setData, 'data');
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setError('data', 'Failed to load');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  fetchData();
+}, [id, handleResult, clearError, setError]);
+```
+
+Use **cancellation** (e.g. `let cancelled = false; return () => { cancelled = true; };`) when the effect can re-run before the previous fetch finishes, so you don’t update state after unmount or with stale deps.

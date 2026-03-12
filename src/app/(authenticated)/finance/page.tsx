@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import RoleGuard from "@/components/auth/RoleGuard";
 import { Add, Delete, Edit, AttachMoney } from "@mui/icons-material";
-import { Invoice, InvoiceItem } from "@/types";
+import { Invoice, InvoiceItem } from "@/services/types";
 import { useAuth } from "@/context/AuthContext";
 import {
   collection,
@@ -12,7 +12,7 @@ import {
   doc,
   updateDoc,
 } from "firebase/firestore";
-import { db } from "@/firebase";
+import { db } from "@/services/firebase";
 import Button from "@/components/ui/button/Button";
 import Badge from "@/components/ui/badge/Badge";
 import MetricCard from "@/components/common/MetricCard";

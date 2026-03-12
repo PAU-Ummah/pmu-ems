@@ -9,9 +9,9 @@ import {
   where,
   writeBatch,
 } from "firebase/firestore";
-import { db } from "@/firebase";
-import type { Person, AcademicSession } from "@/types";
-import { isEngineeringDepartment } from "@/types";
+import { db } from "@/services/firebase";
+import type { Person, AcademicSession } from "@/services/types";
+import { isEngineeringDepartment } from "@/services/types";
 import {
   CONFIG_COLLECTION,
   SETTINGS_DOC_ID,

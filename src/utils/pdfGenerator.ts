@@ -1,5 +1,5 @@
 // src/utils/pdfGenerator.ts
-import { Event, Invoice } from "@/types";
+import { Event, Invoice } from "@/services/types";
 
 export const generateInvoicePDF = (eventData: { event: Event; invoices: Invoice[] }) => {
   // This is a placeholder for PDF generation

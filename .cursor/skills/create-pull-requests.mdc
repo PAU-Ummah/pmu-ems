@@ -1,0 +1,121 @@
+---
+description: Guide for creating well-structured pull requests following PMU-EMS conventions
+globs: "**/*"
+alwaysApply: false
+---
+
+# Creating Pull Requests
+
+When creating a pull request for PMU-EMS, follow this structure and process:
+
+## PR Description Structure
+
+Use the three-section format from PULL_REQUEST_TEMPLATE.md:
+
+### 1. What does this PR do?
+
+- Start with a concise one-line summary of the main change
+- List key changes as bullet points when multiple features/fixes are included
+- For bug fixes: briefly state the cause and the change
+- For migrations/refactors: explain what moved where and why
+- Use clear, descriptive language focusing on the "what" and "why"
+
+**Examples from recent PRs:**
+- "Fixes a bug where assessments created by an enterprise client disappeared from the assessment list after a page refresh."
+- "Moves all candidate data-fetching from Directus into Next.js API routes under app/api/v1/candidates/..., using Prisma in those routes."
+
+### 2. How should the PR be tested?
+
+- Provide step-by-step testing instructions
+- Include specific user flows to verify (e.g., "Log in as an admin...")
+- List affected UI areas to check
+- Mention both happy path and edge cases
+- For API changes: note request/response validation
+- Use numbered lists for sequential steps, bullet points for parallel checks
+
+**Example structure:**
+```
+1. Setup step (e.g., "Add FIREBASE API to .env.local")
+2. Test main flow (e.g., "Run the event creation flow: create → registar attendees → end event")
+3. Confirm expected behavior
+4. Verify side effects don't occur
+```
+
+
+## Creating the PR
+
+### Before creating:
+
+1. Ensure you're on the correct branch (not main/master)
+2. All commits are pushed to remote: `git push -u origin HEAD`
+3. Code follows project conventions (run `npm run lint` and `npm run prettify:all`)
+4. Changes have been tested locally
+
+### Verify Branch Name and Ticket Number
+
+**IMPORTANT**: Before creating the PR, check the current branch name:
+
+1. Run `git branch --show-current` to get the current branch name
+2. Check if the branch name follows the format: `pmu-ems-description` 
+
+
+### Using gh CLI:
+
+```bash
+# Push branch first
+git push -u origin HEAD
+
+# Create PR with proper format
+gh pr create --title "SKI-XXX: Brief description" --body "$(cat <<'EOF'
+#### What does this PR do?
+
+[Main summary and bullet points]
+
+#### How should the PR be tested?
+
+[Testing steps]
+
+```
+
+## PR Title Conventions
+
+- Format: `PMU-EMS: Brief description`
+- Be specific but concise
+- Examples:
+  - `PMU-EMS: Create Anti Cheating settings section`
+  - `PMU-EMS: Newly Created Assessment Disappears after Creation`
+  - `PMU-EMS: Move all the Directus API calls in candidates.service to appropriate NextJS Backend Routes`
+
+## Common PR Types
+
+### Feature PRs
+- Describe the new functionality
+- Explain user-facing changes
+- Note any new dependencies or environment variables
+- Include comprehensive test coverage
+
+### Bug Fix PRs
+- State the bug clearly
+- Explain the root cause
+- Describe the fix
+- Provide steps to reproduce and verify the fix
+
+### Refactor/Migration PRs
+- Explain what moved where
+- Note if it's a breaking change
+- List all affected services/components
+- Provide thorough testing checklist covering all affected areas
+
+### UI/Styling PRs
+- Describe visual changes
+- Note dark mode compatibility
+- List all affected components
+- Include before/after testing steps
+
+## Best Practices
+
+1. **Be thorough**: Test instructions should enable anyone to verify your changes
+2. **Be specific**: Reference actual file paths, component names, API routes
+3. **Be clear**: Use bullet points and numbered lists for readability
+4. **Link everything**: Always reference the Linear ticket
+5. **Consider the reviewer**: Make it easy to understand the context and test the changes

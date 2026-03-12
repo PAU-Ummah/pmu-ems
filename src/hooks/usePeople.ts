@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "@/firebase";
-import type { Person } from "@/types";
+import { db } from "@/services/firebase";
+import type { Person } from "@/services/types";
 
 export interface UsePeopleOptions {
   /** If true, only return people with status "active". Default true. */

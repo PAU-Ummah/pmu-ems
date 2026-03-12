@@ -6,7 +6,7 @@ import InputField from '@/components/form/input/InputField';
 import Select from '@/components/form/Select';
 import Label from '@/components/form/Label';
 import Button from '@/components/ui/button/Button';
-import { User } from '@/types';
+import { User } from '@/services/types';
 
 interface RegisterUserFormProps {
   isOpen: boolean;

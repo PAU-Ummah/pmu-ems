@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '@/firebase';
-import { User } from '@/types';
+import { auth, db } from '@/services/firebase';
+import { User } from '@/services/types';
 
 export async function POST(request: NextRequest) {
   try {

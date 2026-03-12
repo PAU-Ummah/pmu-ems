@@ -1,0 +1,17 @@
+---
+description: React components and App Router page conventions
+globs: "**/*.tsx"
+alwaysApply: false
+---
+
+# React and pages
+
+- **Components**: Functional components only. Use `'use client'` at the top when the file uses hooks, browser APIs, or client-only libraries.
+- **Imports**: Use `@/` path alias (e.g. `@/components/...`, `@/store/user`, `@/types/user.type`).
+- **State**: Global state in Zustand stores under `src/store/`. Use selectors: `useUserStore(state => state.accessLevel)`.
+- **Route-specific UI**: Colocate in `_components/` next to the route (e.g. `app/(authenticated)/admin/_components/overview-tab/`).
+- **Component placement**: Never put React components inside `src/utils/`. Components belong in `_components/<component-name>/<ComponentName>.tsx`, placed as close as possible to where they are used. If a component is shared across multiple routes, place it at the nearest common ancestor's `_components/` directory (e.g. `app/(authenticated)/_components/`). Only move to `src/components/` if it is truly app-wide and domain-agnostic.
+- **Styling**: Tailwind CSS. Prefer Tailwind classes; avoid inline styles unless necessary.
+- **JSX quotes**: Double quotes for JSX attributes (per ESLint `jsx-quotes`).
+
+When adding a new page or feature, mirror patterns from the same route group (e.g. skills, assessments, candidates).
