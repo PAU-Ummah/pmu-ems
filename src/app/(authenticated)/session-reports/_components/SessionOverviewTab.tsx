@@ -80,64 +80,104 @@ export default function SessionOverviewTab({
             </p>
           </ComponentCard>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
-            <div className="max-w-full overflow-x-auto">
-              <Table>
-                <TableHeader className="border-b border-gray-100 bg-gray-50 dark:bg-gray-800/50">
-                  <TableRow>
-                    <TableCell
-                      isHeader
-                      className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
-                    >
-                      Event
-                    </TableCell>
-                    <TableCell
-                      isHeader
-                      className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
-                    >
-                      Date
-                    </TableCell>
-                    <TableCell
-                      isHeader
-                      className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
-                    >
-                      Attendees
-                    </TableCell>
-                    <TableCell
-                      isHeader
-                      className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
-                    >
-                      Amount spent
-                    </TableCell>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {eventFinanceRows.map((row) => (
-                    <TableRow
-                      key={row.event.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                    >
-                      <TableCell className="px-5 py-4 text-start text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                        {row.event.name}
-                      </TableCell>
-                      <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400">
+          <>
+            {/* Mobile Card View */}
+            <div className="space-y-4 md:hidden">
+              {eventFinanceRows.map((row) => (
+                <ComponentCard key={row.event.id} title={row.event.name}>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Date
+                      </span>
+                      <span className="text-sm font-medium text-gray-800 dark:text-white/90">
                         {row.event.date}
-                      </TableCell>
-                      <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400">
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Attendees
+                      </span>
+                      <span className="text-sm font-medium text-gray-800 dark:text-white/90">
                         {row.attendeeCount}
-                      </TableCell>
-                      <TableCell className="px-5 py-4 text-start">
-                        <span className="inline-flex items-center gap-1 text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                          <AttachMoney className="!h-4 !w-4 text-success-500" />
-                          ₦{row.totalSpent.toLocaleString()}
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Amount spent
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-sm font-medium text-gray-800 dark:text-white/90">
+                        <AttachMoney className="!h-4 !w-4 text-success-500" />
+                        ₦{row.totalSpent.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </ComponentCard>
+              ))}
             </div>
-          </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03] md:block">
+              <div className="max-w-full overflow-x-auto">
+                <div className="min-w-[650px]">
+                  <Table>
+                    <TableHeader className="border-b border-gray-100 bg-gray-50 dark:bg-gray-800/50">
+                      <TableRow>
+                        <TableCell
+                          isHeader
+                          className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
+                        >
+                          Event
+                        </TableCell>
+                        <TableCell
+                          isHeader
+                          className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
+                        >
+                          Date
+                        </TableCell>
+                        <TableCell
+                          isHeader
+                          className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
+                        >
+                          Attendees
+                        </TableCell>
+                        <TableCell
+                          isHeader
+                          className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
+                        >
+                          Amount spent
+                        </TableCell>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
+                      {eventFinanceRows.map((row) => (
+                        <TableRow
+                          key={row.event.id}
+                          className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                        >
+                          <TableCell className="px-5 py-4 text-start text-theme-sm font-medium text-gray-800 dark:text-white/90">
+                            {row.event.name}
+                          </TableCell>
+                          <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400">
+                            {row.event.date}
+                          </TableCell>
+                          <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400">
+                            {row.attendeeCount}
+                          </TableCell>
+                          <TableCell className="px-5 py-4 text-start">
+                            <span className="inline-flex items-center gap-1 text-theme-sm font-medium text-gray-800 dark:text-white/90">
+                              <AttachMoney className="!h-4 !w-4 text-success-500" />
+                              ₦{row.totalSpent.toLocaleString()}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </>
