@@ -426,7 +426,7 @@ export default function Home() {
             </div>
           </div>
           <div className="mt-4">
-            <Link href="/finance-reports">
+            <Link href="/finance-report">
               <Button variant="primary" className="w-full sm:w-auto">
                 View Finance Details
               </Button>
