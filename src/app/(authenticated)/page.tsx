@@ -9,6 +9,8 @@ import {
   Assessment as ReportsIcon,
   HowToReg as AttendanceIcon,
   PersonAdd as UserManagementIcon,
+  Description as FinanceReportIcon,
+  Summarize as SessionReportsIcon,
   TrendingUp,
   CalendarToday,
   CheckCircle,
@@ -218,7 +220,7 @@ export default function Home() {
         hasRole(["registrar", "admin"])) && (
         <ComponentCard title="Quick Actions" desc="Navigate to key features based on your role">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {hasRole(["event-organizer", "admin"]) && (
+            {hasRole(["event-organizer"]) && (
               <Link href="/events">
                 <Button
                   variant="outline"
@@ -242,7 +244,7 @@ export default function Home() {
               </Link>
             )}
 
-            {hasRole(["it", "admin"]) && (
+            {hasRole(["it"]) && (
               <Link href="/user-management">
                 <Button
                   variant="outline"
@@ -265,7 +267,17 @@ export default function Home() {
                 </Button>
               </Link>
             )}
-
+            {hasRole(["finance-manager", "admin"]) && (
+              <Link href="/finance-report">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2 text-left"
+                >
+                  <FinanceReportIcon className="h-5 w-5" />
+                  View Finance Reports
+                </Button>
+              </Link>
+            )}
             {hasRole(["admin"]) && (
               <Link href="/reports">
                 <Button
@@ -277,8 +289,18 @@ export default function Home() {
                 </Button>
               </Link>
             )}
-
-            {hasRole(["registrar", "admin"]) && (
+            {hasRole(["admin"]) && (
+              <Link href="/session-reports">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2 text-left"
+                >
+                  <SessionReportsIcon className="h-5 w-5" />
+                  View Session Reports
+                </Button>
+              </Link>
+            )}
+            {hasRole(["registrar"]) && (
               <Link href="/attendance">
                 <Button
                   variant="outline"
@@ -404,7 +426,7 @@ export default function Home() {
             </div>
           </div>
           <div className="mt-4">
-            <Link href="/finance">
+            <Link href="/finance-reports">
               <Button variant="primary" className="w-full sm:w-auto">
                 View Finance Details
               </Button>

@@ -24,6 +24,7 @@ export default function LoginPage() {
 
   return (
     <AuthPageLayout
+      logoSrc="/Logo.png"
       title="PMU EMS"
       description="PAU Muslim Ummah Event Management System"
       subtitle="Sign in to your account"
