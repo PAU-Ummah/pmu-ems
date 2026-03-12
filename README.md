@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## PMU EMS – PAU Muslim Ummah Event Management System
 
-## Getting Started
+PMU EMS is an internal web application for **managing events, people, attendance, finance, and reports** for the PAU Muslim Ummah.  
+It is built with **Next.js 15, React 19, TypeScript, Tailwind, MUI, and Firebase (Auth + Firestore)**.
 
-First, run the development server:
+For detailed technical docs, see the `docs/` folder (starting with `docs/overview.md` and `docs/rbac-and-workflows.md`).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Events** – create, edit, and end events per academic session; view attendees.
+- **People** – manage people records, bulk import from Excel, filter by year/department/living.
+- **Attendance** – real‑time attendance marking for registrars, with concurrent updates.
+- **Finance** – invoices per event, line items, and automatic event spending totals.
+- **Reports** – event‑level and session‑level reports (attendance + finance) with PDF/CSV exports.
+- **Sessions** – academic session initialization and rollover (graduate/progress people).
+- **Users & roles** – Firebase‑backed auth with role‑based navigation and guards.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## Tech Stack
 
-To learn more about Next.js, take a look at the following resources:
+- **Framework**: Next.js (App Router), React, TypeScript.
+- **UI**: Tailwind CSS, Material UI, custom components.
+- **Backend**: Firebase Auth + Firestore (no custom server).
+- **Utilities**: dayjs, xlsx, PDF/CSV helpers.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Getting Started (Development)
 
-## Deploy on Vercel
+1. **Install dependencies**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   ```bash
+   npm install
+   # or
+   yarn
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+2. **Configure environment**
+
+   Create `.env.local` in the project root and set your Firebase config:
+
+   ```env
+   NEXT_PUBLIC_FIREBASE_API_KEY=...
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+   NEXT_PUBLIC_FIREBASE_APP_ID=...
+   FIREBASE_CLIENT_EMAIL=...
+   FIREBASE_PRIVATE_KEY=...
+   ```
+
+3. **Run the dev server**
+
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
+
+   Then open `http://localhost:3000` in your browser.
+
+---
+
+## Scripts
+
+- `npm run dev` – start the development server.
+- `npm run lint` – run ESLint.
+- `npm run lint:fix` – auto‑fix lint issues where possible.
+- `npm run check` – typecheck + lint (if configured).
+
+---
+
+## Documentation
+
+More detailed information lives in the `docs/` directory:
+
+- `docs/overview.md` – high‑level system overview.
+- `docs/architecture.md` – app architecture and main modules.
+- `docs/data-model.md` – Firestore collections and types.
+- `docs/rbac-and-workflows.md` – roles, permissions, and workflows.
+- `docs/features.md` – feature‑by‑feature breakdown.
+- `docs/development.md` – deeper development guide and conventions.
