@@ -2,28 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import RoleGuard from '@/components/auth/RoleGuard';
-import { Download, AttachMoney } from '@mui/icons-material';
 import { Event, Invoice } from '@/services/types';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { generateSessionSummaryPDF } from '@/utils/pdfGenerator';
 import Label from '@/components/form/Label';
 import Select from '@/components/form/Select';
-import MetricCard from '@/components/common/MetricCard';
-import ComponentCard from '@/components/common/ComponentCard';
-import Button from '@/components/ui/button/Button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import Tabs from '@/components/ui/tabs/Tabs';
+import TabPane from '@/components/ui/tabs/TabPane';
 import { useAllSessions } from '@/hooks/useAllSessions';
 import { useEvents } from '@/hooks/useEvents';
 import { usePeople } from '@/hooks/usePeople';
 import Spinner from '@/components/ui/spinner/Spinner';
 import EmptyState from '@/components/empty-state/EmptyState';
+import SessionOverviewTab from './_components/SessionOverviewTab';
+import AttendeesByEventTab from './_components/AttendeesByEventTab';
+import InvoicesTab from './_components/InvoicesTab';
 
 interface EventFinanceRow {
   event: Event;
@@ -149,247 +143,25 @@ export default function SessionReportsPage() {
         )}
 
         {selectedSessionId && !loading && selectedSession && (
-          <>
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white/90">
-                {selectedSession.name}
-              </h2>
-              <Button
-                variant="primary"
-                onClick={handleExportSession}
-                className="inline-flex items-center gap-2"
-              >
-                <Download fontSize="small" />
-                Export as PDF
-              </Button>
-            </div>
-
-            <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <MetricCard title="Events" value={events.length} />
-              <MetricCard
-                title="Total attendees (all events)"
-                value={eventFinanceRows.reduce(
-                  (sum, row) => sum + row.attendeeCount,
-                  0
-                )}
+          <Tabs justifyTabs="left" tabStyle="independent">
+            <TabPane tab="Overview">
+              <SessionOverviewTab
+                sessionName={selectedSession.name}
+                eventFinanceRows={eventFinanceRows}
+                events={events as Event[]}
+                onExport={handleExportSession}
               />
-              <MetricCard
-                title="Total spent"
-                value={`₦${eventFinanceRows
-                  .reduce((sum, row) => sum + row.totalSpent, 0)
-                  .toLocaleString()}`}
+            </TabPane>
+            <TabPane tab="Attendees by event">
+              <AttendeesByEventTab
+                eventFinanceRows={eventFinanceRows}
+                people={people}
               />
-            </div>
-
-            {/* Events & finance summary table */}
-            <div className="mb-8">
-              <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white/90">
-                Events and finance summary
-              </h3>
-              {eventFinanceRows.length === 0 ? (
-                <ComponentCard title="No events">
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    This session has no events.
-                  </p>
-                </ComponentCard>
-              ) : (
-                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
-                  <div className="max-w-full overflow-x-auto">
-                    <Table>
-                      <TableHeader className="border-b border-gray-100 bg-gray-50 dark:bg-gray-800/50">
-                        <TableRow>
-                          <TableCell
-                            isHeader
-                            className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
-                          >
-                            Event
-                          </TableCell>
-                          <TableCell
-                            isHeader
-                            className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
-                          >
-                            Date
-                          </TableCell>
-                          <TableCell
-                            isHeader
-                            className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
-                          >
-                            Attendees
-                          </TableCell>
-                          <TableCell
-                            isHeader
-                            className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
-                          >
-                            Amount spent
-                          </TableCell>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
-                        {eventFinanceRows.map((row) => (
-                          <TableRow
-                            key={row.event.id}
-                            className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                          >
-                            <TableCell className="px-5 py-4 text-start text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                              {row.event.name}
-                            </TableCell>
-                            <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400">
-                              {row.event.date}
-                            </TableCell>
-                            <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400">
-                              {row.attendeeCount}
-                            </TableCell>
-                            <TableCell className="px-5 py-4 text-start">
-                              <span className="inline-flex items-center gap-1 text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                                <AttachMoney className="!h-4 !w-4 text-success-500" />
-                                ₦{row.totalSpent.toLocaleString()}
-                              </span>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Attendees per event */}
-            <div className="mb-8">
-              <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white/90">
-                Attendees by event
-              </h3>
-              <div className="space-y-6">
-                {eventFinanceRows.map((row) => {
-                  const attendeeIds = row.event.attendees ?? [];
-                  const attendeePeople = attendeeIds
-                    .map((attendeeId) =>
-                      people.find((person) => person.id === attendeeId)
-                    )
-                    .filter(Boolean);
-                  return (
-                    <ComponentCard key={row.event.id} title={row.event.name}>
-                      <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
-                        {row.event.date} · {row.attendeeCount} attendee
-                        {row.attendeeCount !== 1 ? 's' : ''}
-                      </p>
-                      {attendeePeople.length === 0 ? (
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          No attendees recorded.
-                        </p>
-                      ) : (
-                        <div className="max-w-full overflow-x-auto">
-                          <Table>
-                            <TableHeader className="border-b border-gray-100 bg-gray-50 dark:bg-gray-800/50">
-                              <TableRow>
-                                <TableCell
-                                  isHeader
-                                  className="text-theme-xs px-3 py-2 text-start font-semibold text-gray-700 dark:text-white/90"
-                                >
-                                  Name
-                                </TableCell>
-                                <TableCell
-                                  isHeader
-                                  className="text-theme-xs px-3 py-2 text-start font-semibold text-gray-700 dark:text-white/90"
-                                >
-                                  Department
-                                </TableCell>
-                                <TableCell
-                                  isHeader
-                                  className="text-theme-xs px-3 py-2 text-start font-semibold text-gray-700 dark:text-white/90"
-                                >
-                                  Year
-                                </TableCell>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
-                              {attendeePeople.map((person) => (
-                                <TableRow
-                                  key={person!.id}
-                                  className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                                >
-                                  <TableCell className="px-3 py-2 text-start text-theme-sm text-gray-800 dark:text-white/90">
-                                    {person!.firstName}{' '}
-                                    {person!.middleName} {person!.surname}
-                                  </TableCell>
-                                  <TableCell className="px-3 py-2 text-start text-theme-sm text-gray-600 dark:text-gray-400">
-                                    {person!.department}
-                                  </TableCell>
-                                  <TableCell className="px-3 py-2 text-start text-theme-sm text-gray-600 dark:text-gray-400">
-                                    {person!.year ? `YR${person!.year}` : '-'}
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </div>
-                      )}
-                    </ComponentCard>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Finance report (per-event totals, no invoice detail) */}
-            <div>
-              <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white/90">
-                Finance report
-              </h3>
-              <ComponentCard title="Spending by event">
-                <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-                  Total amount spent per event (from invoices). Export summary
-                  does not include invoice or attendee details.
-                </p>
-                <div className="max-w-full overflow-x-auto">
-                  <Table>
-                    <TableHeader className="border-b border-gray-100 bg-gray-50 dark:bg-gray-800/50">
-                      <TableRow>
-                        <TableCell
-                          isHeader
-                          className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
-                        >
-                          Event
-                        </TableCell>
-                        <TableCell
-                          isHeader
-                          className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
-                        >
-                          Invoices
-                        </TableCell>
-                        <TableCell
-                          isHeader
-                          className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
-                        >
-                          Total spent
-                        </TableCell>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
-                      {eventFinanceRows.map((row) => (
-                        <TableRow
-                          key={row.event.id}
-                          className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                        >
-                          <TableCell className="px-5 py-4 text-start text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                            {row.event.name}
-                          </TableCell>
-                          <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400">
-                            {row.invoices.length}
-                          </TableCell>
-                          <TableCell className="px-5 py-4 text-start">
-                            <span className="inline-flex items-center gap-1 text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                              <AttachMoney className="!h-4 !w-4 text-success-500" />
-                              ₦{row.totalSpent.toLocaleString()}
-                            </span>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </ComponentCard>
-            </div>
-          </>
+            </TabPane>
+            <TabPane tab="Invoices">
+              <InvoicesTab events={events as Event[]} invoices={invoices} />
+            </TabPane>
+          </Tabs>
         )}
       </div>
     </RoleGuard>
