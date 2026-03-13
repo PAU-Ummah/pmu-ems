@@ -100,6 +100,8 @@ Invoice {
   items: InvoiceItem[];
   totalAmount: number;
   date: string;             // 'YYYY-MM-DD'
+  /** Required HTTP(S) URL to the invoice/payment receipt. */
+  attachmentUrl: string;
   invoiceNumber?: string;
   vendor?: string;
   notes?: string;
@@ -110,8 +112,8 @@ Invoice {
 - Managed from `Finance` page (Finance Manager).
 - Used in:
   - Event‐level finance (`amountSpent` on events).
-  - `Finance Report` (per‑event totals, counts, exports).
-  - `Session Reports` (per‑session totals).
+  - `Finance Report` (per‑event totals, counts, exports, and per‑invoice receipt links).
+  - `Session Reports` (per‑session totals and invoice receipt links).
 
 ### Academic Sessions
 

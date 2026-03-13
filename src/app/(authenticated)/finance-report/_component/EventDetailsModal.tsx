@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Print, Download } from '@mui/icons-material';
+import { Print, Download, OpenInNew } from '@mui/icons-material';
 import { EventFinanceData } from '../page';
 
 interface EventDetailsModalProps {
@@ -107,6 +107,20 @@ export default function EventDetailsModal({
                       <strong>Date:</strong> {invoice.date}
                     </p>
                   </div>
+
+                  {invoice.attachmentUrl && (
+                    <p className="mb-3 sm:mb-4 text-sm">
+                      <a
+                        href={invoice.attachmentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-brand-500 hover:underline"
+                      >
+                        View payment receipt
+                        <OpenInNew sx={{ fontSize: 16 }} />
+                      </a>
+                    </p>
+                  )}
 
                   {invoice.notes && (
                     <p className="mb-3 sm:mb-4 text-sm text-gray-700 dark:text-gray-300 break-words">
