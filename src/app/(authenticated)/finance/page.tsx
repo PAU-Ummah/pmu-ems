@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import RoleGuard from "@/components/auth/RoleGuard";
-import { Add, Delete, Edit, AttachMoney } from "@mui/icons-material";
+import { Add, Delete, Edit, AttachMoney, OpenInNew } from "@mui/icons-material";
 import { Invoice, InvoiceItem } from "@/services/types";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -44,6 +44,7 @@ export default function FinancePage() {
     invoiceNumber: "",
     vendor: "",
     notes: "",
+    attachmentUrl: "",
   });
   const [isEdit, setIsEdit] = useState(false);
   const { user } = useAuth();
@@ -165,6 +166,7 @@ export default function FinancePage() {
       invoiceNumber: "",
       vendor: "",
       notes: "",
+      attachmentUrl: "",
     });
   };
 
@@ -292,6 +294,20 @@ export default function FinancePage() {
                     {invoice.date}
                   </span>
                 </div>
+                {invoice.attachmentUrl && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">Receipt</span>
+                    <a
+                      href={invoice.attachmentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-brand-500 hover:underline"
+                    >
+                      View receipt
+                      <OpenInNew sx={{ fontSize: 14 }} />
+                    </a>
+                  </div>
+                )}
                 <div className="flex items-center justify-end gap-1 pt-2">
                   <button
                     onClick={() => handleEdit(invoice)}
@@ -360,6 +376,12 @@ export default function FinancePage() {
                       isHeader
                       className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
                     >
+                      Receipt
+                    </TableCell>
+                    <TableCell
+                      isHeader
+                      className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
+                    >
                       Actions
                     </TableCell>
                   </TableRow>
@@ -400,6 +422,22 @@ export default function FinancePage() {
                       </TableCell>
                       <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400">
                         {invoice.date}
+                      </TableCell>
+                      <TableCell className="px-5 py-4">
+                        {invoice.attachmentUrl ? (
+                          <a
+                            href={invoice.attachmentUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-theme-sm text-brand-500 hover:underline"
+                            title="View receipt"
+                          >
+                            View
+                            <OpenInNew sx={{ fontSize: 14 }} />
+                          </a>
+                        ) : (
+                          <span className="text-theme-sm text-gray-400">—</span>
+                        )}
                       </TableCell>
                       <TableCell className="px-5 py-4">
                         <div className="flex gap-1">

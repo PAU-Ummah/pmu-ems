@@ -163,8 +163,8 @@ Key behaviours:
 - **UI & exports**:
   - Shows per‑event finance summary (status, invoice count, items, total spent).
   - Provides:
-    - `View details` modal.
-    - `Generate PDF` (via `generateInvoicePDF`).
+    - `View details` modal, including per‑invoice **payment receipt** links.
+    - `Generate PDF` (via `generateInvoicePDF`), which includes each invoice’s receipt as a clickable **“Payment receipt”** link.
     - `Download CSV` per event.
 
 ---
@@ -212,6 +212,9 @@ Key behaviours:
     - Uses `AttendeesByEventTab` to group attendees by event, joined with `people`.
   - `Invoices`:
     - Uses `InvoicesTab` to show invoices for events in the session.
+    - Shows per‑invoice **receipt links**.
+    - Includes a **session total** row at the bottom of the invoices table.
+    - Provides a **“Print invoices (PDF)”** action that uses `generateSessionInvoicesPDF` to print/export all invoices (with embedded “Payment receipt” links) for the selected session.
 
 ---
 

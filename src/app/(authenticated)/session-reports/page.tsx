@@ -5,7 +5,7 @@ import RoleGuard from '@/components/auth/RoleGuard';
 import { Event, Invoice } from '@/services/types';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/services/firebase';
-import { generateSessionSummaryPDF } from '@/utils/pdfGenerator';
+import { generateSessionSummaryPDF, generateSessionInvoicesPDF } from '@/utils/pdfGenerator';
 import Label from '@/components/form/Label';
 import Select from '@/components/form/Select';
 import Tabs from '@/components/ui/tabs/Tabs';
@@ -96,6 +96,19 @@ export default function SessionReportsPage() {
     );
   };
 
+  const handleExportSessionInvoices = () => {
+    if (!selectedSessionId || events.length === 0) return;
+    const eventIdsForSession = new Set(events.map((eventItem) => eventItem.id));
+    const sessionInvoices = invoices.filter(
+      (invoice) => invoice.eventId && eventIdsForSession.has(invoice.eventId)
+    );
+    generateSessionInvoicesPDF(
+      selectedSession?.name ?? selectedSessionId,
+      sessionInvoices,
+      events as Event[]
+    );
+  };
+
   const sessionOptions = sessions.map((session) => ({
     value: session.id,
     label: `${session.name}${session.isActive ? ' (Current)' : ''}`,
@@ -159,7 +172,11 @@ export default function SessionReportsPage() {
               />
             </TabPane>
             <TabPane tab="Invoices">
-              <InvoicesTab events={events as Event[]} invoices={invoices} />
+              <InvoicesTab
+                events={events as Event[]}
+                invoices={invoices}
+                onExportSessionInvoices={handleExportSessionInvoices}
+              />
             </TabPane>
           </Tabs>
         )}

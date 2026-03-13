@@ -8,17 +8,26 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Event, Invoice } from '@/services/types';
+import {OpenInNew, Download} from '@mui/icons-material';
+import Button from '@/components/ui/button/Button';
+
 
 interface InvoicesTabProps {
   events: Event[];
   invoices: Invoice[];
+  onExportSessionInvoices: () => void;
 }
 
-export default function InvoicesTab({ events, invoices }: InvoicesTabProps) {
+export default function InvoicesTab({ events, invoices, onExportSessionInvoices }: InvoicesTabProps) {
   const eventsById = new Map(events.map((event) => [event.id, event]));
 
   const sessionInvoices = invoices.filter((invoice) =>
     eventsById.has(invoice.eventId)
+  );
+
+  const totalAmountSpent = sessionInvoices.reduce(
+    (sum, invoice) => sum + invoice.totalAmount,
+    0
   );
 
   if (events.length === 0) {
@@ -41,10 +50,20 @@ export default function InvoicesTab({ events, invoices }: InvoicesTabProps) {
   }
 
   return (
-    <div className="mb-8">
-      <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white/90">
-        Invoices for this session
-      </h3>
+    <div className="mb-8 space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white/90">
+          Invoices for this session
+        </h3>
+        <Button
+          variant="primary"
+          onClick={onExportSessionInvoices}
+          className="inline-flex items-center gap-2"
+        >
+          <Download fontSize="small" />
+          Export as PDF
+        </Button>
+      </div>
       {/* Mobile Card View */}
       <div className="space-y-4 md:hidden">
         {sessionInvoices.map((invoice) => {
@@ -87,6 +106,22 @@ export default function InvoicesTab({ events, invoices }: InvoicesTabProps) {
                     ₦{invoice.totalAmount.toLocaleString()}
                   </span>
                 </div>
+                {invoice.attachmentUrl && (
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      Receipt
+                    </span>
+                    <a
+                      href={invoice.attachmentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-brand-500 hover:underline"
+                    >
+                      View receipt
+                      <OpenInNew sx={{ fontSize: 14 }} />
+                    </a>
+                  </div>
+                )}
               </div>
             </ComponentCard>
           );
@@ -130,6 +165,12 @@ export default function InvoicesTab({ events, invoices }: InvoicesTabProps) {
                   >
                     Total amount
                   </TableCell>
+                  <TableCell
+                    isHeader
+                    className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
+                  >
+                    Receipt
+                  </TableCell>
                 </TableRow>
               </TableHeader>
               <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -155,10 +196,42 @@ export default function InvoicesTab({ events, invoices }: InvoicesTabProps) {
                       <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-800 dark:text-white/90">
                         ₦{invoice.totalAmount.toLocaleString()}
                       </TableCell>
+                      <TableCell className="px-5 py-4">
+                        {invoice.attachmentUrl ? (
+                          <a
+                            href={invoice.attachmentUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-theme-sm text-brand-500 hover:underline"
+                            title="View receipt"
+                          >
+                            View
+                            <OpenInNew sx={{ fontSize: 14 }} />
+                          </a>
+                        ) : (
+                          <span className="text-theme-sm text-gray-400">—</span>
+                        )}
+                      </TableCell>
                     </TableRow>
                   );
                 })}
               </TableBody>
+              <tfoot>
+                <TableRow>
+                  <TableCell
+                    colSpan={4}
+                    className="px-5 py-3 text-right text-theme-sm font-semibold text-gray-700 dark:text-white/90"
+                  >
+                    Total for session
+                  </TableCell>
+                  <TableCell
+                    colSpan={2}
+                    className="px-5 py-3 text-start text-theme-sm font-semibold text-gray-800 dark:text-white/90"
+                  >
+                    ₦{totalAmountSpent.toLocaleString()}
+                  </TableCell>
+                </TableRow>
+              </tfoot>
             </Table>
           </div>
         </div>

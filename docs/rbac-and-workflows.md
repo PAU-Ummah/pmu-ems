@@ -155,13 +155,14 @@ This section focuses on which routes, hooks, and Firestore collections each role
 - **Key operations**
   - Invoices:
     - CRUD on `invoices` collection.
-    - Each invoice references an `eventId` and contains a list of items.
+    - Each invoice references an `eventId`, contains a list of items, and includes a required **payment receipt link** (`attachmentUrl`).
     - `totalAmount` computed from items per invoice.
   - Event spending:
     - For each invoice create/update/delete, re‑computes sum of `totalAmount` for invoices per event.
     - Updates `events/{id}.amountSpent`.
   - Reporting:
-    - `FinanceReportPage` joins `events` and `invoices` into `EventFinanceData` rows.
+    - `FinanceReportPage` joins `events` and `invoices` into `EventFinanceData` rows and surfaces per‑invoice receipt links in the event detail modal.
+    - Session‑level reports show invoice receipt links on the **Invoices** tab.
     - Uses helpers (`generateInvoicePDF`, CSV utilities) for exports.
 
 ### Admin

@@ -12,7 +12,7 @@ For detailed technical docs, see the `docs/` folder (starting with `docs/overvie
 - **Events** – create, edit, and end events per academic session; view attendees.
 - **People** – manage people records, bulk import from Excel, filter by year/department/living.
 - **Attendance** – real‑time attendance marking for registrars, with concurrent updates.
-- **Finance** – invoices per event, line items, and automatic event spending totals.
+- **Finance** – invoices per event, line items, required receipt links, and automatic event spending totals.
 - **Reports** – event‑level and session‑level reports (attendance + finance) with PDF/CSV exports.
 - **Sessions** – academic session initialization and rollover (graduate/progress people).
 - **Users & roles** – Firebase‑backed auth with role‑based navigation and guards.

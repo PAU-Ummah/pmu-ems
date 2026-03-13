@@ -106,6 +106,7 @@ All roles:
 - Create new invoices linked to events.
 - Add, edit, and remove invoice line items (description, quantity, unit price).
 - Update and delete existing invoices.
+- Attach a payment receipt **link (URL)** to every invoice.
 - Automatically update each event’s **amount spent** based on invoices.
 - View finance summaries for the current session.
 
@@ -118,7 +119,7 @@ All roles:
 - **Finance**
   - Add invoices for specific events.
   - Maintain detailed line items.
-  - See per‑invoice totals and vendor information.
+  - See per‑invoice totals, vendor information, and receipt links.
   - Session‑filtered view: only invoices for events in the current academic session are summarized.
 - **Finance Report**
   - Cross‑event summary of:
@@ -127,15 +128,16 @@ All roles:
     - Total invoices and items.
   - Per‑event breakdown (status, invoices, items, total spent).
   - Can **view details**, **generate PDF**, or **download CSV** for each event.
+  - Event details modal lists each invoice and exposes its payment receipt link.
 
 **Typical workflow**
 1. **Log in** and confirm you are logged in as **Finance Manager** on the dashboard.
 2. Use **Manage Finance** Quick Action or sidebar `Finance` link.
-3. Click **Add Invoice**, select the event, and add line items (description, quantity, unit price).
-4. Save the invoice; the system recalculates the invoice total and updates the event’s **amount spent**.
+3. Click **Add Invoice**, select the event, add line items (description, quantity, unit price), and paste the **payment receipt link (URL)**.
+4. Save the invoice; the system validates the URL format, recalculates the invoice total, and updates the event’s **amount spent**.
 5. Repeat for all vendors/expenses related to the event.
 6. To review overall spending, open **Finance Report** from the sidebar or Quick Actions.
-7. On **Finance Report**, review per‑event totals and, when needed, export a **PDF** or **CSV** for external reporting.
+7. On **Finance Report**, review per‑event totals, open event details to see invoice‑level receipt links, and, when needed, export a **PDF** or **CSV** for external reporting.
 
 ---
 

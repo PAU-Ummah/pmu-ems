@@ -9,6 +9,18 @@ import TextArea from '@/components/form/TextArea';
 import { Invoice, InvoiceItem, Event } from '@/services/types';
 import { Add, Delete } from '@mui/icons-material';
 
+/** Returns true only for non-empty strings that are valid http or https URLs. */
+function isValidHttpUrl(str: string): boolean {
+  const trimmed = (str ?? '').trim();
+  if (!trimmed) return false;
+  try {
+    const url = new URL(trimmed);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 interface InvoiceFormProps {
   isOpen: boolean;
   onClose: () => void;
@@ -59,6 +71,9 @@ export default function InvoiceForm({
     value: event.id ?? '',
     label: `${event.name} - ${event.date}`,
   }));
+
+  const attachmentUrl = (currentInvoice.attachmentUrl ?? '').trim();
+  const attachmentUrlInvalid = attachmentUrl.length > 0 && !isValidHttpUrl(attachmentUrl);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="!max-w-[900px] p-6 lg:p-10">
@@ -209,6 +224,26 @@ export default function InvoiceForm({
             />
           </div>
 
+          <div>
+            <Label htmlFor="attachmentUrl">Payment receipt link</Label>
+            <InputField
+              id="attachmentUrl"
+              name="attachmentUrl"
+              type="url"
+              value={currentInvoice.attachmentUrl ?? ''}
+              onChange={onInputChange}
+              placeholder="https://..."
+              required
+              error={attachmentUrlInvalid}
+              hint={attachmentUrlInvalid ? 'Enter a valid URL starting with https:// or http://' : undefined}
+            />
+            {!attachmentUrlInvalid && (
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Link to the invoice or payment receipt (e.g. from Google Drive, email, or bank). Required.
+              </p>
+            )}
+          </div>
+
           <div className="flex justify-end">
             <p className="text-lg font-semibold text-brand-500">
               Total: ₦{(currentInvoice.totalAmount ?? 0).toLocaleString()}
@@ -226,7 +261,12 @@ export default function InvoiceForm({
             <Button
               variant="primary"
               onClick={onSubmit}
-              disabled={!currentInvoice.eventId || !currentInvoice.items?.length}
+              disabled={
+                !currentInvoice.eventId ||
+                !currentInvoice.items?.length ||
+                !attachmentUrl ||
+                attachmentUrlInvalid
+              }
               className="w-full sm:w-auto sm:min-w-[100px]"
             >
               {isEdit ? 'Update' : 'Add'}
