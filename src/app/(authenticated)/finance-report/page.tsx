@@ -48,6 +48,9 @@ export default function FinanceReportPage() {
         const itemCount = eventInvoices.reduce((sum, invoice) => sum + (invoice.items?.length ?? 0), 0);
         return { event, invoices: eventInvoices, totalSpent, itemCount };
       });
+      financeData.sort((first, second) =>
+        (second.event.date ?? '').localeCompare(first.event.date ?? '')
+      );
       setEventFinanceData(financeData);
     };
     if (events.length >= 0) fetchData();
