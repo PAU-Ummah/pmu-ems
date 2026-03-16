@@ -76,8 +76,8 @@ export default function InvoiceForm({
   const attachmentUrlInvalid = attachmentUrl.length > 0 && !isValidHttpUrl(attachmentUrl);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} className="!max-w-[900px] p-6 lg:p-10">
-      <div className="w-full">
+    <Modal isOpen={isOpen} onClose={onClose} className="!max-w-[900px] p-0">
+      <div className="max-h-[85vh] min-h-0 w-full overflow-y-auto p-6 lg:p-10">
         <h2 className="mb-6 text-xl font-semibold text-gray-900 dark:text-white/90">
           {isEdit ? 'Edit Invoice' : 'Add New Invoice'}
         </h2>
