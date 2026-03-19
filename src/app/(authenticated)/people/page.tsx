@@ -122,6 +122,7 @@ export default function PeoplePage() {
     // Build payload without any undefined fields (Firestore does not allow them).
     const payload: Partial<Person> = {
       firstName: currentPerson.firstName ?? "",
+      middleName: currentPerson.middleName ?? "",
       surname: currentPerson.surname ?? "",
       department: currentPerson.department ?? "",
       gender: currentPerson.gender ?? "",
@@ -130,10 +131,6 @@ export default function PeoplePage() {
       year: baseYear ?? 1,
       status: currentPerson.status ?? "active",
     };
-
-    if (currentPerson.middleName) {
-      payload.middleName = currentPerson.middleName;
-    }
     if (currentPerson.living) {
       payload.living = currentPerson.living;
     }
@@ -149,7 +146,17 @@ export default function PeoplePage() {
   };
 
   const handleEdit = (person: Person) => {
-    setCurrentPerson(person);
+    const derivedClass =
+      person.class && person.class.trim()
+        ? person.class
+        : person.year
+          ? `YR${person.year}`
+          : "YR1";
+    setCurrentPerson({
+      ...person,
+      middleName: person.middleName ?? "",
+      class: derivedClass,
+    });
     setIsEdit(true);
     setOpen(true);
   };
@@ -157,6 +164,7 @@ export default function PeoplePage() {
   const handleAddClick = () => {
     setCurrentPerson({
       academicSessionId: currentSessionId ?? "",
+      middleName: "",
       year: 1,
       status: "active",
     });
