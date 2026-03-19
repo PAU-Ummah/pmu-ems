@@ -99,6 +99,15 @@ export default function PeoplePage() {
     }
   };
 
+  const handleDepartmentChange = (departmentValue: string) => {
+    setCurrentPerson({ ...currentPerson, department: departmentValue });
+  };
+
+  const handleClassChange = (classValue: string) => {
+    const normalizedYear = normalizeYear(classValue);
+    setCurrentPerson({ ...currentPerson, class: classValue, year: normalizedYear });
+  };
+
   const handleLivingChange = (value: string) => {
     setCurrentPerson({ ...currentPerson, living: value });
   };
@@ -319,6 +328,19 @@ export default function PeoplePage() {
     { value: "", label: "Select..." },
     { value: "On Campus", label: "On Campus" },
     { value: "Off Campus", label: "Off Campus" },
+  ];
+
+  const departmentFormOptions = getUniqueDepartments().map((departmentName) => ({
+    value: departmentName,
+    label: departmentName,
+  }));
+
+  const classFormOptions = [
+    { value: "YR1", label: "YR1" },
+    { value: "YR2", label: "YR2" },
+    { value: "YR3", label: "YR3" },
+    { value: "YR4", label: "YR4" },
+    { value: "YR5", label: "YR5" },
   ];
 
   return (
@@ -590,8 +612,12 @@ export default function PeoplePage() {
           currentPerson={currentPerson}
           isEdit={isEdit}
           onInputChange={handleInputChange}
+          onDepartmentChange={handleDepartmentChange}
+          onClassChange={handleClassChange}
           onLivingChange={handleLivingChange}
           onSubmit={handleSubmit}
+          departmentFormOptions={departmentFormOptions}
+          classFormOptions={classFormOptions}
           livingFormOptions={livingFormOptions}
           currentSessionId={currentSessionId}
         />

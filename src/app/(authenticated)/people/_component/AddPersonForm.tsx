@@ -13,8 +13,12 @@ interface AddPersonFormProps {
   currentPerson: Partial<Person>;
   isEdit: boolean;
   onInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onDepartmentChange: (value: string) => void;
+  onClassChange: (value: string) => void;
   onLivingChange: (value: string) => void;
   onSubmit: () => void;
+  departmentFormOptions: { value: string; label: string }[];
+  classFormOptions: { value: string; label: string }[];
   livingFormOptions: { value: string; label: string }[];
   currentSessionId?: string | null;
 }
@@ -25,8 +29,12 @@ export default function AddPersonForm({
   currentPerson,
   isEdit,
   onInputChange,
+  onDepartmentChange,
+  onClassChange,
   onLivingChange,
   onSubmit,
+  departmentFormOptions,
+  classFormOptions,
   livingFormOptions,
   currentSessionId,
 }: AddPersonFormProps) {
@@ -66,11 +74,12 @@ export default function AddPersonForm({
           </div>
           <div>
             <Label htmlFor="department">Department</Label>
-            <InputField
-              id="department"
-              name="department"
-              value={currentPerson.department ?? ''}
-              onChange={onInputChange}
+            <Select
+              options={departmentFormOptions}
+              defaultValue={currentPerson.department ?? ''}
+              onChange={(changeEvent) => onDepartmentChange(changeEvent.target.value)}
+              placeholder="Select department"
+              disabled={!currentSessionId && !isEdit}
             />
           </div>
           <div>
@@ -84,12 +93,11 @@ export default function AddPersonForm({
           </div>
           <div>
             <Label htmlFor="class">Class</Label>
-            <InputField
-              id="class"
-              name="class"
-              value={currentPerson.class ?? ''}
-              onChange={onInputChange}
-              placeholder="e.g. YR2, 200 Level"
+            <Select
+              options={classFormOptions}
+              defaultValue={currentPerson.class ?? ''}
+              onChange={(changeEvent) => onClassChange(changeEvent.target.value)}
+              placeholder="Select class"
               disabled={!currentSessionId && !isEdit}
             />
           </div>
