@@ -32,8 +32,8 @@ export default function AttendanceDialog({
   updateError,
 }: AttendanceDialogProps) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} className="!max-w-[800px] p-6 lg:p-10">
-      <div className="w-full">
+    <Modal isOpen={isOpen} onClose={onClose} className="!max-w-[800px] p-0">
+      <div className="max-h-[88vh] min-h-0 w-full overflow-y-auto p-6 lg:p-10">
         <h2 className="mb-6 text-xl font-semibold text-gray-900 dark:text-white/90">
           Mark Attendance - {currentEvent?.name}
         </h2>

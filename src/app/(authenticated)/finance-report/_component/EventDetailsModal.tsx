@@ -31,8 +31,8 @@ export default function EventDetailsModal({
   if (!selectedEvent) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} className="!max-w-[1000px] !m-2 sm:!m-4 p-3 sm:p-6 lg:p-10">
-      <div className="w-full">
+    <Modal isOpen={isOpen} onClose={onClose} className="!max-w-[1000px] !m-2 sm:!m-4 p-0">
+      <div className="max-h-[88vh] min-h-0 w-full overflow-y-auto p-3 sm:p-6 lg:p-10">
         <h2 className="mb-4 sm:mb-6 text-lg sm:text-xl font-semibold text-gray-900 dark:text-white/90 pr-8 sm:pr-0">
           Invoice Details - {selectedEvent.event.name}
         </h2>
