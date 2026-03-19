@@ -38,6 +38,9 @@ export default function AddPersonForm({
   livingFormOptions,
   currentSessionId,
 }: AddPersonFormProps) {
+  const classYear = currentPerson.year ?? '';
+  const classDefaultValue = classYear === '' ? '' : `YR${classYear}`;
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="!max-w-[1000px] p-6 lg:p-10">
       <div className="w-full">
@@ -95,7 +98,7 @@ export default function AddPersonForm({
             <Label htmlFor="class">Class</Label>
             <Select
               options={classFormOptions}
-              defaultValue={currentPerson.class ?? ''}
+              defaultValue={classDefaultValue}
               onChange={(changeEvent) => onClassChange(changeEvent.target.value)}
               placeholder="Select class"
               disabled={!currentSessionId && !isEdit}
