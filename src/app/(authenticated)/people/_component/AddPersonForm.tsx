@@ -42,8 +42,8 @@ export default function AddPersonForm({
   const classDefaultValue = classYear === '' ? '' : `YR${classYear}`;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} className="!max-w-[1000px] p-6 lg:p-10">
-      <div className="w-full">
+    <Modal isOpen={isOpen} onClose={onClose} className="!max-w-[1000px] p-0">
+      <div className="max-h-[85vh] min-h-0 w-full overflow-y-auto p-6 lg:p-10">
         <h2 className="mb-6 text-xl font-semibold text-gray-900">
           {isEdit ? 'Edit Person' : 'Add New Person'}
         </h2>
