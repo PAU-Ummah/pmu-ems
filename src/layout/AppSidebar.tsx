@@ -75,14 +75,14 @@ const AppSidebar: React.FC = () => {
     },
     {
       icon: <Description sx={{ fontSize: 20 }} />,
-      name: 'Finance-Report',
-      path: '/finance-report',
+      name: 'Finance Reports',
+      path: '/finance-reports',
       subItems: undefined,
     },
     {
       icon: <Assessment sx={{ fontSize: 20 }} />,
-      name: 'Reports',
-      path: '/reports',
+      name: 'Event Reports',
+      path: '/event-reports',
       subItems: undefined,
     },
     {
@@ -101,8 +101,8 @@ const AppSidebar: React.FC = () => {
       if (item.path === '/people' && !canManagePeople()) return false;
       if (item.path === '/user-management' && !canManageUsers()) return false;
       if (item.path === '/finance' && !canManageFinance()) return false;
-      if (item.path === '/finance-report' && !canManageFinance() && !canViewReports()) return false;
-      if (item.path === '/reports' && !canViewReports()) return false;
+      if (item.path === '/finance-reports' && !canManageFinance() && !canViewReports()) return false;
+      if (item.path === '/event-reports' && !canViewReports()) return false;
       if (item.path === '/session-reports' && !canViewReports()) return false;
       return true;
     });

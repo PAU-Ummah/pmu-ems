@@ -67,7 +67,7 @@ Code style:
   - `(not-authenticated)/login` – login page.
   - `(authenticated)/` – main app:
     - `page.tsx` – dashboard.
-    - feature directories: `events`, `people`, `attendance`, `finance`, `finance-report`, `reports`, `session-reports`, `user-management`, `settings`.
+    - feature directories: `events`, `people`, `attendance`, `finance`, `finance-reports`, `event-reports`, `session-reports`, `user-management`, `settings`.
     - `api/` – API routes (e.g., `register-user`, `send-email`).
 - `src/components/`
   - `auth` – `RoleGuard`.

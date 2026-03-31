@@ -115,7 +115,7 @@ All roles:
   - Sees **Total Invoices** and **Total Spent** metrics.
   - Quick Actions:
     - **Manage Finance** → `/finance`.
-    - **View Finance Reports** → `/finance-report`.
+    - **View Finance Reports** → `/finance-reports`.
 - **Finance**
   - Add invoices for specific events.
   - Maintain detailed line items.
@@ -168,9 +168,9 @@ All roles:
     - Attendance (Total Attendees).
   - Quick Actions:
     - **Manage People** → `/people`.
-    - **View Reports** → `/reports`.
+    - **View Reports** → `/event-reports`.
     - **View Session Reports** → `/session-reports`.
-    - **View Finance Reports** → `/finance-report`.
+    - **View Finance Reports** → `/finance-reports`.
 - **People**
   - Same filtered list and CRUD operations as IT.
 - **Reports (Event Reports)**

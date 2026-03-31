@@ -104,8 +104,8 @@ Usage patterns:
   - `/people` → `canManagePeople()`.
   - `/user-management` → `canManageUsers()`.
   - `/finance` → `canManageFinance()`.
-  - `/finance-report` → `canManageFinance()` or `canViewReports()`.
-  - `/reports` and `/session-reports` → `canViewReports()`.
+  - `/finance-reports` → `canManageFinance()` or `canViewReports()`.
+  - `/event-reports` and `/session-reports` → `canViewReports()`.
 - Result: unauthorized users do not see menu entries to features they cannot access.
 
 ---
@@ -151,7 +151,7 @@ This section focuses on which routes, hooks, and Firestore collections each role
 
 - **Core routes**
   - `/finance` – invoices.
-  - `/finance-report` – finance analytics.
+  - `/finance-reports` – finance analytics.
 - **Key operations**
   - Invoices:
     - CRUD on `invoices` collection.
@@ -169,9 +169,9 @@ This section focuses on which routes, hooks, and Firestore collections each role
 
 - **Core routes**
   - `/people` – same people management as IT.
-  - `/reports` – per‑event reports with attendance + finance.
+  - `/event-reports` – per‑event reports with attendance + finance.
   - `/session-reports` – per‑session reports.
-  - `/finance-report` – read‑only finance analytics.
+  - `/finance-reports` – read‑only finance analytics.
   - `/settings` → session management card.
 - **Key operations**
   - Uses `useEvents` and `usePeople` to produce:

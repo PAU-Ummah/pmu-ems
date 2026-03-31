@@ -22,8 +22,8 @@
 - `src/app/(not-authenticated)` – Login.
 - `src/app/(authenticated)` – Main app:
   - `page.tsx` – dashboard.
-  - `events`, `people`, `attendance`, `finance`, `finance-report`,
-    `reports`, `session-reports`, `user-management`, `settings`.
+  - `events`, `people`, `attendance`, `finance`, `finance-reports`,
+    `event-reports`, `session-reports`, `user-management`, `settings`.
 - `src/context` – `AuthContext`, theme, sidebar, etc.
 - `src/hooks` – domain hooks (`useEvents`, `usePeople`, `useCurrentSession`, `useAllSessions`, `useRole`).
 - `src/services` – Firebase config, typed Firestore entities, session migration/rollover.

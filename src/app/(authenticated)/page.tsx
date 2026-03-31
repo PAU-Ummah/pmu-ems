@@ -269,7 +269,7 @@ export default function Home() {
               </Link>
             )}
             {hasRole(["finance-manager", "admin"]) && (
-              <Link href="/finance-report">
+              <Link href="/finance-reports">
                 <Button
                   variant="outline"
                   className="w-full justify-start gap-2 text-left"
@@ -280,7 +280,7 @@ export default function Home() {
               </Link>
             )}
             {hasRole(["admin"]) && (
-              <Link href="/reports">
+              <Link href="/event-reports">
                 <Button
                   variant="outline"
                   className="w-full justify-start gap-2 text-left"
@@ -429,7 +429,7 @@ export default function Home() {
             </div>
           </div>
           <div className="mt-4">
-            <Link href="/finance-report">
+            <Link href="/finance-reports">
               <Button variant="primary" className="w-full sm:w-auto">
                 View Finance Details
               </Button>

@@ -11,8 +11,8 @@
     - `people` – people management.
     - `attendance` – registrar attendance view.
     - `finance` – invoice CRUD.
-    - `finance-report` – finance analytics & exports.
-    - `reports` – single‑event report.
+    - `finance-reports` – finance analytics & exports.
+    - `event-reports` – single‑event report.
     - `session-reports` – per‑session reporting.
     - `user-management` – user registration (IT‑only).
     - `settings` – account, security, app info, session management.

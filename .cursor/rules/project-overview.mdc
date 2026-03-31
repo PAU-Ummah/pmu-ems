@@ -12,7 +12,7 @@ alwaysApply: true
 
 ## Key folders
 
-- `src/app/` – App Router; groups: `(authenticated)` (dashboard, people, events, attendance, finance, finance-report, reports, user-management, settings), `(not-authenticated)` (login), `api/` (register-user, send-email).
+- `src/app/` – App Router; groups: `(authenticated)` (dashboard, people, events, attendance, finance, finance-reports, event-reports, user-management, settings), `(not-authenticated)` (login), `api/` (register-user, send-email).
 - `src/components/` – Shared UI (calendar, form, auth, common, header, loading, empty-state, ui).
 - `src/layout/` – AppSidebar, Backdrop.
 - `src/context/` – AuthContext, ThemeContext.

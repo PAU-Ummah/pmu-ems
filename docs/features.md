@@ -145,7 +145,7 @@ Key behaviours:
 
 ## Finance Report
 
-- Page: `src/app/(authenticated)/finance-report/page.tsx`.
+- Page: `src/app/(authenticated)/finance-reports/page.tsx`.
 - Roles: `admin`, `finance-manager` (read‑only for admin).
 
 Key behaviours:
@@ -171,7 +171,7 @@ Key behaviours:
 
 ## Reports (Single Event)
 
-- Page: `src/app/(authenticated)/reports/page.tsx`.
+- Page: `src/app/(authenticated)/event-reports/page.tsx`.
 - Roles: `admin`.
 
 Key behaviours:
