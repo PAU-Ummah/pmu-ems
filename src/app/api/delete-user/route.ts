@@ -12,6 +12,11 @@ const getBearerToken = (authorizationHeader: string | null) => {
   return authorizationHeader.substring('Bearer '.length).trim();
 };
 
+function isIdTokenAudienceMismatch(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes('"aud"') || message.toLowerCase().includes('audience');
+}
+
 export async function POST(request: NextRequest) {
   try {
     const idToken = getBearerToken(request.headers.get('authorization'));
@@ -19,7 +24,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized request.' }, { status: 401 });
     }
 
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    let decodedToken;
+    try {
+      decodedToken = await adminAuth.verifyIdToken(idToken);
+    } catch (verifyError: unknown) {
+      if (isIdTokenAudienceMismatch(verifyError)) {
+        return NextResponse.json(
+          {
+            error:
+              'Server Firebase project does not match the signed-in app. Use FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY from the same Firebase project as NEXT_PUBLIC_FIREBASE_PROJECT_ID (and align FIREBASE_PROJECT_ID with that project).',
+          },
+          { status: 500 }
+        );
+      }
+      throw verifyError;
+    }
     const requesterId = decodedToken.uid;
 
     const requesterDoc = await adminDb.collection('users').doc(requesterId).get();
