@@ -17,6 +17,26 @@ function isIdTokenAudienceMismatch(error: unknown): boolean {
   return message.includes('"aud"') || message.toLowerCase().includes('audience');
 }
 
+function isAdminCredentialDecodeError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  const lower = message.toLowerCase();
+  return (
+    lower.includes('decoder routines') ||
+    lower.includes('getting metadata from plugin') ||
+    lower.includes('decoding private key')
+  );
+}
+
+function credentialDecodeErrorResponse() {
+  return NextResponse.json(
+    {
+      error:
+        'Firebase Admin could not read the service account private key. Remove any space after = in .env, use \\n for PEM line breaks, or set FIREBASE_SERVICE_ACCOUNT_JSON to the full downloaded JSON (one line). Then restart the server.',
+    },
+    { status: 500 }
+  );
+}
+
 export async function POST(request: NextRequest) {
   try {
     const idToken = getBearerToken(request.headers.get('authorization'));
@@ -28,6 +48,9 @@ export async function POST(request: NextRequest) {
     try {
       decodedToken = await adminAuth.verifyIdToken(idToken);
     } catch (verifyError: unknown) {
+      if (isAdminCredentialDecodeError(verifyError)) {
+        return credentialDecodeErrorResponse();
+      }
       if (isIdTokenAudienceMismatch(verifyError)) {
         return NextResponse.json(
           {
@@ -81,6 +104,9 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     // eslint-disable-next-line no-console
     console.error('Delete user error:', error);
+    if (isAdminCredentialDecodeError(error)) {
+      return credentialDecodeErrorResponse();
+    }
     return NextResponse.json({ error: 'Failed to delete user.' }, { status: 500 });
   }
 }

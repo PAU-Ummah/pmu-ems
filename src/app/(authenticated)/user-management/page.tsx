@@ -21,6 +21,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import RegisterUserForm from './_component/RegisterUserForm';
+import DeleteUserModal from './_component/DeleteUserModal';
 
 interface UserRegistrationForm {
   email: string;
@@ -45,6 +46,7 @@ export default function UserManagementPage() {
   const [roleDrafts, setRoleDrafts] = useState<Record<string, User['role']>>({});
   const [updatingRoleUserId, setUpdatingRoleUserId] = useState<string | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [deleteTargetUser, setDeleteTargetUser] = useState<User | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -192,7 +194,7 @@ export default function UserManagementPage() {
     }
   };
 
-  const handleDeleteUser = async (selectedUser: User) => {
+  const openDeleteUserModal = (selectedUser: User) => {
     if (selectedUser.id === currentUser?.uid) {
       setMessage({
         type: 'error',
@@ -200,11 +202,18 @@ export default function UserManagementPage() {
       });
       return;
     }
+    setDeleteTargetUser(selectedUser);
+  };
 
-    const shouldDeleteUser = window.confirm(
-      `Delete ${selectedUser.email}? This will remove the user record from User Management.`
-    );
-    if (!shouldDeleteUser) {
+  const closeDeleteUserModal = () => {
+    if (deletingUserId === null) {
+      setDeleteTargetUser(null);
+    }
+  };
+
+  const executeDeleteUser = async () => {
+    const selectedUser = deleteTargetUser;
+    if (!selectedUser) {
       return;
     }
 
@@ -236,6 +245,7 @@ export default function UserManagementPage() {
         void removedRoleDraft;
         return remainingRoleDrafts;
       });
+      setDeleteTargetUser(null);
       setMessage({
         type: 'success',
         text: result.message ?? `Deleted ${selectedUser.email}.`,
@@ -355,7 +365,7 @@ export default function UserManagementPage() {
                   <Button
                     variant="danger"
                     className="w-full"
-                    onClick={() => handleDeleteUser(listedUser)}
+                    onClick={() => openDeleteUserModal(listedUser)}
                     disabled={deletingUserId === listedUser.id || listedUser.id === currentUser?.uid}
                   >
                     {deletingUserId === listedUser.id ? 'Deleting...' : 'Delete'}
@@ -467,7 +477,7 @@ export default function UserManagementPage() {
                             variant="danger"
                             size="sm"
                             startIcon={<DeleteOutline fontSize="small" />}
-                            onClick={() => handleDeleteUser(listedUser)}
+                            onClick={() => openDeleteUserModal(listedUser)}
                             disabled={deletingUserId === listedUser.id || listedUser.id === currentUser?.uid}
                           >
                             {deletingUserId === listedUser.id ? 'Deleting...' : 'Delete'}
@@ -481,6 +491,16 @@ export default function UserManagementPage() {
             </div>
           </div>
         </div>
+
+        <DeleteUserModal
+          isOpen={deleteTargetUser !== null}
+          user={deleteTargetUser}
+          onClose={closeDeleteUserModal}
+          onConfirm={executeDeleteUser}
+          isDeleting={
+            deleteTargetUser !== null && deletingUserId === deleteTargetUser.id
+          }
+        />
 
         <RegisterUserForm
           isOpen={open}
