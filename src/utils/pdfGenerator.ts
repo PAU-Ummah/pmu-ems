@@ -30,7 +30,7 @@ export const generateInvoicePDF = (eventData: { event: Event; invoices: Invoice[
         .total { font-weight: bold; text-align: right; }
         .summary { background-color: #e8f5e8; padding: 15px; margin-top: 20px; }
         @media print {
-          @page { margin: 18mm 14mm 18mm 18mm; }
+          @page { margin: 18mm 14mm 18mm 25mm; }
           body { margin: 0; }
           .no-print { display: none; }
         }
@@ -171,7 +171,7 @@ export function generateSessionSummaryPDF(
         th { background-color: #f2f2f2; }
         .total { font-weight: bold; text-align: right; }
         .summary { background-color: #e8f5e8; padding: 15px; margin-top: 20px; }
-        @media print { @page { margin: 18mm 14mm 18mm 18mm; } body { margin: 0; } .no-print { display: none; } }
+        @media print { @page { margin: 18mm 14mm 18mm 25mm; } body { margin: 0; } .no-print { display: none; } }
       </style>
     </head>
     <body>
@@ -313,7 +313,7 @@ export function generateSessionInvoicesPDF(
         th { background-color: #f2f2f2; }
         .total { font-weight: bold; text-align: right; }
         .summary { background-color: #e8f5e8; padding: 15px; margin-top: 20px; }
-        @media print { @page { margin: 18mm 14mm 18mm 18mm; } body { margin: 0; } .no-print { display: none; } }
+        @media print { @page { margin: 18mm 14mm 18mm 25mm; } body { margin: 0; } .no-print { display: none; } }
       </style>
     </head>
     <body>
