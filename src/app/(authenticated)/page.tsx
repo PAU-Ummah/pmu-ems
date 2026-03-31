@@ -29,6 +29,7 @@ import Button from "@/components/ui/button/Button";
 import Badge from "@/components/ui/badge/Badge";
 import Link from "next/link";
 import Loading from "@/components/loading/Loading";
+import { getTotalAttendeeCount } from "@/utils/eventAttendance";
 
 export default function Home() {
   const { userData } = useAuth();
@@ -73,7 +74,7 @@ export default function Home() {
   const totalPeople = people.length;
   const totalInvoices = sessionInvoices.length;
   const totalSpent = sessionInvoices.reduce((sum, invoice) => sum + (invoice.totalAmount ?? 0), 0);
-  const totalAttendees = events.reduce((sum, event) => sum + (event.attendees?.length ?? 0), 0);
+  const totalAttendees = events.reduce((sum, event) => sum + getTotalAttendeeCount(event), 0);
 
   // Get upcoming events (next 5)
   const upcomingEventsList = events
@@ -339,7 +340,8 @@ export default function Home() {
                       </p>
                       {event.attendees && (
                         <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-                          {event.attendees.length} attendee{event.attendees.length !== 1 ? "s" : ""}
+                          {getTotalAttendeeCount(event)} attendee
+                          {getTotalAttendeeCount(event) !== 1 ? "s" : ""}
                         </p>
                       )}
                     </div>
@@ -382,7 +384,8 @@ export default function Home() {
                       </p>
                       {event.attendees && (
                         <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-                          {event.attendees.length} attendee{event.attendees.length !== 1 ? "s" : ""}
+                          {getTotalAttendeeCount(event)} attendee
+                          {getTotalAttendeeCount(event) !== 1 ? "s" : ""}
                         </p>
                       )}
                     </div>

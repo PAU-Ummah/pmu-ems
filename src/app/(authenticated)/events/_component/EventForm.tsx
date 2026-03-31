@@ -6,8 +6,9 @@ import InputField from '@/components/form/input/InputField';
 import Label from '@/components/form/Label';
 import Button from '@/components/ui/button/Button';
 import DatePicker from '@/components/form/date-picker';
-import { Event } from '@/services/types';
+import { Event, ExternalAttendeeGroup } from '@/services/types';
 import dayjs, { Dayjs } from 'dayjs';
+import { Add, Delete } from '@mui/icons-material';
 
 interface EventFormProps {
   isOpen: boolean;
@@ -18,6 +19,11 @@ interface EventFormProps {
   onDateChange: (date: Dayjs | null) => void;
   onDateTimeChange: (dateTime: Dayjs | null) => void;
   onInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  externalAttendeeGroups: ExternalAttendeeGroup[];
+  onExternalGroupNameChange: (index: number, value: string) => void;
+  onExternalGroupCountChange: (index: number, value: number) => void;
+  onAddExternalGroup: () => void;
+  onRemoveExternalGroup: (index: number) => void;
   onSubmit: () => void;
   isEdit: boolean;
   isEnded?: boolean;
@@ -32,6 +38,11 @@ export default function EventForm({
   onDateChange,
   onDateTimeChange,
   onInputChange,
+  externalAttendeeGroups,
+  onExternalGroupNameChange,
+  onExternalGroupCountChange,
+  onAddExternalGroup,
+  onRemoveExternalGroup,
   onSubmit,
   isEdit,
   isEnded,
@@ -97,6 +108,68 @@ export default function EventForm({
               onChange={handleDateTimeChange}
               disabled={isEdit && isEnded}
             />
+          </div>
+
+          <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <Label>Non-registered attendees</Label>
+              <Button
+                variant="outline"
+                startIcon={<Add />}
+                onClick={onAddExternalGroup}
+                className="text-xs"
+              >
+                Add group
+              </Button>
+            </div>
+            <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
+              Example: Faculty - 11, Visitors - 7
+            </p>
+
+            {externalAttendeeGroups.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                No external groups added.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {externalAttendeeGroups.map((group, index) => (
+                  <div key={`${group.name}-${index}`} className="grid grid-cols-12 gap-2">
+                    <div className="col-span-7">
+                      <InputField
+                        name={`external-group-name-${index}`}
+                        value={group.name}
+                        onChange={(changeEvent) =>
+                          onExternalGroupNameChange(index, changeEvent.target.value)
+                        }
+                        placeholder="Group name (e.g. Faculty)"
+                      />
+                    </div>
+                    <div className="col-span-3">
+                      <InputField
+                        name={`external-group-count-${index}`}
+                        type="number"
+                        value={String(group.count)}
+                        onChange={(changeEvent) =>
+                          onExternalGroupCountChange(index, Number(changeEvent.target.value))
+                        }
+                        min={0}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="col-span-2 flex justify-end">
+                      <Button
+                        variant="outline"
+                        onClick={() => onRemoveExternalGroup(index)}
+                        aria-label="Remove group"
+                        className="px-3"
+                      >
+                        <Delete fontSize="small" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">

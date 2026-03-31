@@ -16,6 +16,8 @@ interface EventFinanceRow {
   invoices: Invoice[];
   totalSpent: number;
   attendeeCount: number;
+  studentAttendeeCount: number;
+  externalAttendeeCount: number;
 }
 
 interface SessionOverviewTabProps {
@@ -96,10 +98,10 @@ export default function SessionOverviewTab({
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-500 dark:text-gray-400">
-                        Attendees
+                        Students / External / Total
                       </span>
                       <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                        {row.attendeeCount}
+                        {row.studentAttendeeCount} / {row.externalAttendeeCount} / {row.attendeeCount}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
@@ -139,7 +141,19 @@ export default function SessionOverviewTab({
                           isHeader
                           className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
                         >
-                          Attendees
+                          Students
+                        </TableCell>
+                        <TableCell
+                          isHeader
+                          className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
+                        >
+                          External
+                        </TableCell>
+                        <TableCell
+                          isHeader
+                          className="text-theme-xs px-5 py-3 text-start font-semibold text-gray-700 dark:text-white/90"
+                        >
+                          Total
                         </TableCell>
                         <TableCell
                           isHeader
@@ -160,6 +174,12 @@ export default function SessionOverviewTab({
                           </TableCell>
                           <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400">
                             {row.event.date}
+                          </TableCell>
+                          <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400">
+                            {row.studentAttendeeCount}
+                          </TableCell>
+                          <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400">
+                            {row.externalAttendeeCount}
                           </TableCell>
                           <TableCell className="px-5 py-4 text-start text-theme-sm text-gray-600 dark:text-gray-400">
                             {row.attendeeCount}

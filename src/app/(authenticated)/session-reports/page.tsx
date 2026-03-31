@@ -18,12 +18,15 @@ import EmptyState from '@/components/empty-state/EmptyState';
 import SessionOverviewTab from './_components/SessionOverviewTab';
 import AttendeesByEventTab from './_components/AttendeesByEventTab';
 import InvoicesTab from './_components/InvoicesTab';
+import { getAttendanceBreakdown } from '@/utils/eventAttendance';
 
 interface EventFinanceRow {
   event: Event;
   invoices: Invoice[];
   totalSpent: number;
   attendeeCount: number;
+  studentAttendeeCount: number;
+  externalAttendeeCount: number;
 }
 
 export default function SessionReportsPage() {
@@ -73,12 +76,14 @@ export default function SessionReportsPage() {
         (sum, invoice) => sum + invoice.totalAmount,
         0
       );
-      const attendeeCount = event.attendees?.length ?? 0;
+      const attendanceBreakdown = getAttendanceBreakdown(event);
       return {
         event,
         invoices: eventInvoices,
         totalSpent,
-        attendeeCount,
+        attendeeCount: attendanceBreakdown.total,
+        studentAttendeeCount: attendanceBreakdown.students,
+        externalAttendeeCount: attendanceBreakdown.external,
       };
     });
     setEventFinanceRows(rows);

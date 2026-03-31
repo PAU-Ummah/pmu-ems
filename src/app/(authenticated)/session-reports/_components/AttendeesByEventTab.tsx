@@ -11,6 +11,8 @@ import { Event, Person } from '@/services/types';
 interface EventFinanceRow {
   event: Event;
   attendeeCount: number;
+  studentAttendeeCount: number;
+  externalAttendeeCount: number;
 }
 
 interface AttendeesByEventTabProps {
@@ -39,9 +41,26 @@ export default function AttendeesByEventTab({
           return (
             <ComponentCard key={row.event.id} title={row.event.name}>
               <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
-                {row.event.date} · {row.attendeeCount} attendee
-                {row.attendeeCount !== 1 ? 's' : ''}
+                {row.event.date} · Students: {row.studentAttendeeCount} · External:{' '}
+                {row.externalAttendeeCount} · Total: {row.attendeeCount}
               </p>
+              {row.externalAttendeeCount > 0 && (
+                <div className="mb-3 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800/40">
+                  <p className="mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">
+                    External groups
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {(row.event.externalAttendeeGroups ?? []).map((group) => (
+                      <span
+                        key={`${row.event.id}-${group.name}`}
+                        className="inline-flex items-center rounded-md bg-white px-2 py-1 text-xs text-gray-700 shadow-sm dark:bg-gray-700 dark:text-gray-200"
+                      >
+                        {group.name}: {group.count}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               {attendeePeople.length === 0 ? (
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   No attendees recorded.

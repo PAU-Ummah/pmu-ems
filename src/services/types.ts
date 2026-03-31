@@ -67,9 +67,15 @@ export interface Event {
   endTime?: string; // ISO string for end time
   isEnded?: boolean; // Flag to indicate if event has ended
   attendees: string[]; // Array of person IDs
+  externalAttendeeGroups?: ExternalAttendeeGroup[]; // Non-registered attendee groups
   amountSpent?: number; // Amount spent on the event
   /** Session this event belongs to. */
   academicSessionId: string;
+}
+
+export interface ExternalAttendeeGroup {
+  name: string;
+  count: number;
 }
 
   export interface User {

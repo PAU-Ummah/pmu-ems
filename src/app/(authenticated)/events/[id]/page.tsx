@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/table";
 import { useCurrentSession } from "@/hooks/useCurrentSession";
 import { usePeople } from "@/hooks/usePeople";
+import { getTotalAttendeeCount } from "@/utils/eventAttendance";
 
 export default function EventDetailPage() {
   const params = useParams();
@@ -123,7 +124,7 @@ export default function EventDetailPage() {
         </div>
         <div>
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            <strong>Total Attendees:</strong> {event.attendees.length}
+            <strong>Total Attendees:</strong> {getTotalAttendeeCount(event)}
           </p>
         </div>
       </div>

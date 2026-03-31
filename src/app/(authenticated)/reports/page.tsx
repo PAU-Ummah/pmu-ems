@@ -14,6 +14,7 @@ import {
 import { useCurrentSession } from "@/hooks/useCurrentSession";
 import { useEvents } from "@/hooks/useEvents";
 import { usePeople } from "@/hooks/usePeople";
+import { getAttendanceBreakdown } from "@/utils/eventAttendance";
 
 export default function ReportsPage() {
   const { currentSessionId } = useCurrentSession();
@@ -22,6 +23,7 @@ export default function ReportsPage() {
   const [selectedEvent, setSelectedEvent] = useState<string>("");
 
   const selectedEventData = events.find((event) => event.id === selectedEvent);
+  const attendanceBreakdown = selectedEventData ? getAttendanceBreakdown(selectedEventData) : null;
 
   const eventOptions = events.map((event) => ({
     value: event.id ?? '',
@@ -56,7 +58,13 @@ export default function ReportsPage() {
               </h2>
               <div className="flex flex-col gap-2">
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  <strong>Total Attendees:</strong> {selectedEventData.attendees.length}
+                  <strong>Total Attendees:</strong> {attendanceBreakdown?.total ?? 0}
+                </p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <strong>Students:</strong> {attendanceBreakdown?.students ?? 0}
+                </p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <strong>External groups:</strong> {attendanceBreakdown?.external ?? 0}
                 </p>
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   <strong>Amount Spent:</strong> ₦{selectedEventData.amountSpent?.toLocaleString() ?? "0"}

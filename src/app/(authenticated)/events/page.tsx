@@ -3,6 +3,7 @@ import { useState } from "react";
 import dayjs, { Dayjs } from "dayjs";
 import { Add, Delete, Edit, People } from "@mui/icons-material";
 import { Event } from "@/services/types";
+import { ExternalAttendeeGroup } from "@/services/types";
 import {
   collection,
   addDoc,
@@ -26,6 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import EventForm from "./_component/EventForm";
+import { getTotalAttendeeCount } from "@/utils/eventAttendance";
 
 export default function EventsPage() {
   const { currentSessionId } = useCurrentSession();
@@ -41,6 +43,7 @@ export default function EventsPage() {
   const [selectedDate, setSelectedDate] = useState<Dayjs | null>(dayjs());
   const [selectedDateTime, setSelectedDateTime] = useState<Dayjs | null>(dayjs());
   const [isEdit, setIsEdit] = useState(false);
+  const [externalAttendeeGroups, setExternalAttendeeGroups] = useState<ExternalAttendeeGroup[]>([]);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -48,10 +51,18 @@ export default function EventsPage() {
   };
 
   const handleSubmit = async () => {
+    const sanitizedExternalGroups = externalAttendeeGroups
+      .map((group) => ({
+        name: group.name.trim(),
+        count: Number.isFinite(group.count) ? Math.max(0, group.count) : 0,
+      }))
+      .filter((group) => group.name !== "" && group.count > 0);
+
     const eventData: Partial<Event> = {
       ...currentEvent,
       date: selectedDate ? selectedDate.format("YYYY-MM-DD") : currentEvent.date,
       startTime: selectedDateTime ? selectedDateTime.toISOString() : currentEvent.startTime,
+      externalAttendeeGroups: sanitizedExternalGroups,
     };
     if (!isEdit && currentSessionId) {
       eventData.academicSessionId = currentSessionId;
@@ -70,6 +81,7 @@ export default function EventsPage() {
       startTime: new Date().toISOString(),
       attendees: [],
     });
+    setExternalAttendeeGroups([]);
     setSelectedDate(dayjs());
     setSelectedDateTime(dayjs());
   };
@@ -80,6 +92,7 @@ export default function EventsPage() {
       return;
     }
     setCurrentEvent(event);
+    setExternalAttendeeGroups(event.externalAttendeeGroups ?? []);
     setSelectedDate(event.date ? dayjs(event.date) : dayjs());
     setSelectedDateTime(event.startTime ? dayjs(event.startTime) : dayjs());
     setIsEdit(true);
@@ -115,8 +128,35 @@ export default function EventsPage() {
     });
     setSelectedDate(dayjs());
     setSelectedDateTime(dayjs());
+    setExternalAttendeeGroups([]);
     setIsEdit(false);
     setOpen(true);
+  };
+
+  const handleExternalGroupNameChange = (index: number, value: string) => {
+    setExternalAttendeeGroups((previousGroups) =>
+      previousGroups.map((group, groupIndex) =>
+        groupIndex === index ? { ...group, name: value } : group
+      )
+    );
+  };
+
+  const handleExternalGroupCountChange = (index: number, value: number) => {
+    setExternalAttendeeGroups((previousGroups) =>
+      previousGroups.map((group, groupIndex) =>
+        groupIndex === index ? { ...group, count: Number.isFinite(value) ? Math.max(0, value) : 0 } : group
+      )
+    );
+  };
+
+  const handleAddExternalGroup = () => {
+    setExternalAttendeeGroups((previousGroups) => [...previousGroups, { name: "", count: 0 }]);
+  };
+
+  const handleRemoveExternalGroup = (index: number) => {
+    setExternalAttendeeGroups((previousGroups) =>
+      previousGroups.filter((_, groupIndex) => groupIndex !== index)
+    );
   };
 
   if (eventsLoading) {
@@ -182,7 +222,7 @@ export default function EventsPage() {
                   {event.isEnded ? "Ended" : "Active"}
                 </Badge>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {event.attendees.length} attendees
+                  {getTotalAttendeeCount(event)} attendees
                 </p>
               </div>
               <div>
@@ -401,6 +441,7 @@ export default function EventsPage() {
           setOpen(false);
           setSelectedDate(dayjs());
           setSelectedDateTime(dayjs());
+          setExternalAttendeeGroups([]);
         }}
         currentEvent={currentEvent}
         selectedDate={selectedDate}
@@ -408,6 +449,11 @@ export default function EventsPage() {
         onDateChange={setSelectedDate}
         onDateTimeChange={setSelectedDateTime}
         onInputChange={handleInputChange}
+        externalAttendeeGroups={externalAttendeeGroups}
+        onExternalGroupNameChange={handleExternalGroupNameChange}
+        onExternalGroupCountChange={handleExternalGroupCountChange}
+        onAddExternalGroup={handleAddExternalGroup}
+        onRemoveExternalGroup={handleRemoveExternalGroup}
         onSubmit={handleSubmit}
         isEdit={isEdit}
         isEnded={currentEvent.isEnded}

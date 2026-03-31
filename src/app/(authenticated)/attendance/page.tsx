@@ -26,6 +26,7 @@ import { useCurrentSession } from "@/hooks/useCurrentSession";
 import { useEvents } from "@/hooks/useEvents";
 import { usePeople } from "@/hooks/usePeople";
 import AttendanceDialog from "./_component/AttendanceDialog";
+import { getTotalAttendeeCount } from "@/utils/eventAttendance";
 
 export default function AttendancePage() {
   const { currentSessionId } = useCurrentSession();
@@ -338,7 +339,7 @@ export default function AttendancePage() {
                       
                       <div>
                         <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Attendees ({event.attendees.length}):
+                          Attendees ({getTotalAttendeeCount(event)}):
                         </p>
                         <div className="flex flex-wrap gap-1">
                           {event.attendees.slice(0, 2).map((attendee) => (
