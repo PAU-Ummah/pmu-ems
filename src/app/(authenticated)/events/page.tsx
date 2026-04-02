@@ -19,6 +19,7 @@ import { useEvents } from "@/hooks/useEvents";
 import { usePeople } from "@/hooks/usePeople";
 import Button from "@/components/ui/button/Button";
 import Badge from "@/components/ui/badge/Badge";
+import Alert from "@/components/ui/alert/Alert"
 import {
   Table,
   TableBody,
@@ -174,10 +175,11 @@ export default function EventsPage() {
       </h1>
 
       {!currentSessionId && (
-        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-          <p className="font-medium">No academic session configured</p>
-          <p className="mt-1 text-sm">Configure a session in Settings → Session management to create or view events.</p>
-        </div>
+         <Alert
+         variant="warning"
+         title="No academic session configured"
+         message="Configure a session in Settings → Session management to create or view events."
+       />
       )}
 
       <RoleGuard allowedRoles={['event-organizer']}>
