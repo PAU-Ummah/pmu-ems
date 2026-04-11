@@ -257,7 +257,7 @@ export default function Home() {
               </Link>
             )}
 
-            {hasRole(["finance-manager", "admin"]) && (
+            {hasRole(["finance-manager"]) && (
               <Link href="/finance">
                 <Button
                   variant="outline"

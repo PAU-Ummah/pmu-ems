@@ -1,326 +1,230 @@
-# PMU EMS Role & Workflow Guide (v3.0.0)
+# PMU EMS Role & Workflow Guide (v3.1.0)
 
-This document describes **who can do what** in the PMU Event Management System and the **day‑to‑day workflow** for each role.
+This document describes **who can do what** in the PMU Event Management System and the **day‑to‑day workflow** for each role. It matches the behavior enforced in the app (sidebar, dashboard, and page-level checks) as of this version.
 
-The system currently supports **five roles**:
+The system supports **five roles** (stored as `User.role`):
 
-- **Event Organizer** (`event-organizer`) – owns event setup and lifecycle.
-- **IT** (`it`) – manages people records and user accounts.
-- **Finance Manager** (`finance-manager`) – manages invoices and event spending.
-- **Admin** (`admin`) – oversees data, reports, and academic sessions.
-- **Registrar** (`registrar`) – marks attendance during events.
+| Display name | Value |
+| --- | --- |
+| Event Organizer | `event-organizer` |
+| IT | `it` |
+| Finance Manager | `finance-manager` |
+| Admin | `admin` |
+| Registrar | `registrar` |
 
-All roles:
-- Sign in via the login page.
-- Land on the dashboard, which shows role‑specific metrics and **Quick Actions** that deep‑link into the main pages they use.
+**Everyone**
+
+- Signs in on the login page and lands on the **dashboard** (`/`).
+- Sees a **No academic session configured** banner when no session is active; event and people data depend on an admin completing **Settings → Session management** (admin-only card).
+- Can open **Settings** for account and security; only **Admin** sees **Session management** there.
+
+---
+
+## Quick reference: navigation and access
+
+| Area | Who can use it (typical) |
+| --- | --- |
+| **Sidebar → Events** | Event Organizer only |
+| **Sidebar → People** | IT, Admin |
+| **Sidebar → User Management** | IT only |
+| **Sidebar → Finance** (`/finance`) | Finance Manager only |
+| **Sidebar → Finance Reports** (`/finance-reports`) | Finance Manager, Admin |
+| **Sidebar → Event Reports** (`/event-reports`) | Admin only |
+| **Sidebar → Session Reports** (`/session-reports`) | Admin only |
+| **Sidebar → Attendance** | Registrar only |
+
+**Note:** The **Events** list page (`/events`) is not wrapped in a full-page role gate. **Create / edit / end / delete** actions are restricted to **Event Organizer**. Other signed-in users could open `/events` by URL and see the list in read-only form (no organizer actions). The sidebar hides **Events** for non-organizers.
+
+---
+
+## Dashboard (`/`)
+
+Metrics and **Quick Actions** depend on role.
+
+**Metrics**
+
+- **Event Organizer:** Total Events, Upcoming Events, Active Events.
+- **IT:** Total People.
+- **Finance Manager:** Total Invoices, Total Spent (₦).
+- **Registrar:** Total Attendees (across events).
+- **Admin:** All of the above (events, people, finance, attendance).
+
+**Quick Actions**
+
+- **Event Organizer:** Manage Events → `/events`.
+- **IT:** Manage People → `/people`; User Management → `/user-management`.
+- **Finance Manager:** Manage Finance → `/finance`; View Finance Reports → `/finance-reports`.
+- **Admin:** Manage People → `/people`; View Finance Reports → `/finance-reports`; View Reports → `/event-reports`; View Session Reports → `/session-reports`.  
+  (No **Manage Finance** link to `/finance` — that page is Finance Manager only; no **User Management**; no **Manage Events**.)
+- **Registrar:** Mark Attendance → `/attendance`.
+
+**Extra sections (dashboard)**
+
+- **Upcoming Events** and **Recent Events** (links to event details): Event Organizer and Admin.
+- **Finance Overview** (summary + button to Finance Reports): Finance Manager and Admin.
 
 ---
 
 ## Event Organizer (`event-organizer`)
 
-**Primary responsibility:** Set up and manage events for the current academic session.
+**Primary responsibility:** Create and run events for the **current academic session**, including optional **external attendee groups** (named groups with headcounts, separate from individual attendees).
 
-**Key permissions**
-- Create new events in the current session.
-- Edit event details **while the event is still active**.
-- End events (set end time and mark as ended).
-- View all events in the current session.
-- View attendee lists for each event (read‑only; attendance itself is managed by registrars).
+**Permissions**
 
-**Main pages & features**
-- **Dashboard**
-  - Sees **Total Events**, **Upcoming Events**, and **Active Events** metrics.
-  - Quick Action: **Manage Events** → `/events`.
-- **Events**
-  - Create events with date and start time.
-  - Edit active events.
-  - End events when finished.
-  - View attendee counts and basic attendee information per event.
-- **Event Details**
-  - For any event, view date, times, status, and full attendee list.
-  - End the event from this page while it is active.
+- Create events (session must be configured).
+- Edit events **while not ended**.
+- End events and **delete** events (from the events list).
+- View events and attendee information for the session.
+- **Cannot** mark attendance (Registrar role).
+- **Cannot** manage invoices (`/finance` is Finance Manager only).
+
+**Main pages**
+
+- **Dashboard** — event metrics; Quick Action **Manage Events**.
+- **Events** (`/events`) — create; edit active events; end or delete; open **View** for detail. You can add **external attendee groups** when creating/editing (e.g. guests or external bodies with a label and count).
+- **Event details** (`/events/[id]`) — full info and attendee list; **End Event** while active.
 
 **Typical workflow**
-1. **Log in** and confirm you are logged in as **Event Organizer** on the dashboard.
-2. From **Quick Actions**, click **Manage Events** (or use the sidebar to open `Events`).
-3. Click **Create Event**, fill in event name, date, and start time, then save.
-4. Before the event, optionally update event details (e.g., time adjustments) while it is still active.
-5. During the event, **registrars** mark attendance on the `Attendance` page; you can monitor attendee counts on the event list and detail views.
-6. After the event finishes, open the event from the list and click **End Event** to close it.
-7. When finance data is entered by the Finance Manager, you can see updated **amount spent** and attendee statistics in reports (read‑only).
+
+1. Log in and confirm **Event Organizer** on the dashboard.
+2. Open **Manage Events** or **Events** in the sidebar.
+3. **Create Event:** name, date, start time; add external groups if needed; save.
+4. Before or during the event, adjust details while the event is still active.
+5. Registrars mark attendance on **Attendance**; you monitor counts on the list or detail page.
+6. After the event, open the event and **End Event** (or use **End** on the list).
+7. For spending, Finance Manager maintains invoices; you see totals via reports where your role has access (organizer-focused views on the dashboard; broader reporting is mainly Admin / Finance).
 
 ---
 
 ## IT (`it`)
 
-**Primary responsibility:** Maintain the people database and manage application users and roles.
+**Primary responsibility:** Maintain the **people** database and **application users**.
 
-**Key permissions**
-- **People management**
-  - Add new people records.
-  - Edit existing people (including department, gender, year, and living status).
-  - Delete people when necessary.
-  - Upload Excel files to **bulk import or update** people, with duplicate detection.
-- **User management**
-  - Register new application users.
-  - Assign roles to users at registration.
-  - Trigger password‑reset emails via the registration flow.
+**Permissions**
 
-**Main pages & features**
-- **Dashboard**
-  - Sees **Total People** metric.
-  - Quick Actions:
-    - **Manage People** → `/people`.
-    - **User Management** → `/user-management`.
-- **People**
-  - Filter people by **year**, **department**, and **living**.
-  - Add, edit, and delete people.
-  - Bulk upload from Excel; system will:
-    - Update existing people when matches are found.
-    - Create new people when needed.
-- **User Management**
-  - Register new users with email, temporary password, display name, and role.
-  - Shows brief descriptions of each role to help with correct assignment.
+- **People:** Add, edit, delete people (same CRUD as Admin on this page).
+- **People — Excel:** Bulk **upload / update** via Excel is **IT only** (Admin does not see this upload flow).
+- **User Management:** Register users, assign roles, update roles, delete users (with safeguards). Sidebar and dashboard Quick Action point here for IT only.
 
-**Typical workflow – managing people**
-1. **Log in** and confirm you are logged in as **IT** on the dashboard.
-2. Use **Manage People** Quick Action or sidebar `People` link.
-3. To add a single person, click **Add Person**, fill the required fields (name, department, gender, year, etc.), and save.
-4. To update many people at once, click **Upload Excel**, select the prepared file, and wait while the import progress runs.
-5. Review the filtered list (by year/department/living) to confirm records look correct.
+**Main pages**
 
-**Typical workflow – managing users**
-1. From the dashboard, open **User Management**.
-2. Click **Register New User**.
-3. Enter the user’s email, temporary password, and display name.
-4. Select the appropriate **role** (Event Organizer, IT, Finance Manager, Admin, or Registrar).
-5. Submit; a password‑reset email is automatically sent so the user can set their own password.
+- **Dashboard** — Total People; Quick Actions **Manage People**, **User Management**.
+- **People** — filters (year, department, living); Excel import with duplicate handling; single-record CRUD.
+- **User Management** — register new users (email, temporary password, display name, role); password reset email sent on registration.
+
+**Typical workflow — people**
+
+1. Log in as **IT**; open **People**.
+2. Add individuals with **Add Person** or use **Upload Excel** for bulk work.
+3. Filter the list to verify data.
+
+**Typical workflow — users**
+
+1. Open **User Management** → **Register New User**.
+2. Fill email, password, display name, and **role**.
+3. Submit; the user receives a password reset email to set their own password.
 
 ---
 
 ## Finance Manager (`finance-manager`)
 
-**Primary responsibility:** Track and manage all event‑related financial transactions.
+**Primary responsibility:** Invoices and event spending for the session.
 
-**Key permissions**
-- Create new invoices linked to events.
-- Add, edit, and remove invoice line items (description, quantity, unit price).
-- Update and delete existing invoices.
-- Attach a payment receipt **link (URL)** to every invoice.
-- Automatically update each event’s **amount spent** based on invoices.
-- View finance summaries for the current session.
+**Permissions**
 
-**Main pages & features**
-- **Dashboard**
-  - Sees **Total Invoices** and **Total Spent** metrics.
-  - Quick Actions:
-    - **Manage Finance** → `/finance`.
-    - **View Finance Reports** → `/finance-reports`.
-- **Finance**
-  - Add invoices for specific events.
-  - Maintain detailed line items.
-  - See per‑invoice totals, vendor information, and receipt links.
-  - Session‑filtered view: only invoices for events in the current academic session are summarized.
-- **Finance Report**
-  - Cross‑event summary of:
-    - Total events.
-    - Total spending.
-    - Total invoices and items.
-  - Per‑event breakdown (status, invoices, items, total spent).
-  - Can **view details**, **generate PDF**, or **download CSV** for each event.
-  - Event details modal lists each invoice and exposes its payment receipt link.
+- Full access to **Finance** (`/finance`): create, edit, delete invoices; line items; **payment receipt URL** on invoices.
+- Totals update **amount spent** on linked events.
+- **Finance Reports** (`/finance-reports`): summaries, per-event breakdown, PDF/CSV where provided, receipt links in detail views.
+
+**Main pages**
+
+- **Dashboard** — invoice and spent metrics; Quick Actions **Manage Finance**, **View Finance Reports**.
+- **Finance** — session-scoped invoice work (events in the current session).
+- **Finance Reports** — analytics and exports.
 
 **Typical workflow**
-1. **Log in** and confirm you are logged in as **Finance Manager** on the dashboard.
-2. Use **Manage Finance** Quick Action or sidebar `Finance` link.
-3. Click **Add Invoice**, select the event, add line items (description, quantity, unit price), and paste the **payment receipt link (URL)**.
-4. Save the invoice; the system validates the URL format, recalculates the invoice total, and updates the event’s **amount spent**.
-5. Repeat for all vendors/expenses related to the event.
-6. To review overall spending, open **Finance Report** from the sidebar or Quick Actions.
-7. On **Finance Report**, review per‑event totals, open event details to see invoice‑level receipt links, and, when needed, export a **PDF** or **CSV** for external reporting.
+
+1. Log in as **Finance Manager**.
+2. Open **Finance** → **Add Invoice**, pick the event, add lines and receipt URL, save.
+3. Use **Finance Reports** for cross-event review and exports.
 
 ---
 
 ## Admin (`admin`)
 
-**Primary responsibility:** Oversee data integrity, reporting, and academic session lifecycle.
+**Primary responsibility:** Oversight, **reporting**, **academic session** lifecycle, and **people** data entry (without Excel bulk import).
 
-**Key permissions**
-- View and manage people (same CRUD capabilities as IT on the `People` page).
-- View **all reports**:
-  - Event‑level reports (`Reports`).
-  - Academic session reports (`Session Reports`).
-  - Finance reports (`Finance Report`).
-- Manage academic sessions (create initial session and roll over to new sessions).
-- View aggregated dashboard metrics across events, people, finance, and attendance.
-- Does **not**:
-  - Create/edit/end events (Event Organizer only).
-  - Create/edit invoices (Finance Manager only).
+**Permissions**
+
+- **People:** Add, edit, delete — same as IT **except** **no Excel bulk upload** (IT only).
+- **Reports:** **Event Reports** (`/event-reports`) and **Session Reports** (`/session-reports`) — admin only.
+- **Finance Reports** (`/finance-reports`): read-only analytics and exports (same page as Finance Manager for viewing; **not** invoice editing).
+- **Session management:** **Settings** → **Session management** (initialize first session, rollover to a new session). Card is **admin-only**; other roles do not see it.
+- **Dashboard:** Sees **all** metric cards (events, people, finance, attendance) and **Finance Overview** linking to Finance Reports.
+- **Does not** (by design and UI):
+  - Create/edit/end/delete events (Event Organizer only for mutations; sidebar does not show Events for Admin).
+  - Create/edit invoices — use **`/finance`** only as **Finance Manager**; Admin uses **Finance Reports** for visibility.
   - Mark attendance (Registrar only).
-  - Register application users (IT only).
+  - Register or manage users — **User Management** is **IT** only (`canManageUsers`); Admin has no sidebar link and no Quick Action.
 
-**Main pages & features**
-- **Dashboard**
-  - Sees metrics across multiple domains:
-    - Events (Total, Upcoming, Active).
-    - People (Total People).
-    - Finance (Total Invoices, Total Spent).
-    - Attendance (Total Attendees).
-  - Quick Actions:
-    - **Manage People** → `/people`.
-    - **View Reports** → `/event-reports`.
-    - **View Session Reports** → `/session-reports`.
-    - **View Finance Reports** → `/finance-reports`.
-- **People**
-  - Same filtered list and CRUD operations as IT.
-- **Reports (Event Reports)**
-  - Select an event and view:
-    - Total attendees.
-    - Amount spent on that event.
-    - Per‑attendee details (department, year).
-- **Session Reports**
-  - Select any **academic session** (current or past).
-  - Tabs:
-    - **Overview** – per‑event attendee count and amount spent.
-    - **Attendees by event** – breakdown of people per event.
-    - **Invoices** – invoice coverage for events in the session.
-  - Export a **session summary PDF** with per‑event totals (no attendee names or invoice line items).
-- **Finance Report**
-  - Same aggregate finance view as Finance Manager (read‑only).
-- **Settings → Session management**
-  - Admin‑only card.
-  - Initialize the **first session**, assigning existing people and events.
-  - Run **session rollover**: graduate final‑year students, promote others, and create a new active session.
+**Main pages**
 
-**Typical workflow – reporting & oversight**
-1. **Log in** and confirm you are logged in as **Admin** on the dashboard.
-2. Use dashboard metrics to spot trends (e.g., number of events, total attendees, total spending).
-3. Open **Reports** to investigate a single event’s attendees and spending.
-4. Open **Session Reports** to review the performance of an entire academic session; export PDFs for archival or management reporting.
-5. Open **Finance Report** to confirm that invoices and spending are consistent across events.
+- **Dashboard** — cross-domain metrics; Quick Actions: People, Finance Reports, Event Reports, Session Reports.
+- **People** — CRUD without Excel upload.
+- **Event Reports** / **Session Reports** — per-event and per-session analytics; session PDF export where available.
+- **Finance Reports** — financial overview.
+- **Settings** — **Session management** for session init and rollover.
 
-**Typical workflow – session management**
-1. Open **Settings** from the user dropdown.
-2. In **Session management**:
-   - If no session exists, enter the initial session name and run **Initialize session**.
-   - At the end of a session, enter the new session name and run **End session & start new**.
-3. After rollover, coordinate with IT to upload new YR1 students for the new session.
+**Typical workflow — reporting**
+
+1. Log in as **Admin**.
+2. Use **Event Reports** or **Session Reports** for operational and archival review.
+3. Open **Finance Reports** to validate spending and invoices at a glance.
+
+**Typical workflow — session**
+
+1. **Settings** → **Session management**.
+2. If needed, run **Initialize session** with a session name (assigns existing people/events as applicable).
+3. At year end, run **End session & start new** with the new session name; then coordinate with IT for new YR1 data (Excel on **People**).
 
 ---
 
 ## Registrar (`registrar`)
 
-**Primary responsibility:** Mark and manage attendance during live events.
+**Primary responsibility:** Mark attendance during live events.
 
-**Key permissions**
-- View only events that:
-  - Start within the next 1 hour, or
-  - Have already started and are not yet ended.
-- Open an **Attendance** dialog for an event.
-- Search people by name or department.
-- Toggle an individual’s attendance for the selected event.
-- See real‑time updates to attendance when other registrars are working on the same event.
+**Permissions**
 
-**Main pages & features**
-- **Dashboard**
-  - Sees **Total Attendees** across all events.
-  - Quick Action: **Mark Attendance** → `/attendance`.
-- **Attendance**
-  - List of events available for attendance based on start time and status.
-  - For each event:
-    - See date, start time, and time until start / time since start.
-    - View current attendees with counts.
-  - **Attendance dialog**:
-    - Full list or filtered view of people for the current session.
-    - Search by name or department.
-    - Toggle attendance on/off per person.
-  - Uses safe concurrent updates, so multiple registrars can mark the same event without conflicts.
+- **Attendance** page only (sidebar); list shows events that are **starting within about one hour**, or **already started and not ended**.
+- Open the attendance dialog for an event: search people by name or department; toggle attendance.
+- Multiple registrars can work on the same event; updates are coordinated in the backend.
+
+**Main pages**
+
+- **Dashboard** — Total Attendees; Quick Action **Mark Attendance**.
+- **Attendance** — event list + dialog per event.
 
 **Typical workflow**
-1. **Log in** and confirm you are logged in as **Registrar** on the dashboard.
-2. Use **Mark Attendance** Quick Action or sidebar `Attendance` link.
-3. In the **Events Available for Attendance** list, pick the active/upcoming event you are responsible for.
-4. Click **Mark Attendance** for that event to open the attendance dialog.
-5. Search or scroll to find each attendee and toggle their status as they arrive.
-6. Continue updating throughout the event; changes are reflected immediately for other registrars.
-7. When the event is over, the **Event Organizer** ends the event from the `Events` section; you no longer see it in your active list.
 
-# Role-Based Access Control System
+1. Log in as **Registrar**; open **Attendance**.
+2. Choose the relevant event → **Mark Attendance**.
+3. Search or scroll; toggle each person as they arrive.
+4. When the Event Organizer **ends** the event, it drops out of the active attendance list.
 
-This document describes the role-based access control (RBAC) system implemented in the PMU EMS application.
+---
 
-## User Roles
+## Appendix: RBAC (technical)
 
-The system supports five distinct user roles:
+Authorization is enforced through:
 
-### 1. Event Organizer (`event-organizer`)
-**Permissions:**
-- Create new events
-- Edit existing events (only if not ended)
-- End events
-- View events and attendees
+- **`useRole()`** (`src/hooks/useRole.ts`) — helpers such as `hasRole`, `canCreateEvents`, `canManagePeople` (IT + Admin), `canManageFinance` (Finance Manager), `canViewReports` (Admin), `canManageUsers` / `canRegisterUsers` (IT), `canMarkAttendance` (Registrar).
+- **`RoleGuard`** — wraps pages or sections with `allowedRoles` (e.g. Finance page `finance-manager`; Finance Reports `admin` + `finance-manager`; Attendance `registrar`; Event/Session reports `admin`).
+- **Sidebar** (`src/layout/AppSidebar.tsx`) — menu items filtered with the same helpers so users only see what they can access.
 
-**Access:**
-- Events page (full access)
-- Can create, edit, and end events
-- Cannot manage event attendance (removed from this role)
+**`getRolePermissions` in `src/utils/userManagement.ts`** is a coarse legacy map; **prefer `useRole()`** for accurate behavior (e.g. Admin can manage people in the UI though the old map may not list `canManagePeople` for admin).
 
-### 2. IT (`it`)
-**Permissions:**
-- Add new people to the system
-- Edit existing people records
-- Delete people from the system
-- Upload Excel files to bulk import people
-- Register new users with specific roles
-- Manage user accounts and role assignments
+**Registrar concurrency:** Attendance uses safe Firestore array updates so multiple registrars can update different attendees without lost updates.
 
-**Access:**
-- People page (full access)
-- User Management page (full access)
-- Can manage all people-related operations
-- Can register new users and assign roles
+---
 
-### 3. Finance Manager (`finance-manager`)
-**Permissions:**
-- Add invoices to events
-- Edit existing invoices
-- Delete invoices
-- Attach spending amounts to events
-- View financial data
-
-**Access:**
-- Finance page (full access)
-- Can manage all financial operations
-
-### 4. Admin (`admin`)
-**Permissions:**
-- View comprehensive reports
-- Access to all event data including:
-  - Event name
-  - Number of attendees
-  - Amount spent
-  - Start and end times
-  - Detailed attendee lists
-
-**Access:**
-- Reports page (full access)
-- Can view all system data
-
-### 5. Registrar (`registrar`)
-**Permissions:**
-- Mark attendance for events
-- View events starting within 1 hour
-- Access to people data for attendance marking
-
-**Access:**
-- Attendance page (full access)
-- Can only see events that start within 1 hour
-- Can mark attendance for people attending events
-- Time-based visibility: Events appear 1 hour before start time
-
-**Concurrent Access Features:**
-- Multiple registrars can mark attendance simultaneously for different people
-- Real-time updates when other registrars make changes
-- Safe array operations using Firestore's arrayUnion/arrayRemove
-- Error handling and user feedback
-
+*Document version 3.1.0 — aligned with dashboard, sidebar, and page guards in the PMU EMS codebase.*
