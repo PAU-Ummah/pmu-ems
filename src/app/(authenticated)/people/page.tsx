@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { IconButton } from "@mui/material";
-import { Add, Delete, Edit } from "@mui/icons-material";
+import { Add, Delete, Edit, FileDownload } from "@mui/icons-material";
 import {
   Table,
   TableBody,
@@ -34,9 +34,13 @@ import ComponentCard from "@/components/common/ComponentCard";
 import AddPersonForm from "./_component/AddPersonForm";
 import ProcessingProgress from "./_component/ProcessingProgress";
 import DeletePersonModal from "./_component/DeletePersonModal";
+import {
+  buildPeopleExportFilename,
+  exportPeopleToCsv,
+} from "@/utils/peopleExport";
 
 export default function PeoplePage() {
-  const { currentSessionId } = useCurrentSession();
+  const { currentSessionId, currentSession } = useCurrentSession();
   const { people, loading: peopleLoading, refresh: fetchPeople } = usePeople(currentSessionId);
   const [filteredPeople, setFilteredPeople] = useState<Person[]>([]);
   const [open, setOpen] = useState(false);
@@ -181,6 +185,16 @@ export default function PeoplePage() {
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const handleExportCsv = () => {
+    if (filteredPeople.length === 0) {
+      return;
+    }
+    exportPeopleToCsv(
+      filteredPeople,
+      buildPeopleExportFilename(currentSession?.name)
+    );
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -379,6 +393,16 @@ export default function PeoplePage() {
               className="w-full sm:w-auto"
             >
               Add Person
+            </Button>
+
+            <Button
+              variant="outline"
+              startIcon={<FileDownload />}
+              className="w-full sm:w-auto"
+              onClick={handleExportCsv}
+              disabled={filteredPeople.length === 0}
+            >
+              Export CSV
             </Button>
 
             {canUploadExcel && (
