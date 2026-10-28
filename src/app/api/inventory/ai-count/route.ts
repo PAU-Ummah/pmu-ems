@@ -1,15 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { adminAuth, adminDb } from '@/services/firebaseAdmin';
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const SUPPORTED_MEDIA_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const INVENTORY_ROLES = ['event-organizer', 'it', 'finance-manager', 'admin', 'registrar'];
+const DEFAULT_MODEL = 'claude-sonnet-5-5';
 
 function base64ByteSize(base64: string): number {
   const padding = base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0;
   return (base64.length * 3) / 4 - padding;
 }
 
+function getBearerToken(header: string | null): string | null {
+  return header?.startsWith('Bearer ') ? header.substring('Bearer '.length).trim() : null;
+}
+
 export async function POST(request: NextRequest) {
   try {
+    const idToken = getBearerToken(request.headers.get('authorization'));
+    if (!idToken) {
+      return NextResponse.json({ error: 'Unauthorized request.' }, { status: 401 });
+    }
+
+    let uid: string;
+    try {
+      uid = (await adminAuth.verifyIdToken(idToken)).uid;
+    } catch {
+      return NextResponse.json({ error: 'Unauthorized request.' }, { status: 401 });
+    }
+
+    const role = (await adminDb.collection('users').doc(uid).get()).data()?.role;
+    if (!role || !INVENTORY_ROLES.includes(role)) {
+      return NextResponse.json({ error: 'Insufficient permissions.' }, { status: 403 });
+    }
+
     const { imageBase64, mediaType } = await request.json();
 
     if (!imageBase64 || typeof imageBase64 !== 'string') {
@@ -36,7 +60,7 @@ export async function POST(request: NextRequest) {
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-5',
+          model: process.env.ANTHROPIC_MODEL ?? DEFAULT_MODEL,
           max_tokens: 1024,
           tools: [
             {
@@ -51,10 +75,9 @@ export async function POST(request: NextRequest) {
                 },
                 required: ['item', 'count', 'confidence'],
               },
-              strict: true,
             },
           ],
-          tool_choice: { type: 'auto' },
+          tool_choice: { type: 'tool', name: 'record_stock_count' },
           messages: [
             {
               role: 'user',
@@ -87,7 +110,14 @@ export async function POST(request: NextRequest) {
       }
 
       const { item, count, confidence } = toolUse.input;
-      return NextResponse.json({ item, count, confidence });
+      if (typeof item !== 'string' || !Number.isFinite(count) || !Number.isFinite(confidence)) {
+        throw new Error('Unexpected tool_use input from Anthropic');
+      }
+      return NextResponse.json({
+        item,
+        count: Math.max(0, Math.round(count)),
+        confidence: Math.min(1, Math.max(0, confidence)),
+      });
     } catch (aiError: unknown) {
       // eslint-disable-next-line no-console
       console.error('AI stock count failed:', aiError);

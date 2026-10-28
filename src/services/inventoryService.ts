@@ -84,6 +84,8 @@ interface ConsumeAndRecordMovementOpts {
   eventId?: string;
   recipientGroup?: RecipientGroup;
   headcount?: number;
+  /** A stock-take count record, written in the same transaction as the adjustment. */
+  countData?: Record<string, unknown>;
 }
 
 async function consumeAndRecordMovement(opts: ConsumeAndRecordMovementOpts): Promise<string> {
@@ -141,6 +143,9 @@ async function consumeAndRecordMovement(opts: ConsumeAndRecordMovementOpts): Pro
     }
 
     transaction.set(movementRef, movementData);
+    if (opts.countData) {
+      transaction.set(doc(collection(db, 'inventoryCounts')), opts.countData);
+    }
   });
 
   return movementRef.id;
@@ -182,9 +187,11 @@ export interface RecordStockTakeOpts {
   date: string;
   createdBy: string;
   reason?: AdjustmentReason;
+  photoPath?: string;
+  photoUrl?: string;
 }
 
-export async function recordStockTake(opts: RecordStockTakeOpts): Promise<string> {
+export async function recordStockTake(opts: RecordStockTakeOpts): Promise<void> {
   if (opts.countedQty < 0) {
     throw new Error('countedQty must be 0 or greater');
   }
@@ -193,18 +200,24 @@ export async function recordStockTake(opts: RecordStockTakeOpts): Promise<string
   }
 
   const variance = opts.countedQty - opts.systemQtyAtCount;
-  const countRef = await addDoc(collection(db, 'inventoryCounts'), {
+  const createdAt = new Date().toISOString();
+  const countData: Record<string, unknown> = {
     itemId: opts.itemId,
     countedQty: opts.countedQty,
     systemQtyAtCount: opts.systemQtyAtCount,
     variance,
     date: opts.date,
-    createdAt: new Date().toISOString(),
+    createdAt,
     createdBy: opts.createdBy,
-  });
+  };
+  if (opts.photoPath) countData.photoPath = opts.photoPath;
+  if (opts.photoUrl) countData.photoUrl = opts.photoUrl;
 
+  // The count record and any adjustment it causes are written in one transaction,
+  // so a failed adjustment never leaves a count behind without its movement.
   if (variance === 0) {
-    return countRef.id;
+    await addDoc(collection(db, 'inventoryCounts'), countData);
+    return;
   }
 
   if (variance < 0) {
@@ -215,13 +228,14 @@ export async function recordStockTake(opts: RecordStockTakeOpts): Promise<string
       date: opts.date,
       createdBy: opts.createdBy,
       reason: opts.reason,
+      countData,
     });
-    return countRef.id;
+    return;
   }
 
   const movementRef = doc(collection(db, 'inventoryMovements'));
   await runTransaction(db, async (transaction) => {
-    const foundLayer = addFoundLayer(variance, opts.date, new Date().toISOString());
+    const foundLayer = addFoundLayer(variance, opts.date, createdAt);
     const layerRef = doc(collection(db, 'inventoryLayers'));
     transaction.set(layerRef, {
       itemId: opts.itemId,
@@ -241,12 +255,11 @@ export async function recordStockTake(opts: RecordStockTakeOpts): Promise<string
       costOfGoods: 0,
       layerConsumption: [],
       reason: opts.reason,
-      createdAt: new Date().toISOString(),
+      createdAt,
       createdBy: opts.createdBy,
     });
+    transaction.set(doc(collection(db, 'inventoryCounts')), countData);
   });
-
-  return countRef.id;
 }
 
 function layerDocFromSnapshot(

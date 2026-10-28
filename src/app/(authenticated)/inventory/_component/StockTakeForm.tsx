@@ -7,7 +7,8 @@ import Label from '@/components/form/Label';
 import Button from '@/components/ui/button/Button';
 import { recordStockTake } from '@/services/inventoryService';
 import { useAuth } from '@/context/AuthContext';
-import AiCountDialog from './AiCountDialog';
+import { useRole } from '@/hooks/useRole';
+import AiCountDialog, { type CountPhoto } from './AiCountDialog';
 import type { InventoryItem, AdjustmentReason } from '@/services/inventoryTypes';
 import type { InventoryItemWithStock } from '@/hooks/useInventoryItems';
 
@@ -29,6 +30,8 @@ export default function StockTakeForm({
   onCreated,
 }: StockTakeFormProps) {
   const { user } = useAuth();
+  const { canAdminInventory } = useRole();
+  const [photo, setPhoto] = useState<CountPhoto | null>(null);
   const [itemId, setItemId] = useState(defaultItemId ?? '');
   const [countedQty, setCountedQty] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -47,12 +50,20 @@ export default function StockTakeForm({
     setCountedQty('');
     setDate(new Date().toISOString().split('T')[0]);
     setReason('');
+    setPhoto(null);
     setError(null);
     onClose();
   };
 
+  // Only admins can post the adjustment a difference creates (firestore.rules enforces this too).
+  const needsAdmin = variance !== 0 && !canAdminInventory();
+
   const canSubmit =
-    !!itemId && hasCount && countedQtyNum >= 0 && (variance === 0 || !!reason);
+    !!itemId &&
+    hasCount &&
+    countedQtyNum >= 0 &&
+    (variance === 0 || !!reason) &&
+    !needsAdmin;
 
   const handleSubmit = async () => {
     if (!user || !canSubmit) return;
@@ -67,6 +78,8 @@ export default function StockTakeForm({
         date,
         createdBy: user.uid,
         reason: variance !== 0 ? (reason as AdjustmentReason) : undefined,
+        photoPath: photo?.path,
+        photoUrl: photo?.url,
       });
       resetAndClose();
       onCreated();
@@ -173,6 +186,19 @@ export default function StockTakeForm({
               </div>
             )}
 
+            {needsAdmin && (
+              <p className="text-sm text-warning-500">
+                The count differs from the system quantity. Only an admin can save a stock take
+                that changes the stock, so ask an admin to record this one.
+              </p>
+            )}
+
+            {photo && (
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                AI count photo attached as an audit record.
+              </p>
+            )}
+
             {error && <p className="text-sm text-error-500">{error}</p>}
 
             <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
@@ -195,7 +221,10 @@ export default function StockTakeForm({
       <AiCountDialog
         isOpen={aiDialogOpen}
         onClose={() => setAiDialogOpen(false)}
-        onAccept={(count) => setCountedQty(String(count))}
+        onAccept={(count, countPhoto) => {
+          setCountedQty(String(count));
+          setPhoto(countPhoto);
+        }}
       />
     </>
   );

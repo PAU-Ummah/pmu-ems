@@ -5,11 +5,18 @@ import { Modal } from '@/components/ui/modal';
 import InputField from '@/components/form/input/InputField';
 import Label from '@/components/form/Label';
 import Button from '@/components/ui/button/Button';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { auth, storage } from '@/services/firebase';
+
+export interface CountPhoto {
+  path: string;
+  url: string;
+}
 
 interface AiCountDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onAccept: (count: number) => void;
+  onAccept: (count: number, photo: CountPhoto) => void;
 }
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -37,12 +44,14 @@ export default function AiCountDialog({ isOpen, onClose, onAccept }: AiCountDial
   const [error, setError] = useState<string | null>(null);
   const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
   const [editedCount, setEditedCount] = useState('');
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
 
   const reset = () => {
     setLoading(false);
     setError(null);
     setSuggestion(null);
     setEditedCount('');
+    setPhotoFile(null);
   };
 
   const resetAndClose = () => {
@@ -56,6 +65,7 @@ export default function AiCountDialog({ isOpen, onClose, onAccept }: AiCountDial
 
     setError(null);
     setSuggestion(null);
+    setPhotoFile(null);
 
     if (file.size > MAX_IMAGE_BYTES) {
       setError('Image is too large. Please use a photo under 5MB.');
@@ -65,10 +75,18 @@ export default function AiCountDialog({ isOpen, onClose, onAccept }: AiCountDial
 
     setLoading(true);
     try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) {
+        setError('You are signed out. Please sign in again.');
+        return;
+      }
       const imageBase64 = await fileToBase64(file);
       const response = await fetch('/api/inventory/ai-count', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          authorization: `Bearer ${idToken}`,
+        },
         body: JSON.stringify({ imageBase64, mediaType: file.type }),
       });
       const data = await response.json();
@@ -80,6 +98,7 @@ export default function AiCountDialog({ isOpen, onClose, onAccept }: AiCountDial
 
       setSuggestion(data);
       setEditedCount(String(data.count));
+      setPhotoFile(file);
     } catch {
       setError('AI count failed. You can still enter the count manually.');
     } finally {
@@ -88,11 +107,25 @@ export default function AiCountDialog({ isOpen, onClose, onAccept }: AiCountDial
     }
   };
 
-  const handleUseCount = () => {
+  const handleUseCount = async () => {
     const countNum = Number(editedCount);
-    if (!Number.isFinite(countNum)) return;
-    onAccept(countNum);
-    resetAndClose();
+    const uid = auth.currentUser?.uid;
+    if (!Number.isFinite(countNum) || countNum < 0 || !photoFile || !uid) return;
+
+    setLoading(true);
+    setError(null);
+    try {
+      const safeName = photoFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `inventoryCountPhotos/${uid}/${Date.now()}-${safeName}`;
+      const photoRef = ref(storage, path);
+      await uploadBytes(photoRef, photoFile, { contentType: photoFile.type });
+      const url = await getDownloadURL(photoRef);
+      onAccept(countNum, { path, url });
+      resetAndClose();
+    } catch {
+      setError('The photo could not be saved, so this count was not used. Try again, or type the count in manually.');
+      setLoading(false);
+    }
   };
 
   return (
@@ -154,7 +187,7 @@ export default function AiCountDialog({ isOpen, onClose, onAccept }: AiCountDial
             <Button
               variant="primary"
               onClick={handleUseCount}
-              disabled={!suggestion || editedCount === ''}
+              disabled={loading || !suggestion || !photoFile || editedCount === ''}
               className="w-full sm:w-auto"
             >
               Use this count
