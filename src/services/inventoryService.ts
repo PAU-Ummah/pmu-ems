@@ -89,13 +89,12 @@ interface ConsumeAndRecordMovementOpts {
 }
 
 async function consumeAndRecordMovement(opts: ConsumeAndRecordMovementOpts): Promise<string> {
-  const layersQuery = query(
-    collection(db, 'inventoryLayers'),
-    where('itemId', '==', opts.itemId),
-    where('remainingQty', '>', 0)
-  );
+  // Equality-only query (no range filter) so no composite index is needed; empty layers are skipped here.
+  const layersQuery = query(collection(db, 'inventoryLayers'), where('itemId', '==', opts.itemId));
   const candidateSnapshot = await getDocs(layersQuery);
-  const candidateRefs = candidateSnapshot.docs.map((snap) => snap.ref);
+  const candidateRefs = candidateSnapshot.docs
+    .filter((snap) => (snap.data().remainingQty as number) > 0)
+    .map((snap) => snap.ref);
 
   const movementRef = doc(collection(db, 'inventoryMovements'));
 
