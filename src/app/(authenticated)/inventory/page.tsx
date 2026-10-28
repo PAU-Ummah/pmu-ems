@@ -15,18 +15,40 @@ import {
 import Loading from '@/components/loading/Loading';
 import EmptyState from '@/components/empty-state/EmptyState';
 import { useInventoryItems } from '@/hooks/useInventoryItems';
+import { useEvents } from '@/hooks/useEvents';
+import { useCurrentSession } from '@/hooks/useCurrentSession';
+import { useRole } from '@/hooks/useRole';
 import ItemForm from './_component/ItemForm';
 import ReceiptForm from './_component/ReceiptForm';
+import IssueForm from './_component/IssueForm';
+import WriteOffForm from './_component/WriteOffForm';
 
 export default function InventoryPage() {
   const { items, loading, refresh } = useInventoryItems();
+  const { currentSessionId } = useCurrentSession();
+  const { events } = useEvents(currentSessionId);
+  const { canAdminInventory } = useRole();
   const [itemFormOpen, setItemFormOpen] = useState(false);
   const [receiptFormOpen, setReceiptFormOpen] = useState(false);
   const [receiptDefaultItemId, setReceiptDefaultItemId] = useState<string | undefined>(undefined);
+  const [issueFormOpen, setIssueFormOpen] = useState(false);
+  const [issueDefaultItemId, setIssueDefaultItemId] = useState<string | undefined>(undefined);
+  const [writeOffFormOpen, setWriteOffFormOpen] = useState(false);
+  const [writeOffDefaultItemId, setWriteOffDefaultItemId] = useState<string | undefined>(undefined);
 
   const openReceiptForm = (itemId?: string) => {
     setReceiptDefaultItemId(itemId);
     setReceiptFormOpen(true);
+  };
+
+  const openIssueForm = (itemId?: string) => {
+    setIssueDefaultItemId(itemId);
+    setIssueFormOpen(true);
+  };
+
+  const openWriteOffForm = (itemId?: string) => {
+    setWriteOffDefaultItemId(itemId);
+    setWriteOffFormOpen(true);
   };
 
   return (
@@ -90,6 +112,22 @@ export default function InventoryPage() {
                     >
                       Add Receipt
                     </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => openIssueForm(item.id)}
+                      className="text-xs"
+                    >
+                      Issue Stock
+                    </Button>
+                    {canAdminInventory() && (
+                      <Button
+                        variant="outline"
+                        onClick={() => openWriteOffForm(item.id)}
+                        className="text-xs"
+                      >
+                        Write Off
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -182,6 +220,21 @@ export default function InventoryPage() {
           onClose={() => setReceiptFormOpen(false)}
           items={items.map(({ item }) => item)}
           defaultItemId={receiptDefaultItemId}
+          onCreated={refresh}
+        />
+        <IssueForm
+          isOpen={issueFormOpen}
+          onClose={() => setIssueFormOpen(false)}
+          items={items.map(({ item }) => item)}
+          events={events}
+          defaultItemId={issueDefaultItemId}
+          onCreated={refresh}
+        />
+        <WriteOffForm
+          isOpen={writeOffFormOpen}
+          onClose={() => setWriteOffFormOpen(false)}
+          items={items.map(({ item }) => item)}
+          defaultItemId={writeOffDefaultItemId}
           onCreated={refresh}
         />
       </div>
