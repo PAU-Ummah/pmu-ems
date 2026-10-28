@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import RoleGuard from '@/components/auth/RoleGuard';
 import { Add } from '@mui/icons-material';
 import Button from '@/components/ui/button/Button';
@@ -89,6 +90,11 @@ export default function InventoryPage() {
           >
             Stock Take
           </Button>
+          {canAdminInventory() && (
+            <Link href="/inventory/reports">
+              <Button variant="outline">Reports &amp; Valuation</Button>
+            </Link>
+          )}
         </div>
 
         {loading ? (

@@ -19,6 +19,7 @@ import type {
   AdjustmentReason,
   InventoryItem,
   InventoryLayerDoc,
+  InventoryMovement,
   InventorySourceType,
   RecipientGroup,
   WriteOffReason,
@@ -283,6 +284,29 @@ export async function getItemWithLayers(
   ) as InventoryLayerDoc[];
 
   return { item, layers };
+}
+
+export interface InventoryReportData {
+  items: InventoryItem[];
+  layers: InventoryLayerDoc[];
+  movements: InventoryMovement[];
+}
+
+/** Every item, every layer (including fully used ones) and every movement, for reporting. */
+export async function loadInventoryReportData(): Promise<InventoryReportData> {
+  const [itemsSnap, layersSnap, movementsSnap] = await Promise.all([
+    getDocs(collection(db, 'inventoryItems')),
+    getDocs(collection(db, 'inventoryLayers')),
+    getDocs(collection(db, 'inventoryMovements')),
+  ]);
+
+  return {
+    items: itemsSnap.docs.map((snap) => ({ id: snap.id, ...snap.data() }) as InventoryItem),
+    layers: layersSnap.docs.map(layerDocFromSnapshot),
+    movements: movementsSnap.docs.map(
+      (snap) => ({ id: snap.id, ...snap.data() }) as InventoryMovement
+    ),
+  };
 }
 
 export async function listInventoryItemsWithLayers(): Promise<
