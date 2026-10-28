@@ -97,3 +97,22 @@ export function calculateStockValue(layers: InventoryLayer[]): number {
 export function getNextLayerToConsume(layers: InventoryLayer[]): InventoryLayer | undefined {
   return sortLayersForConsumption(layers)[0];
 }
+
+export interface FoundLayer {
+  receivedDate: string;
+  remainingQty: number;
+  unitCost: number;
+  createdAt: string;
+}
+
+export function addFoundLayer(quantityFound: number, date: string, createdAt: string): FoundLayer {
+  if (quantityFound <= 0) {
+    throw new Error('quantityFound must be greater than 0');
+  }
+  return {
+    receivedDate: date,
+    remainingQty: quantityFound,
+    unitCost: 0,
+    createdAt,
+  };
+}

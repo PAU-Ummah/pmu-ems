@@ -59,7 +59,16 @@ service cloud.firestore {
         && request.resource.data.type in ['issue', 'writeoff', 'adjustment']
         && (request.resource.data.type != 'writeoff'
             || (isInventoryAdmin() && request.resource.data.reason in ['expired', 'damaged', 'lost']))
-        && (request.resource.data.type != 'adjustment' || isInventoryAdmin());
+        && (request.resource.data.type != 'adjustment'
+            || (isInventoryAdmin() && request.resource.data.reason in ['expired', 'damaged', 'lost', 'miscounted']));
+      allow update, delete: if false;
+    }
+
+    match /inventoryCounts/{countId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && request.resource.data.countedQty is number && request.resource.data.countedQty >= 0
+        && request.resource.data.systemQtyAtCount is number && request.resource.data.systemQtyAtCount >= 0;
       allow update, delete: if false;
     }
   }

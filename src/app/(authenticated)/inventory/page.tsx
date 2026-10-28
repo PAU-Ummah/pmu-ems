@@ -22,6 +22,7 @@ import ItemForm from './_component/ItemForm';
 import ReceiptForm from './_component/ReceiptForm';
 import IssueForm from './_component/IssueForm';
 import WriteOffForm from './_component/WriteOffForm';
+import StockTakeForm from './_component/StockTakeForm';
 
 export default function InventoryPage() {
   const { items, loading, refresh } = useInventoryItems();
@@ -35,6 +36,8 @@ export default function InventoryPage() {
   const [issueDefaultItemId, setIssueDefaultItemId] = useState<string | undefined>(undefined);
   const [writeOffFormOpen, setWriteOffFormOpen] = useState(false);
   const [writeOffDefaultItemId, setWriteOffDefaultItemId] = useState<string | undefined>(undefined);
+  const [stockTakeFormOpen, setStockTakeFormOpen] = useState(false);
+  const [stockTakeDefaultItemId, setStockTakeDefaultItemId] = useState<string | undefined>(undefined);
 
   const openReceiptForm = (itemId?: string) => {
     setReceiptDefaultItemId(itemId);
@@ -49,6 +52,11 @@ export default function InventoryPage() {
   const openWriteOffForm = (itemId?: string) => {
     setWriteOffDefaultItemId(itemId);
     setWriteOffFormOpen(true);
+  };
+
+  const openStockTakeForm = (itemId?: string) => {
+    setStockTakeDefaultItemId(itemId);
+    setStockTakeFormOpen(true);
   };
 
   return (
@@ -74,6 +82,12 @@ export default function InventoryPage() {
             onClick={() => openReceiptForm(undefined)}
           >
             Add Receipt
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => openStockTakeForm(undefined)}
+          >
+            Stock Take
           </Button>
         </div>
 
@@ -118,6 +132,13 @@ export default function InventoryPage() {
                       className="text-xs"
                     >
                       Issue Stock
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => openStockTakeForm(item.id)}
+                      className="text-xs"
+                    >
+                      Stock Take
                     </Button>
                     {canAdminInventory() && (
                       <Button
@@ -235,6 +256,14 @@ export default function InventoryPage() {
           onClose={() => setWriteOffFormOpen(false)}
           items={items.map(({ item }) => item)}
           defaultItemId={writeOffDefaultItemId}
+          onCreated={refresh}
+        />
+        <StockTakeForm
+          isOpen={stockTakeFormOpen}
+          onClose={() => setStockTakeFormOpen(false)}
+          items={items.map(({ item }) => item)}
+          itemsWithStock={items}
+          defaultItemId={stockTakeDefaultItemId}
           onCreated={refresh}
         />
       </div>

@@ -10,11 +10,13 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import {
+  addFoundLayer,
   consumeFifoLayers,
   sortLayersForConsumption,
   type InventoryLayer,
 } from '@/lib/inventory/fifo';
 import type {
+  AdjustmentReason,
   InventoryItem,
   InventoryLayerDoc,
   InventorySourceType,
@@ -73,11 +75,11 @@ export async function createReceipt(params: CreateReceiptParams): Promise<string
 
 interface ConsumeAndRecordMovementOpts {
   itemId: string;
-  type: 'issue' | 'writeoff';
+  type: 'issue' | 'writeoff' | 'adjustment';
   quantity: number;
   date: string;
   createdBy: string;
-  reason?: WriteOffReason;
+  reason?: AdjustmentReason;
   eventId?: string;
   recipientGroup?: RecipientGroup;
   headcount?: number;
@@ -129,7 +131,7 @@ async function consumeAndRecordMovement(opts: ConsumeAndRecordMovementOpts): Pro
       createdBy: opts.createdBy,
     };
 
-    if (opts.type === 'writeoff') {
+    if (opts.type === 'writeoff' || opts.type === 'adjustment') {
       movementData.reason = opts.reason;
     } else {
       if (opts.eventId !== undefined) movementData.eventId = opts.eventId;
@@ -170,6 +172,80 @@ export async function writeOffStock(opts: WriteOffStockOpts): Promise<string> {
     throw new Error('A reason (expired, damaged, or lost) is required for a write-off');
   }
   return consumeAndRecordMovement({ ...opts, type: 'writeoff' });
+}
+
+export interface RecordStockTakeOpts {
+  itemId: string;
+  countedQty: number;
+  systemQtyAtCount: number;
+  date: string;
+  createdBy: string;
+  reason?: AdjustmentReason;
+}
+
+export async function recordStockTake(opts: RecordStockTakeOpts): Promise<string> {
+  if (opts.countedQty < 0) {
+    throw new Error('countedQty must be 0 or greater');
+  }
+  if (opts.countedQty !== opts.systemQtyAtCount && !opts.reason) {
+    throw new Error('A reason is required when the counted quantity differs from the system quantity');
+  }
+
+  const variance = opts.countedQty - opts.systemQtyAtCount;
+  const countRef = await addDoc(collection(db, 'inventoryCounts'), {
+    itemId: opts.itemId,
+    countedQty: opts.countedQty,
+    systemQtyAtCount: opts.systemQtyAtCount,
+    variance,
+    date: opts.date,
+    createdAt: new Date().toISOString(),
+    createdBy: opts.createdBy,
+  });
+
+  if (variance === 0) {
+    return countRef.id;
+  }
+
+  if (variance < 0) {
+    await consumeAndRecordMovement({
+      itemId: opts.itemId,
+      type: 'adjustment',
+      quantity: -variance,
+      date: opts.date,
+      createdBy: opts.createdBy,
+      reason: opts.reason,
+    });
+    return countRef.id;
+  }
+
+  const movementRef = doc(collection(db, 'inventoryMovements'));
+  await runTransaction(db, async (transaction) => {
+    const foundLayer = addFoundLayer(variance, opts.date, new Date().toISOString());
+    const layerRef = doc(collection(db, 'inventoryLayers'));
+    transaction.set(layerRef, {
+      itemId: opts.itemId,
+      sourceType: 'donated',
+      receivedDate: foundLayer.receivedDate,
+      quantityReceived: foundLayer.remainingQty,
+      remainingQty: foundLayer.remainingQty,
+      unitCost: foundLayer.unitCost,
+      createdAt: foundLayer.createdAt,
+      createdBy: opts.createdBy,
+    });
+    transaction.set(movementRef, {
+      itemId: opts.itemId,
+      type: 'adjustment',
+      date: opts.date,
+      quantity: variance,
+      costOfGoods: 0,
+      layerConsumption: [],
+      reason: opts.reason,
+      createdAt: new Date().toISOString(),
+      createdBy: opts.createdBy,
+    });
+  });
+
+  return countRef.id;
 }
 
 function layerDocFromSnapshot(

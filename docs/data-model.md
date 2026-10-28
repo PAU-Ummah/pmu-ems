@@ -187,8 +187,10 @@ InventoryMovement {
   eventId?: string;
   recipientGroup?: 'everyone' | 'participants';
   headcount?: number;
-  // writeoff-only, required:
-  reason?: 'expired' | 'damaged' | 'lost';
+  // writeoff/adjustment-only, required:
+  // writeoff: 'expired' | 'damaged' | 'lost'
+  // adjustment: 'expired' | 'damaged' | 'lost' | 'miscounted'
+  reason?: 'expired' | 'damaged' | 'lost' | 'miscounted';
   createdAt: string;
   createdBy: string;
 }
@@ -197,4 +199,6 @@ InventoryMovement {
 `inventoryMovements` is a single flat collection discriminated by `type`, immutable once written (`allow update, delete: if false` in `firestore.rules`), always created in the same Firestore transaction that decrements the consumed layers' `remainingQty`. A write-off requires a `reason` and the `admin` role; an adjustment requires the `admin` role; issues are open to the logging tier (`event-organizer`, `it`, `finance-manager`, `admin`, `registrar`).
 
 As of Phase 2, `issueStock`/`writeOffStock` are reachable from the `/inventory` UI via the `IssueForm`/`WriteOffForm` modals; the "Write Off" action is only shown to `admin` in the UI, on top of the `firestore.rules` enforcement described above. `recipientGroup`/`headcount` on an issue movement are optional and only meaningfully populated when the issue is linked to an event (the headcount is pre-filled from that event's attendance but remains editable before saving). `src/services/inventoryService.ts` never references `events.amountSpent` or `invoices/*`, keeping the inventory module architecturally separate from finance; this is backed by the static source check in `inventoryService.finance-separation.test.ts`.
+
+As of Phase 3, a new `inventoryCounts` collection holds a pure audit record per stock-take: `{ itemId, countedQty, systemQtyAtCount, variance, date, createdAt, createdBy }`, written by `recordStockTake` outside any transaction and never itself consumed by the FIFO engine — it only records what a human observed. The write-off reason enum is widened to an `AdjustmentReason` (`'expired' | 'damaged' | 'lost' | 'miscounted'`) for `adjustment` movements only; `writeoff` keeps its original three-value enum. `miscounted` covers the case where the system's recorded quantity was simply wrong (e.g. a prior data-entry slip), the one adjustment scenario none of `expired`/`damaged`/`lost` describes. An `adjustment` movement is created only when the counted quantity differs from the system quantity: a shrinkage (counted < system) consumes existing layers oldest-first exactly like a write-off, via the same `consumeAndRecordMovement` helper (now widened to accept `type: 'adjustment'`); a found-stock result (counted > system) instead inserts one new zero-cost layer sized to the variance, reusing the existing donated-layer-at-zero-cost convention since "stock the system didn't know it had" has no known purchase cost. Both the service layer and `firestore.rules`' `inventoryMovements` `create` rule require a `reason` for every `adjustment`, mirroring Phase 1's `writeoff` treatment. Count photos (optional, from `AiCountDialog`) are stored in Firebase Storage under `inventoryCountPhotos/`, gated to signed-in users by `storage.rules`; the AI vision suggestion itself is never written to Firestore — only a human-confirmed or edited count reaches `recordStockTake`.
 

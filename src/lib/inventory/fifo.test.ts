@@ -4,6 +4,7 @@ import {
   consumeFifoLayers,
   calculateStockValue,
   getNextLayerToConsume,
+  addFoundLayer,
   InsufficientStockError,
   type InventoryLayer,
 } from './fifo';
@@ -182,5 +183,22 @@ describe('calculateStockValue', () => {
 
   test('returns 0 for an empty layer list', () => {
     expect(calculateStockValue([])).toBe(0);
+  });
+});
+
+describe('addFoundLayer', () => {
+  test('creates a zero-cost layer sized to the found quantity', () => {
+    const result = addFoundLayer(5, '2026-02-01', '2026-02-01T00:00:00.000Z');
+    expect(result).toEqual({
+      receivedDate: '2026-02-01',
+      remainingQty: 5,
+      unitCost: 0,
+      createdAt: '2026-02-01T00:00:00.000Z',
+    });
+  });
+
+  test('throws a plain Error when quantityFound is 0 or negative', () => {
+    expect(() => addFoundLayer(0, '2026-02-01', '2026-02-01T00:00:00.000Z')).toThrow(Error);
+    expect(() => addFoundLayer(-3, '2026-02-01', '2026-02-01T00:00:00.000Z')).toThrow(Error);
   });
 });

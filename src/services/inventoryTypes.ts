@@ -6,6 +6,7 @@ export type { InventoryLayer, LayerConsumption, FifoConsumptionResult };
 export type InventorySourceType = 'purchased' | 'donated';
 export type MovementType = 'issue' | 'writeoff' | 'adjustment';
 export type WriteOffReason = 'expired' | 'damaged' | 'lost';
+export type AdjustmentReason = WriteOffReason | 'miscounted';
 export type RecipientGroup = 'everyone' | 'participants';
 
 export interface InventoryItem {
@@ -35,7 +36,18 @@ export interface InventoryMovement {
   eventId?: string;
   recipientGroup?: RecipientGroup;
   headcount?: number;
-  reason?: WriteOffReason;
+  reason?: AdjustmentReason;
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface InventoryCount {
+  id?: string;
+  itemId: string;
+  countedQty: number;
+  systemQtyAtCount: number;
+  variance: number;
+  date: string;
   createdAt: string;
   createdBy: string;
 }
