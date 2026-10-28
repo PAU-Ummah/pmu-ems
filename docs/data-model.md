@@ -141,3 +141,58 @@ Session lifecycle logic is implemented in:
 - `runInitialSessionMigration` – assign existing people/events to the first session.
 - `runSessionRollover` – graduate final‑year people, promote others, create the next session.
 
+### Inventory Collections
+
+Tracks refreshment stock (biscuits, drinks, snacks, supplies) bought or donated for weekend programs, costed on a FIFO basis for the society's IAS 2 coursework. Inventory is **not** scoped by `academicSessionId` — it persists continuously across sessions, unlike `people`/`events`/`invoices`, since physical stock carries over regardless of session boundaries. The inventory module never writes to `events.amountSpent` or `invoices/*`.
+
+```ts
+InventoryItem {
+  id: string;
+  name: string;
+  unitOfMeasure: string;   // e.g. 'pack', 'piece', 'box'
+  createdAt: string;       // ISO datetime
+  createdBy: string;       // uid of creator
+}
+```
+
+```ts
+InventoryLayerDoc {
+  id: string;
+  itemId: string;                       // FK to InventoryItem.id
+  sourceType: 'purchased' | 'donated';
+  receivedDate: string;                  // 'YYYY-MM-DD'
+  quantityReceived: number;
+  remainingQty: number;                  // invariant: 0 <= remainingQty <= quantityReceived
+  unitCost: number;                      // may be 0 for donated stock
+  expiryDate?: string;                    // 'YYYY-MM-DD', optional, informational only
+  createdAt: string;                      // ISO datetime; FIFO tie-break for equal receivedDate
+  createdBy: string;
+}
+```
+
+Each stock-in receipt creates one cost layer (a "batch"). Layers are consumed oldest-`receivedDate`-first; when two layers share the same `receivedDate`, the one with the earlier `createdAt` is consumed first. This FIFO ordering and the consumption math live entirely in the pure, import-free engine at `src/lib/inventory/fifo.ts`.
+
+Donated layers may carry `unitCost: 0`. IAS 2 itself only prescribes FIFO or weighted-average costing and is silent on donated/zero-cost inventory, so donated layers here are valued at their estimated fair value (possibly zero) by analogy to the IPSAS 12 / nonprofit-GAAP convention, and are otherwise consumed in the same chronological FIFO order as purchased layers — a judgment call worth stating explicitly in the coursework write-up.
+
+```ts
+InventoryMovement {
+  id: string;
+  itemId: string;
+  type: 'issue' | 'writeoff' | 'adjustment';
+  date: string;                 // 'YYYY-MM-DD'
+  quantity: number;
+  costOfGoods: number;          // sum of qtyConsumed * unitCost across consumed layers
+  layerConsumption: { layerId: string; qtyConsumed: number; unitCost: number }[];
+  // issue-only:
+  eventId?: string;
+  recipientGroup?: 'everyone' | 'participants';
+  headcount?: number;
+  // writeoff-only, required:
+  reason?: 'expired' | 'damaged' | 'lost';
+  createdAt: string;
+  createdBy: string;
+}
+```
+
+`inventoryMovements` is a single flat collection discriminated by `type`, immutable once written (`allow update, delete: if false` in `firestore.rules`), always created in the same Firestore transaction that decrements the consumed layers' `remainingQty`. A write-off requires a `reason` and the `admin` role; an adjustment requires the `admin` role; issues are open to the logging tier (`event-organizer`, `it`, `finance-manager`, `admin`, `registrar`).
+

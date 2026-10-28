@@ -21,6 +21,7 @@ import {
   ExpandMore,
   Description,
   Summarize,
+  Inventory2,
 } from '@mui/icons-material';
 
 type NavItem = {
@@ -40,6 +41,7 @@ const AppSidebar: React.FC = () => {
     canViewReports,
     canManageUsers,
     canMarkAttendance,
+    canAccessInventory,
   } = useRole();
 
   const getAllNavItems = (): NavItem[] => [
@@ -74,6 +76,12 @@ const AppSidebar: React.FC = () => {
       subItems: undefined,
     },
     {
+      icon: <Inventory2 sx={{ fontSize: 20 }} />,
+      name: 'Inventory',
+      path: '/inventory',
+      subItems: undefined,
+    },
+    {
       icon: <Description sx={{ fontSize: 20 }} />,
       name: 'Finance Reports',
       path: '/finance-reports',
@@ -104,9 +112,10 @@ const AppSidebar: React.FC = () => {
       if (item.path === '/finance-reports' && !canManageFinance() && !canViewReports()) return false;
       if (item.path === '/event-reports' && !canViewReports()) return false;
       if (item.path === '/session-reports' && !canViewReports()) return false;
+      if (item.path === '/inventory' && !canAccessInventory()) return false;
       return true;
     });
-  }, [canCreateEvents, canMarkAttendance, canManagePeople, canManageUsers, canManageFinance, canViewReports]);
+  }, [canCreateEvents, canMarkAttendance, canManagePeople, canManageUsers, canManageFinance, canViewReports, canAccessInventory]);
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: 'main';
