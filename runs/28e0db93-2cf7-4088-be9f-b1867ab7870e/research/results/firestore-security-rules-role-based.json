@@ -1,0 +1,33 @@
+{
+  "summary": "Scope the two-tier RBAC by writing a reusable Firestore Rules function that does a single get() on /databases/$(database)/documents/users/$(request.auth.uid) and reads its role field, then gate each new collection's read/write rules on that role matching 'logging' or 'admin'. Items, layers, movements, and counts should each get their own match block (nested or flat) with allow create/update split from allow delete/write-off-specific fields so that logging-tier users can create receipts/issues/counts while only admin can write off, adjust, or read valuation fields; this mirrors Firebase's documented get()-based admin-field pattern and keeps calls within the 10 get()/exists() per single-document request limit (20 for batched/transactional writes) as long as the role lookup is written once as a function and reused, since repeated calls to the same path are cached and don't count twice.",
+  "key_findings": [
+    "Firebase's official rules-conditions doc gives the canonical RBAC pattern: allow delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.admin == true; — i.e. read the caller's own user document and check a field on it.",
+    "Per the same doc, get()/exists()/getAfter() calls are capped at 10 for single-document requests and query requests, and 20 for multi-document reads, transactions, and batched writes; exceeding the limit causes the request to be denied.",
+    "Cached calls (same document path requested again within the same rules evaluation) do not count against these limits, so defining one isAdmin()/getRole() helper function and calling it from multiple allow clauses in the same request is safe and cheap.",
+    "Each get()/exists() call executes a real read against Firestore and is billed even if the rule ultimately denies the request, per the official docs — relevant for cost when four new collections (items, layers, movements, counts) each check the role on every operation.",
+    "The rules-structure doc confirms match blocks can be nested per collection (e.g. match /items/{itemId} { ... } alongside match /movements/{movementId} { ... }) and that granular operations (get, list, create, update, delete) can be split within a single match block, which is how logging-tier 'create issues/receipts/counts' can be allowed while delete/write-off/adjust are restricted to admin within the same collection."
+  ],
+  "recommendations": [
+    "Define one shared function, e.g. function getUserRole() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role; }, and reuse it across all four new collections rather than inlining get() calls repeatedly, to stay well under the 10/20 call ceilings and to centralize the role-field read so it keeps matching the existing users.role convention referenced in the codebase's RoleGuard/useRole.",
+    "Split operations per collection: allow create for logging and admin on items/layers/movements/counts (receipts, issues, counts), but restrict allow delete and any write-off/adjustment-type writes, plus any valuation-bearing read, to admin only — matching acceptance criteria 11 and 12 exactly.",
+    "Do not rely on request.resource.data alone to infer 'this is a write-off' for rule purposes if write-offs are just movement documents with a reason field; instead consider a discriminant field (e.g. movementType) that rules can check directly, since Firestore rules cannot execute arbitrary business logic to distinguish issue-vs-writeoff otherwise.",
+    "Enforce the 'no write-off without a reason' acceptance criterion (AC6) at the rules layer too, not just the UI, by requiring request.resource.data.reason is one of an allowed enum when movementType == 'writeoff', so firestore.rules is the final backstop as the PRD constraint requires rules to be extended, not replaced.",
+    "Because each role check is a billed read, and this module is accounting-sensitive but low-traffic (society refreshment stock), the per-call read cost is acceptable; do not attempt to avoid it by caching role in a custom claim unless the existing codebase already uses custom claims elsewhere — stay consistent with whatever the existing RoleGuard/useRole implementation already reads (likely the users document's role field, per the question's own phrasing)."
+  ],
+  "as_of": "Firebase documentation accessed 2026-10-28; no explicit last-updated date shown on the fetched pages, content describes the current (v2) Firestore Security Rules behavior.",
+  "sources": [
+    {
+      "title": "Access data with security rules | Firestore",
+      "url": "https://firebase.google.com/docs/firestore/security/rules-conditions",
+      "type": "official-docs",
+      "quote": "allow delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.admin == true;"
+    },
+    {
+      "title": "Get started with Cloud Firestore Security Rules",
+      "url": "https://firebase.google.com/docs/firestore/security/rules-structure",
+      "type": "official-docs",
+      "quote": "Maximum 10 exists(), get(), and getAfter() calls per single-document request, and a maximum of 20 for multi-document reads, transactions, and batched writes"
+    }
+  ],
+  "uncertain": []
+}

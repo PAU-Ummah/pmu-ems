@@ -1,0 +1,62 @@
+{
+  "summary": "For testing pure FIFO functions (no Firestore/network calls) in this Next.js 15/TypeScript project, Vitest's default `node` test environment is the right fit — no jsdom/DOM setup is needed for these files, only for React component tests elsewhere in the app. Official Next.js App Router guidance (lastUpdated 2026-08-25) specifies installing `vitest @vitejs/plugin-react jsdom @testing-library/react @testing-library/dom vite-tsconfig-paths`, creating a `vitest.config.mts` with `tsconfigPaths()` and `react()` plugins and `environment: 'jsdom'` for component tests, while FIFO unit-test files can simply omit/override that environment (defaulting to `node`) since Vitest 5 requires Node >=22.12.0 and Vite >=6.4.0. Table-driven edge cases (partial layer consumption, multi-layer issue, over-issue rejection, zero-cost donated layers) map cleanly onto Vitest's `test.each`/object-based parameterized tests. Test files must contain `.test.` or `.spec.` in the filename, and `package.json`'s `test` script should run `vitest run` (not the default watch mode) so `npm test` executes once and exits for CI/acceptance-criteria purposes.",
+  "key_findings": [
+    "Vitest 5 (current, released 2026-09-03, latest patch 5.0.5 as of 2026-10-15) requires Node >=v22.12.0 and Vite >=v6.4.0, per the official Getting Started guide (vitest.dev/guide/).",
+    "Vitest's built-in test environments are node (default), jsdom, happy-dom, and edge-runtime; per-file override is done via a `// @vitest-environment <name>` control comment at the top of a test file (vitest.dev/guide/environment).",
+    "Next.js's official App Router Vitest guide (nextjs.org/docs/app/guides/testing/vitest, lastUpdated 2026-08-25) specifies TypeScript deps `vitest @vitejs/plugin-react jsdom @testing-library/react @testing-library/dom vite-tsconfig-paths`, a `vitest.config.mts` using `defineConfig` from `vitest/config` with `plugins: [tsconfigPaths(), react()]` and `test: { environment: 'jsdom' }`, and a `package.json` script `\"test\": \"vitest\"`.",
+    "The same Next.js guide explicitly warns: 'Since async Server Components are new to the React ecosystem, Vitest currently does not support them... we recommend using E2E tests for async components' — not a blocker for pure FIFO functions, but relevant if other parts of the Inventory module use async Server Components.",
+    "Vitest test files must contain `.test.` or `.spec.` in their filename to be picked up by default `include` patterns (vitest.dev/guide/).",
+    "`test.each` supports array-tuple, named-object, and tagged-template-literal syntaxes for parameterized/table-driven tests, e.g. `test.each([{a:1,b:1,expected:2}, ...])('add($a,$b) -> $expected', ({a,b,expected}) => {...})` (vitest.dev/api/).",
+    "Running `npm run test` with the Next.js-recommended script invokes Vitest's default watch mode; a one-shot CI run requires `vitest run` instead — the official guide's sample script does not do this by default."
+  ],
+  "recommendations": [
+    "Keep FIFO pure-function test files in a plain Node environment (Vitest's default) — do not add a `jsdom` environment or DOM-related setup to those files; reserve jsdom only for component/UI tests elsewhere in the repo.",
+    "Set `package.json`'s `test` script to `vitest run` (not bare `vitest`) so `npm test` exits after one pass, satisfying the 'all pass via npm test' acceptance criterion in CI-like execution.",
+    "Use `test.each`/`describe.each` with named-object rows to enumerate FIFO edge cases explicitly: partial layer consumption, multi-layer issue spanning 2+ cost layers, over-issue rejection (quantity > on-hand), and zero-cost donated layers — one row per scenario keeps the suite readable and easy to extend.",
+    "Add `vite-tsconfig-paths` to the Vitest plugin list if the repo uses TS path aliases (e.g. `@/lib/...`) so FIFO module imports resolve the same way in tests as in the Next.js app.",
+    "If component tests and pure-function tests coexist, use the `// @vitest-environment jsdom` control comment on component test files rather than setting `environment: 'jsdom'` globally, so the FIFO test files keep the faster default `node` environment.",
+    "Structure FIFO logic as pure functions with no Firestore/network imports (per the locked PRD's constraint and AC14); this is also what keeps them trivially testable under Vitest's default `node` environment without mocks."
+  ],
+  "as_of": "2026-10-28 (Vitest 5.0.5, released 2026-10-15; Next.js App Router Vitest guide lastUpdated 2026-08-25)",
+  "sources": [
+    {
+      "title": "Vitest — Getting Started",
+      "url": "https://vitest.dev/guide/",
+      "type": "official-docs",
+      "quote": "Vitest requires Vite >=v6.4.0 and Node >=v22.12.0... Test files must contain .test. or .spec. in their filename."
+    },
+    {
+      "title": "Vitest — Test Environment",
+      "url": "https://vitest.dev/guide/environment",
+      "type": "official-docs",
+      "quote": "Control comments are comments that start with @vitest-environment and are followed by the environment name... node (default), jsdom, happy-dom, edge-runtime"
+    },
+    {
+      "title": "Next.js Docs — How to set up Vitest with Next.js (App Router)",
+      "url": "https://nextjs.org/docs/app/guides/testing/vitest",
+      "type": "official-docs",
+      "quote": "Since async Server Components are new to the React ecosystem, Vitest currently does not support them... npm install -D vitest @vitejs/plugin-react jsdom @testing-library/react @testing-library/dom vite-tsconfig-paths"
+    },
+    {
+      "title": "Vitest API Reference (test.each)",
+      "url": "https://vitest.dev/api/#test-each",
+      "type": "official-docs",
+      "quote": "test.each([{ a: 1, b: 1, expected: 2 }, { a: 1, b: 2, expected: 3 }])('add($a, $b) -> $expected', ({ a, b, expected }) => { expect(a + b).toBe(expected) })"
+    },
+    {
+      "title": "Configuring Vitest",
+      "url": "https://vitest.dev/config/",
+      "type": "official-docs",
+      "quote": "environment - listed as a config option; globals - available as a configuration option"
+    },
+    {
+      "title": "vitest-dev/vitest Discussion #4968 — Specific vitest environment for specific tests",
+      "url": "https://github.com/vitest-dev/vitest/discussions/4968",
+      "type": "repo",
+      "quote": "You cannot change specific test functions because the whole file runs in a specified environment... Or you can also set environmentMatchGlobs option specifying the environment based on the glob patterns."
+    }
+  ],
+  "uncertain": [
+    "key_findings"
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "summary": "Claude's Messages API accepts images as a content block (`{\"type\":\"image\",\"source\":{...}}`) inside a `user` message, alongside a `text` block, sent as a normal POST to `https://api.anthropic.com/v1/messages` with `x-api-key` and `anthropic-version` headers. For this build, the Next.js route handler should base64-encode the uploaded photo (JPEG/PNG/WebP/GIF, ≤10MB base64-encoded, ≤8000x8000px, ideally resized to ≤1568px long edge to control token cost) and send one image + one text instruction per request. For reliable item/count/confidence extraction, define a custom tool with an `input_schema` describing those fields and have Claude return a `tool_use` block instead of parsing free-text JSON; on models that support it, force the call with `tool_choice:{\"type\":\"tool\",\"name\":\"...\"}` plus `strict:true` for schema guarantees, but note some newer models reject forced `tool_choice` and require `auto` + `strict` or the separate structured-outputs feature instead.",
+  "key_findings": [
+    "Image content block shape: `{\"type\":\"image\",\"source\":{\"type\":\"base64\",\"media_type\":\"image/jpeg\",\"data\":\"<base64>\"}}` placed in the `content` array of a `user` message, typically before a `{\"type\":\"text\",\"text\":\"...\"}` block since Claude performs best with image-before-text ordering.",
+    "Supported image formats: image/jpeg, image/png, image/gif, image/webp. Animated GIFs are not supported — only the first frame is used.",
+    "Size/dimension limits (Claude API, not Bedrock/GCP): max 10MB per image when base64-encoded; max 8000x8000px dimensions. Amazon Bedrock caps base64 image size at 5MB.",
+    "If a single request contains more than 20 image/document blocks total (including resent history and tool_result images), a stricter per-image pixel limit applies and oversized images are rejected with `invalid_request_error`; staying at ≤20 images or resizing each image's long edge to ≤2000px avoids this.",
+    "Overall request size limits can bind before the 600-image/request cap: 32MB for standard API endpoints (lower on Bedrock/GCP). For repeated or multi-image use, the Files API lets you upload once and reference by `file_id` to shrink payload size — not required for this build's single-photo-per-request flow but worth knowing.",
+    "Token cost model: images are tiled into 28x28px patches (`visual tokens` = ceil(w/28) × ceil(h/28)). Standard tier models cap at 1568px long edge / 1568 visual tokens; high-resolution tier (Claude 4.7 and later) caps at 2576px long edge / 4784 visual tokens. Oversized images are auto-downscaled preserving aspect ratio unless the image block sets a `transformations`/`oversized_image:\"error\"` option to reject instead of resize.",
+    "Required headers for a direct REST call: `x-api-key: $ANTHROPIC_API_KEY`, `anthropic-version: 2023-06-01`, `content-type: application/json`, POST to `https://api.anthropic.com/v1/messages`.",
+    "Structured output for item/count/confidence should use tool use: define a tool with `input_schema` (JSON Schema, e.g. properties `item`, `count`, `confidence`, `required: [\"item\",\"count\"]`). Claude's response then contains a `tool_use` content block whose `input` field is the schema-conformant object — the route handler reads `response.content.find(b => b.type === 'tool_use').input`.",
+    "`tool_choice` options are `auto` (default, Claude decides), `any` (must call some tool), `tool` (must call the named tool), `none`. Forcing `any`/`tool` prefixes the assistant turn with the tool call and skips any `thinking`/explanatory text block.",
+    "Forced tool_choice (`any` or `tool`) is NOT supported on some current models — the docs list Claude Opus 5.5, Sonnet 5.5, Fable 5.1, and Mythos 5.1 as returning a 400 'forced tool use not supported' error for `any`/`tool`; `auto` and `none` still work on those models. The documented workaround is `tool_choice:\"auto\"` combined with `strict:true` on the tool definition, or Anthropic's separate 'structured outputs' feature, to still guarantee schema-valid output.",
+    "`strict:true` on a tool definition guarantees Claude's `tool_use.input` exactly matches the declared JSON Schema (strict tool use), which is the mechanism to rely on for guaranteed item/count/confidence shape regardless of whether `tool_choice` can be forced on the chosen model.",
+    "Known accuracy limitation from Anthropic's own docs: 'Claude can give approximate counts of objects in an image but might not always be precisely accurate, especially with large numbers of small objects' — directly relevant since the product requires a human to confirm/correct the AI-suggested count (acceptance criterion 7)."
+  ],
+  "recommendations": [
+    "Implement the Claude call only inside a Next.js Route Handler (e.g. `app/api/inventory/ai-count/route.ts`), reading `ANTHROPIC_API_KEY` from `process.env` server-side; never send the key or call `api.anthropic.com` from client code, matching the constraint that the key is never exposed client-side.",
+    "In the route handler, validate and resize/compress the uploaded image before encoding to base64 (check size against your own app limit, e.g. reject >8-10MB uploads server-side) so acceptance criterion 8 ('oversized image returns a handled error state') is enforced by your own check, not just by Anthropic's 10MB/8000px limits.",
+    "Send exactly one `image` content block (base64, correct `media_type`) plus one instructional `text` block per request — well within all image-count and request-size limits for this single-photo-per-count use case.",
+    "Define a single custom tool (e.g. `record_stock_count`) with `input_schema` properties for `item` (string), `count` (integer), and `confidence` (number 0-1 or enum low/medium/high), and set `strict:true` on it so the structured response is schema-guaranteed.",
+    "Prefer `tool_choice:{\"type\":\"auto\"}` with `strict:true` over forcing `tool_choice:{\"type\":\"tool\",...}`, since forced tool_choice is rejected on some current models and `auto`+`strict` works across more models while still guaranteeing schema conformance when the tool is called; have the prompt instruct Claude to always call the tool.",
+    "Wrap the Anthropic SDK call in try/catch and map API errors (400 schema/image errors, network failures, rate limits) to a handled JSON error response (e.g. 422/502) from the route — the UI must show a retry/error state, never a raw 500 or crash, satisfying acceptance criterion 8.",
+    "Never auto-write the parsed `tool_use.input` to Firestore from the route handler — return it to the client for on-screen confirmation/edit, and only persist after explicit user confirmation, to satisfy acceptance criterion 7.",
+    "Pin the actual model ID to whatever is current and available in your Anthropic SDK/account at implementation time rather than copying a documentation example verbatim — the docs page fetched shows forward-looking model names (e.g. `claude-opus-5-5`); confirm the exact model string against your installed `@anthropic-ai/sdk` version and Anthropic console before hardcoding it."
+  ],
+  "as_of": "Documentation pages fetched live on 2026-10-28 from platform.claude.com (current official Anthropic docs at time of research; no separate dated changelog entry found on the vision/tool-use pages themselves)",
+  "sources": [
+    {
+      "title": "Vision - Claude Docs",
+      "url": "https://platform.claude.com/docs/en/build-with-claude/vision",
+      "type": "official-docs",
+      "quote": "The maximum size per image is: 10 MB (base64-encoded) on the Claude API... The maximum dimensions for each image are 8000x8000 px... Claude supports JPEG, PNG, GIF, and WebP images... Animations are unsupported, and only the first frame is used."
+    },
+    {
+      "title": "Tool use with Claude - Claude Docs",
+      "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview",
+      "type": "official-docs",
+      "quote": "To have Claude call a function that you define, pass a tool with an `input_schema`, then run the call when Claude returns a `tool_use` block."
+    },
+    {
+      "title": "Define tools - Claude Docs",
+      "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools",
+      "type": "official-docs",
+      "quote": "Not every model and setting supports forced tool use. Where it isn't supported, `tool_choice: {\"type\": \"any\"}` and `tool_choice: {\"type\": \"tool\", \"name\": \"...\"}` fail... Claude Opus 5.5, Claude Sonnet 5.5, Claude Fable 5.1, and Claude Mythos 5.1 ... `any` and `tool` return a 400 error."
+    }
+  ],
+  "uncertain": []
+}

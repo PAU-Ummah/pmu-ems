@@ -1,0 +1,43 @@
+{
+  "summary": "A Firestore transaction for FIFO issue/write-off should read all the item's cost-layer documents (oldest-first) with transaction.get()/getAll() before any write, compute the FIFO consumption in a pure in-memory function, then within the same transaction callback call update() on each mutated layer and create() (not set()) for the new movement/write-off document. Firestore enforces that all reads in a transaction happen before any writes, applies writes only if none of the read documents changed, and automatically retries the whole callback on contention, so the callback must be side-effect-free outside of Firestore calls and must re-validate on-hand quantity on every retry rather than trusting values computed outside the transaction. This naturally satisfies 'no partial writes' and 'reject over-issue, write nothing' because an insufficient-quantity check that throws inside the callback aborts the entire transaction with zero documents touched.",
+  "key_findings": [
+    "Firebase official docs state: 'Read operations must be executed before write operations' inside a transaction function, and 'Transactions never partially apply writes. All writes execute at the end of a successful transaction.' (firebase.google.com/docs/firestore/manage-data/transactions)",
+    "Firebase docs explicitly warn transaction functions 'should not directly modify application state' and may run more than once, so any FIFO math must be recomputed from the values read inside that specific transaction attempt, not memoized from an earlier read.",
+    "Google Cloud's transaction-contention page (last updated 2026-10-26 UTC) states contention is retried automatically, and after enough retries fails with 'ABORTED: Too much contention on these documents. Please try again.' It also documents two concurrency modes: pessimistic (default on Standard edition, locks read docs until commit) and optimistic (default on Enterprise edition, validates at commit and retries on conflict); mobile/web client SDKs always use optimistic concurrency regardless of edition.",
+    "The Admin Node.js SDK Transaction class (googleapis.dev reference) exposes get(ref|query) and getAll(...refs) for pessimistically-locked reads, and set(), update(), create(), delete() for writes; create() fails if the document already exists and update() fails if it does not — useful for guaranteeing the movement/write-off doc is a fresh, never-duplicated record.",
+    "Default maxAttempts for automatic transaction retries is commonly cited as 5 across Firebase/Google Cloud client libraries (JS, Go, Java, Python) per aggregated search results, but this exact numeric default was not confirmed by directly opening an official reference page that enumerates it in this session [uncertain]."
+  ],
+  "recommendations": [
+    "Run the FIFO issue/write-off logic entirely inside a single Admin SDK runTransaction() callback: first read the item's layer docs ordered oldest-first (via a query snapshot or getAll on known layer IDs), sum remainingQty, and abort by throwing if requested quantity exceeds on-hand — this guarantees AC2 (no negative stock, no movement written on over-issue) because Firestore discards all writes on a thrown error.",
+    "Keep the pure FIFO allocation math (which layers to decrement, by how much) in a standalone, Firestore-free function per AC14/AC1, and call that function from inside the transaction callback using only the snapshot data just read — do not pass in data computed before the transaction started, since retries re-run the callback.",
+    "Within the same transaction, use update() on each partially/fully consumed layer document and create() for the new movement document, never set(), so a retried or duplicated movement write fails loudly instead of silently overwriting.",
+    "Scope each transaction to one item's layers plus one new movement doc; don't batch multiple unrelated items into one transaction, since Firestore's contention model locks/validates only the documents actually read, and wider transactions increase the chance of ABORTED retries.",
+    "Because client-side Firestore SDKs always use optimistic concurrency and server-side Admin SDK on Standard-edition Firestore defaults to pessimistic locking, run this logic from the Next.js API route using the Admin SDK so behavior is predictable and server-controlled, consistent with the constraint that mutation logic stays server-side.",
+    "Treat ABORTED-after-retries as a user-facing 'please retry' error state in the UI rather than a crash, since the docs confirm Firestore itself gives up after a bounded number of automatic retries under heavy contention.",
+    "For write-offs and stock-take adjustments, apply the identical pattern (read current layers/on-hand inside the transaction, validate reason/variance server-side, then update layers + create one adjustment movement) so firestore.rules enforcing required reason fields and role checks are backed by equivalent validation in the transaction, not just the client UI."
+  ],
+  "as_of": "2026-10-26 (transaction-data-contention page shows this last-updated date); other Firebase/Firestore docs pages fetched same session, no explicit version number stated on the general transactions page",
+  "sources": [
+    {
+      "title": "Transactions and batched writes | Firestore | Firebase",
+      "url": "https://firebase.google.com/docs/firestore/manage-data/transactions",
+      "type": "official-docs",
+      "quote": "Read operations must be executed before write operations. ... Transactions never partially apply writes. All writes execute at the end of a successful transaction."
+    },
+    {
+      "title": "Data contention in transactions | Firestore in Native mode | Google Cloud Documentation",
+      "url": "https://docs.cloud.google.com/firestore/docs/transaction-data-contention",
+      "type": "official-docs",
+      "quote": "ABORTED: Too much contention on these documents. Please try again. ... Mobile/web SDKs always use optimistic concurrency controls."
+    },
+    {
+      "title": "Transaction - Documentation (Node.js Admin SDK)",
+      "url": "https://googleapis.dev/nodejs/firestore/latest/Transaction.html",
+      "type": "official-docs",
+      "quote": "getAll(...documentRefsOrReadOptions) - Retrieves multiple documents with pessimistic locks. ... create(documentRef, data) - Creates a new document. Fails if the document already exists at that location."
+    }
+  ],
+  "uncertain": [
+    "key_findings"
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "summary": "The official Next.js docs (nextjs.org/docs) confirm the current stable release is 16.4 (2026-10-06), but this build is locked to the Next.js 15.x App Router line, which remains documented and security-patched (most recently 15.5.26, security update 2026-09-22). For this build, the relevant API surface is the App Router's Route Handlers (`app/**/route.ts`) for the server-side Claude vision proxy, the async Request APIs (`params`, `cookies`, `headers`) that became mandatory in 15.0, and standard Web Request/Response/FormData APIs for handling image uploads. The single most relevant pitfall for this build is that Route Handlers have no Next.js-enforced request body size limit (unlike Server Actions' 1MB default), so the API route must implement its own oversized-image check to satisfy acceptance criterion 8.",
+  "key_findings": [
+    "Current stable Next.js release is 16.4, published 2026-10-06 (nextjs.org/blog/next-16-4); Next.js 15.5 was the last 15.x feature release (2025-08-18) and 15.5.26 received a critical out-of-band security patch on 2026-09-22 alongside 16.3.6 — the 15.x line is still actively patched.",
+    "Route Handlers (`route.ts`) support GET/HEAD/POST/PUT/DELETE/PATCH/OPTIONS exported as async functions taking `(request: NextRequest, { params })`; `params` is a Promise since v15.0.0-RC (nextjs.org/docs/app/api-reference/file-conventions/route, 'Version History' table).",
+    "As of Next.js 15, `cookies()`, `headers()`, `draftMode()`, and route `params`/`searchParams` are all asynchronous and must be awaited; a codemod (`@next/codemod upgrade latest` / codemod `150`) exists but manual `await` is the documented recommended path.",
+    "GET Route Handlers are no longer cached by default as of Next.js 15 (previously static); opting into caching requires `export const dynamic = 'force-static'` or similar segment config — relevant if any inventory GET routes are added.",
+    "Request bodies in Route Handlers are read via standard Web APIs: `request.json()`, `request.formData()`, `request.text()` — there is no Next.js-imposed body size cap on Route Handlers documented anywhere in the Route Handler reference page.",
+    "By contrast, Server Actions have a documented default `bodySizeLimit` of 1MB (configurable via `experimental.serverActions.bodySizeLimit` in next.config.js) — this limit is explicitly scoped to Server Actions, not Route Handlers (nextjs.org/docs .../config/next-config-js/serverActions).",
+    "`runtime = 'experimental-edge'` is rejected as of Next.js 15 (must use `runtime = 'edge'` or default `'nodejs'`); for a route that calls the Claude API with a server-held key, `runtime = 'nodejs'` (the default) is appropriate.",
+    "React 19 is now the minimum peer dependency for the App Router as of Next.js 15; `@types/react`/`@types/react-dom` must also be upgraded.",
+    "Webhooks/third-party API proxying from Route Handlers needs no `bodyParser` config (unlike the old Pages Router API Routes) — errors are handled by try/catch around `request.text()`/`request.json()` and returning a `new Response(..., { status: ... })`, which is the documented pattern for returning handled error states instead of letting Next.js produce a generic 500."
+  ],
+  "recommendations": [
+    "Pin the project to the Next.js 15.x line (consistent with the locked constraint) using `npm install next@^15 react@^19 react-dom@^19` rather than installing `next@latest` (which would pull in 16.4).",
+    "Implement the Claude vision proxy as `app/api/inventory/ai-count/route.ts` exporting an async `POST`, running on `runtime = 'nodejs'` (default), reading the image via `request.formData()` or `request.arrayBuffer()`.",
+    "Because Route Handlers have no built-in body-size ceiling, explicitly check `request.headers.get('content-length')` (and/or the actual decoded buffer size) against an app-defined max (e.g. a few MB) before calling the Claude API, returning a 413-style handled JSON error — this directly satisfies acceptance criterion 8's 'oversized image' case.",
+    "Wrap the Claude API call in try/catch; on failure return `Response.json({ error: ... }, { status: 502 })` or similar rather than letting an unhandled rejection produce a framework 500, also required by criterion 8.",
+    "Everywhere `params`, `cookies()`, or `headers()` are used in new route/page/layout files, write them as `await`-ed from the start — do not rely on the deprecated synchronous/`UnsafeUnwrapped` escape hatches, since those are migration shims, not the steady-state API.",
+    "Keep the API key in `process.env.ANTHROPIC_API_KEY` read only inside the server-side route file; never prefix it with `NEXT_PUBLIC_`, consistent with the locked constraint and with Next.js's documented client/server env var boundary.",
+    "If any inventory summary data is exposed via a GET Route Handler, be explicit about caching: either accept the Next.js 15 default (dynamic, uncached) or set `export const dynamic = 'force-static'` deliberately — do not assume GET responses are cached as they were pre-15."
+  ],
+  "as_of": "Next.js docs content as fetched 2026-10-28; nextjs.org/docs/app/api-reference/file-conventions/route last updated 2026-04-30; nextjs.org/docs/app/guides/upgrading/version-15 last updated 2026-10-15; current stable per nextjs.org/blog is 16.4 (2026-10-06), locked build target is the 15.x line (latest patch 15.5.26, security update 2026-09-22)",
+  "sources": [
+    {
+      "title": "Next.js Docs — What is Next.js?",
+      "url": "https://nextjs.org/docs",
+      "type": "official-docs",
+      "quote": "Next.js is a React framework for building full-stack web applications... App Router: The newer router that supports new React features like Server Components."
+    },
+    {
+      "title": "The latest Next.js news (blog index)",
+      "url": "https://nextjs.org/blog",
+      "type": "official-docs",
+      "quote": "Next.js 16.4 (2026-10-06): Next.js 16.4 introduces lazy compilation, smaller Turbopack output, React 19.3 features... Upcoming Next.js Security Update ... Next.js 16.3.6 and 15.5.26 are planned for a critical out-of-band security update on September 22, 2026."
+    },
+    {
+      "title": "route.js — API Reference | Route Handlers",
+      "url": "https://nextjs.org/docs/app/api-reference/file-conventions/route",
+      "type": "official-docs",
+      "quote": "`v15.0.0-RC` | `context.params` is now a promise. ... `v13.2.0` | Route Handlers are introduced."
+    },
+    {
+      "title": "How to upgrade to version 15",
+      "url": "https://nextjs.org/docs/app/guides/upgrading/version-15",
+      "type": "official-docs",
+      "quote": "Previously synchronous Request-time APIs that rely on request information are now asynchronous: cookies, headers, draftMode, params... GET functions in Route Handlers are no longer cached by default."
+    },
+    {
+      "title": "serverActions — next.config.js options",
+      "url": "https://nextjs.org/docs/app/api-reference/config/next-config-js/serverActions",
+      "type": "official-docs",
+      "quote": "By default, the maximum size of the request body sent to a Server Action is 1MB, to prevent the consumption of excessive server resources in parsing large amounts of data..."
+    }
+  ],
+  "current_version": "16.4 (stable, released 2026-10-06, per nextjs.org/blog) — this build is locked to the Next.js 15.x line per constraints, latest patch 15.5.26",
+  "api_surface": [
+    "app/api/.../route.ts exporting async POST(request: NextRequest) for the Claude vision proxy",
+    "request.formData() / request.arrayBuffer() / request.json() for reading uploaded image and JSON payloads",
+    "Response.json(data, { status }) and new Response(body, { status, headers }) for success and handled-error responses",
+    "runtime = 'nodejs' route segment config (default) for the server-side API route holding the Anthropic key",
+    "await params in any dynamic route segment (e.g. app/inventory/items/[id]/route.ts) per the Next.js 15 async Request API change",
+    "next/headers: cookies(), headers() (awaited) if session/role info needs reading in a route handler",
+    "Firebase Auth/Firestore client and admin SDKs invoked from App Router client/server components and route handlers (standard Next.js data-fetching patterns, not Next.js-specific APIs)",
+    "export const dynamic / runtime segment config options on any new GET route handlers for the inventory summary/report endpoints"
+  ],
+  "pitfalls": [
+    "Next.js 15 made params, searchParams, cookies(), headers(), and draftMode() asynchronous — every new route/page/layout must await them; omitting await is a common migration bug.",
+    "GET Route Handlers switched from cached-by-default to dynamic-by-default in Next.js 15 — any inventory report/export GET endpoint will not be cached unless explicitly opted in.",
+    "`runtime = 'experimental-edge'` now errors in Next.js 15; must use `'edge'` or omit (defaults to nodejs).",
+    "Route Handlers have no documented Next.js-level request body size limit, unlike Server Actions (1MB default) — relying on an assumed framework-level cap for the AI image upload would be incorrect; the app must enforce its own limit and handled error response to meet the 'oversized image' acceptance criterion.",
+    "React 19 is now mandatory for the App Router in Next.js 15; mismatched React 18 type packages or peer dependencies commonly break `npm install` and require --force/--legacy-peer-deps during transition.",
+    "`@next/font` was removed in Next.js 15 in favor of the built-in `next/font` — irrelevant to this build's functionality but worth avoiding if copying older boilerplate.",
+    "Next.js 16 (current stable) is a different major line from the 15.x this build targets — copying examples or upgrade guidance from 16.x docs/blog posts (e.g. Cache Components, Turbopack-specific behavior) without checking applicability to 15.x could introduce mismatched assumptions."
+  ],
+  "uncertain": []
+}

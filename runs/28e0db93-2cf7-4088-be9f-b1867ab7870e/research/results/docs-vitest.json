@@ -1,0 +1,96 @@
+{
+  "summary": "Vitest's official docs (vitest.dev) confirm the current stable line is v5 (5.0.5), which bumped its minimum runtime to Node.js >=22.12.0 and Vite >=6.4.0 — a real constraint to check against this project's Node version before adopting it. For this build (pure FIFO unit-test functions with no Firestore/network calls, per acceptance criteria 1 and 14), the relevant API surface is small: `describe`, `test`/`it` (plus `.each` for parameterized FIFO layer-consumption cases), `expect` assertions, and `vi` (mocks/spies, though likely minimal since FIFO logic should be pure). If the dev environment is pinned to Node 20, the previous major, Vitest 4.1.12, officially supports Node ^20.0.0/^22.0.0/>=24.0.0 and should be used instead of forcing a Node upgrade. Config is near-zero: Vitest auto-reads an existing `vite.config.*` or a dedicated `vitest.config.*`, which is sufficient for a Node-environment unit-test suite with no DOM/browser mode needed here.",
+  "key_findings": [
+    "Current stable version per vitest.dev and npm/unpkg package.json is 5.0.5 (v5.0.0 major released 2024-09-03, confirmed via GitHub releases page).",
+    "Vitest 5.0 package.json 'engines' field: Node.js \"^22.12.0 || ^24.0.0 || >=26.0.0\"; 'peerDependencies.vite': \"^6.4.0 || ^7.0.0 || ^8.0.0\" (required).",
+    "The previous major, Vitest 4.1.12, has engines \"^20.0.0 || ^22.0.0 || >=24.0.0\" and vite peer \"^6.0.0 || ^7.0.0 || ^8.0.0\" — this is the version to use if the project's Node runtime is 20.x.",
+    "Install command per official Getting Started guide: `npm install -D vitest` (yarn users additionally need `vite` as an explicit peer per the v5 migration guide).",
+    "Vitest auto-detects and reads an existing `vite.config.*`; a separate `vitest.config.*` can be used for test-only settings and takes priority when both exist.",
+    "Core API confirmed from official docs: `describe(name, body)`, `test`/`it` with `.skip`/`.only`/`.todo`/`.concurrent`/`.each`/`.for`, hook functions `beforeEach`/`afterEach`/`beforeAll`/`afterAll`, the `expect(value)` assertion API, and the `vi` utility object for mocking (`vi.fn`, `vi.mock`, `vi.spyOn`, `vi.hoisted`).",
+    "`vi.mock` calls are hoisted to the top of the file and always execute before imports; in v5, hoisted calls (`vi.mock`, `vi.unmock`, `vi.hoisted`) must be at module top-level or Vitest throws an error (previously more lenient).",
+    "In v5, `clearMocks` now defaults to `true`, automatically clearing mock call history before each test — a behavior change from earlier majors where it defaulted to `false`.",
+    "v5 removed `test.sequential`/`describe.sequential` in favor of `concurrent: false`, and removed deprecated entry points / the previously-inlined `expect` package sharing state with Vitest's `expect`.",
+    "v5 changed unawaited async `expect` assertions to fail the test outright, where earlier versions auto-awaited with only a warning — relevant if any FIFO tests use async setup.",
+    "Documented common pitfalls: Vitest does not respect `tsconfig.json` `baseUrl` automatically (needs `vite-tsconfig-paths` or relative imports); CommonJS/ESM interop can break for packages with malformed exports (fix via `server.deps.inline`); worker pool quirks (e.g. `fetch` + `pool: 'threads'` termination issues) are unlikely to matter for this project's pure-function tests but are worth knowing if coverage/CI issues arise."
+  ],
+  "recommendations": [
+    "Check the project's actual Node version first: if it is Node 20.x, install Vitest 4.x (e.g. `npm install -D vitest@^4`) rather than v5, since v5 hard-requires Node >=22.12.0 and will fail to install/run otherwise; if Node is already >=22.12, v5 is fine and is the officially current stable line.",
+    "Since the PRD requires `devDependencies` in `package.json` plus a foreground `npm install` (not `--no-save`), run `npm install -D vitest` (or the pinned major matching the Node version) in the foreground as specified by the build constraints.",
+    "For the FIFO pure-function tests (criteria 1 and 14), the only API surface actually needed is `describe`, `test`/`it`, `test.each` (for the partial-layer/multi-layer/over-issue/zero-cost-donated-layer cases), and `expect` — mocking (`vi`) is likely unnecessary since the FIFO functions must have no Firestore or network calls.",
+    "No custom `vitest.config.ts` is strictly required if there's no existing `vite.config.*` for this Next.js project; a minimal `vitest.config.ts` with `test: { environment: 'node' }` is enough for pure-function unit tests and avoids pulling in jsdom/happy-dom unnecessarily.",
+    "Avoid relying on `baseUrl`/path-alias resolution in test files unless `vite-tsconfig-paths` is added, since Vitest does not read `tsconfig.json` paths by default — a documented, repeat source of import-resolution failures.",
+    "If upgrading Vitest later, review the official migration guide for the specific major jump, since v5 changed default `clearMocks` behavior and tightened `vi.mock`/`vi.hoisted` placement rules, which can silently change test isolation behavior."
+  ],
+  "as_of": "Vitest v5.0.5 (v5.0.0 major released 2024-09-03); Vitest v4.1.12 as fallback for Node 20 environments; information fetched from vitest.dev and package registries on 2026-10-28",
+  "sources": [
+    {
+      "title": "Vitest — Getting Started Guide",
+      "url": "https://vitest.dev/guide/",
+      "type": "official-docs",
+      "quote": "Vitest requires Vite >=v6.4.0 and Node >=v22.12.0."
+    },
+    {
+      "title": "Vitest — API Reference",
+      "url": "https://vitest.dev/api/",
+      "type": "official-docs",
+      "quote": "describe(name, body) ... test(name, body?, timeout?) ... vi — Utility for mocking and test utilities"
+    },
+    {
+      "title": "Vitest — Mocking Guide",
+      "url": "https://vitest.dev/guide/mocking.html",
+      "type": "official-docs",
+      "quote": "A vi.mock call is hoisted to top of the file. It will always be executed before all imports."
+    },
+    {
+      "title": "Vitest — Common Errors",
+      "url": "https://vitest.dev/guide/common-errors.html",
+      "type": "official-docs",
+      "quote": "Vitest doesn't automatically respect tsconfig.json's baseUrl setting—you'll need to install vite-tsconfig-paths plugin or rewrite paths as relative imports."
+    },
+    {
+      "title": "Vitest — Migration Guide",
+      "url": "https://vitest.dev/guide/migration.html",
+      "type": "official-docs",
+      "quote": "Vitest 5.0 requires Vite >= 6.4.0 and Node.js >= 22.12.0. ... clearMocks now defaults to true, clearing mock history before each test"
+    },
+    {
+      "title": "vitest-dev/vitest — Releases",
+      "url": "https://github.com/vitest-dev/vitest/releases",
+      "type": "repo",
+      "quote": "v5.0.0 ... Vitest 5 is officially out"
+    },
+    {
+      "title": "vitest package.json (unpkg, latest/v5)",
+      "url": "https://unpkg.com/vitest/package.json",
+      "type": "official-docs",
+      "quote": "\"engines\": { \"node\": \"^22.12.0 || ^24.0.0 || >=26.0.0\" }, \"peerDependencies\": { \"vite\": \"^6.4.0 || ^7.0.0 || ^8.0.0\" }"
+    },
+    {
+      "title": "vitest@4 package.json (unpkg)",
+      "url": "https://unpkg.com/vitest@4/package.json",
+      "type": "official-docs",
+      "quote": "\"version\": \"4.1.12\", \"engines\": { \"node\": \"^20.0.0 || ^22.0.0 || >=24.0.0\" }"
+    }
+  ],
+  "current_version": "5.0.5 (latest stable; fallback: 4.1.12 for Node 20 environments)",
+  "api_surface": [
+    "describe(name, fn) — group FIFO test suites (e.g. per-item, per-scenario)",
+    "test(name, fn) / it(name, fn) — individual FIFO test cases",
+    "test.each(cases)([...]) — parameterized tests for partial/multi-layer consumption scenarios",
+    "expect(value).toBe/.toEqual/.toThrow(...) — assertions for on-hand quantities, layer remainders, over-issue rejection errors",
+    "beforeEach/afterEach — reset in-memory FIFO state fixtures between tests",
+    "vi.fn()/vi.spyOn() — only if isolating any boundary calls; not required for pure FIFO math per constraint",
+    "npm install -D vitest — add as devDependency per build constraint",
+    "vitest.config.ts with test.environment: 'node' — minimal config for pure-function unit tests"
+  ],
+  "pitfalls": [
+    "Vitest 5.x requires Node.js >=22.12.0 and Vite >=6.4.0 — will not install/run correctly on Node 20; must pin to Vitest 4.x (Node ^20/^22/>=24) if the project's runtime is Node 20",
+    "v5 changed clearMocks default to true, altering mock-state behavior between tests compared to earlier versions",
+    "v5 requires vi.mock/vi.unmock/vi.hoisted calls to be at module top-level, throwing where earlier versions were more lenient",
+    "v5 removed test.sequential/describe.sequential in favor of concurrent: false",
+    "v5 makes unawaited async expect assertions fail tests outright instead of just warning",
+    "Vitest does not read tsconfig.json baseUrl/path aliases by default, a common source of import-resolution failures without vite-tsconfig-paths",
+    "CommonJS/ESM interop issues can arise for dependencies with malformed export fields, requiring server.deps.inline workarounds"
+  ],
+  "uncertain": []
+}

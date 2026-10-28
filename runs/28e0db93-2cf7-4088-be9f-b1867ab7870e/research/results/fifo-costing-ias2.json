@@ -1,0 +1,38 @@
+{
+  "summary": "IAS 2 (paras 25 and 27) permits only two cost formulas, FIFO or weighted average, and bans LIFO: FIFO assumes the earliest-acquired/produced units are deemed consumed first, so the remaining balance is always valued at the most recent costs — this maps directly onto a strict oldest-batch-first consumption engine with partial and multi-layer draws. IAS 2 itself contains no provision for inventory received at no cost (donations); it is silent on this scenario because it assumes a purchase/production cost already exists. The closest authoritative treatment is IAS 2's public-sector counterpart, IPSAS 12, which requires inventory acquired through a non-exchange transaction (e.g. a donation) to be measured at fair value as at the date of acquisition [uncertain], and inventory held for distribution at no or nominal charge to be measured at the lower of cost and current replacement cost [uncertain] — though these specific paragraph citations could not be independently confirmed by opening a primary IPSAS 12 text, only via secondary search summaries. US GAAP (ASC 820, per ASU 2020-07) independently confirms the same fair-value-at-receipt principle for nonprofit in-kind donations, which is directly on point for this build's non-profit context. For coursework defensibility, the build should apply IAS 2's layer mechanics literally and explicitly document, as a separate judgment call, that donated-layer unit cost (which may legitimately be zero) is assigned using the fair-value-at-acquisition principle borrowed from IPSAS 12/nonprofit GAAP rather than from IAS 2 itself.",
+  "key_findings": [
+    "IAS 2 para 25 (IFRS Foundation issued text, current through the 2025 edition): cost of inventories is assigned using FIFO or weighted average only; the same formula must be used for inventories of similar nature/use; LIFO is not a permitted formula. Confirmed via a page opened directly (ifrsbuddy.com), which summarizes the official clause.",
+    "IAS 2 para 27: FIFO assumes items purchased/produced first are deemed sold/consumed first, so ending inventory reflects the most recently acquired costs — i.e., strict chronological layer consumption, matching an oldest-batch-first engine.",
+    "No text addressing donated, gifted, or zero-cost inventory could be found within IAS 2 itself across multiple searches and the opened secondary summary (ifrsbuddy.com) — this appears to be a genuine, documented gap in the standard rather than a search failure.",
+    "IPSAS 12 (the public-sector/not-for-profit sibling standard to IAS 2) reportedly requires inventory acquired via a non-exchange transaction to be measured at fair value as at the date of acquisition (cited as paragraph 16 in secondary sources), and inventory held for distribution at no/nominal charge to be measured at the lower of cost and current replacement cost (cited as an adjacent paragraph). [uncertain] — the primary IPSAS 12 PDF could not be opened/decoded by the fetch tool across five separate attempts (IFAC, PSASB Kenya, UN), so this is relied on via search-engine summaries only, not a page read directly.",
+    "US GAAP (ASC 820, confirmed via a directly opened article) requires nonprofits to record qualifying contributed nonfinancial assets, including donated inventory, at fair value on receipt, using a documented, supportable valuation methodology (observable prices, comparable transactions, or replacement cost) — explicitly warning that a donor's own stated value is not sufficient by itself. ASU 2020-07, effective for annual periods after 15 June 2021, additionally requires such contributions to be presented as a separate line item with disclosed valuation technique and inputs.",
+    "No candidate paper from the provided leads could be verified as directly addressing FIFO layer mechanics or donated-inventory valuation: the one plausibly relevant title (MDPI IJFS 2023, 'Qualitative Analysis of IAS 2 Capability...') returned HTTP 403 on every fetch attempt and so is not cited, consistent with the rule against citing unopened papers."
+  ],
+  "recommendations": [
+    "Implement the FIFO engine to mirror IAS 2 paras 25/27 literally: layers are consumed in strict chronological (received-date) order, partial-layer consumption is normal, a single issue can span multiple layers, and no formula other than FIFO is offered (do not build in a LIFO or average-cost toggle — it would misrepresent the standard being cited).",
+    "For donated stock, create a cost layer with date, quantity, and a unit cost of zero (or an assigned fair value if the donation has a known market value), and treat it exactly like a purchased layer for FIFO sequencing purposes — it still gets consumed in date order, it is just valued at zero (or fair value) in the cost report.",
+    "In code comments/README or the coursework write-up (not in-app user text), explicitly note that IAS 2 does not itself address donated/zero-cost inventory, and that the zero/fair-value-cost convention is adopted by analogy to IPSAS 12 / nonprofit GAAP practice rather than derived from IAS 2 — this anticipates the exact ambiguity the MDPI paper lead (unverified) suggests markers may probe.",
+    "Do not attempt to implement NRV write-down logic (IAS 2 paras 28-33) for this build — it is for period-end balance-sheet valuation, not for an operational FIFO issue/write-off ledger; keep write-offs (expired/damaged/lost) as explicit movement records instead, which is simpler and already required by the acceptance criteria.",
+    "Flag the IPSAS 12 paragraph numbers in this research as unverified; if the coursework write-up needs an exact citation, the student should pull the live paragraph text from an IFAC-issued IPSAS 12 PDF directly rather than relying on this summary."
+  ],
+  "as_of": "IAS 2 cost-formula provisions per IFRS Foundation issued text (2021-2025 editions, unchanged on this point); US GAAP in-kind donation fair-value rules per ASU 2020-07, effective for annual periods after 15 June 2021; IPSAS 12 donated-inventory provisions as of 2024-2025 IFAC-issued text [uncertain, not independently opened]. Retrieved 2026-10-28.",
+  "sources": [
+    {
+      "title": "IAS 2 FIFO vs Weighted Average (LIFO Banned)",
+      "url": "https://ifrsbuddy.com/learn/en/ias-2-cost-formulas",
+      "type": "article",
+      "quote": "FIFO and weighted average are the only permitted cost formulas; consistent application by inventory class... FIFO assumes the oldest units purchased are sold first."
+    },
+    {
+      "title": "GAAP Requires Nonprofits to Report In-Kind Donations on Financial Statements",
+      "url": "https://hbkcpa.com/insights/gaap-requires-nonprofits-to-report-in-kind-donations-on-financial-statements/",
+      "type": "article",
+      "quote": "nonprofits must record qualifying contributed nonfinancial assets at fair value when the contribution is received... A donor's statement of the amount it believes an item is worth does not, by itself, necessarily establish the fair value that should be recorded."
+    }
+  ],
+  "uncertain": [
+    "summary",
+    "key_findings",
+    "as_of"
+  ]
+}

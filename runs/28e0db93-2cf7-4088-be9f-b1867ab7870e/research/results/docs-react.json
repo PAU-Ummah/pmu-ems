@@ -1,0 +1,73 @@
+{
+  "summary": "React's current stable release is 19.3 (minor 19.3.0 shipped 2026-09-09 per the official Versions page), built on the React 19 line first released 2024-12-05. For this Next.js 15 / React 19 inventory module, the build will rely on core hooks (useState, useEffect, useContext for RoleGuard/useRole), the new Actions-oriented APIs (useActionState, useFormStatus, useOptimistic) for receipt/issue/write-off/stock-take forms with pending and error states, and ref-as-prop (no forwardRef needed) for any custom MUI-wrapped inputs. No installation beyond `npm install react@latest react-dom@latest` (or pinning to the 19.x already locked in this project) is required since React 19 is enabled by default once the package version is 19.x. The main pitfalls from the last 3 years are the React 19 removal of function-component defaultProps/PropTypes and legacy ref/context APIs, the useFormState→useActionState rename, and TypeScript's new requirement that useRef() always take an argument.",
+  "key_findings": [
+    "react.dev/versions lists React 19.3 (19.3.0, 2026-09-09) as the current latest release; React 19.0.0 was the first stable 19 release on 2024-12-05.",
+    "React 19 adds Actions: async functions usable in transitions that auto-manage pending/error/optimistic state, plus the useActionState hook returning [state, action, isPending] (react.dev/blog/2024/12/05/react-19).",
+    "useFormStatus lets a child of a <form> read {pending} without prop drilling; <form action={fn}> and formAction props now accept functions directly.",
+    "useOptimistic provides immediate optimistic UI updates while an async request is in flight.",
+    "use() lets components read a Promise or Context value conditionally during render.",
+    "Function components can now accept ref directly as a prop; forwardRef is no longer required for new components (forwardRef itself is deprecated per the upgrade guide).",
+    "React 19 upgrade guide (react.dev/blog/2024/04/25/react-19-upgrade-guide) confirms removal of: propTypes/defaultProps on function components, legacy context (contextTypes/getChildContext), string refs, React.createFactory, module-pattern factories, ReactDOM.render/hydrate/findDOMNode/unmountComponentAtNode, and react-dom/test-utils.",
+    "Error handling changed: React no longer re-throws errors; uncaught errors go to window.reportError, caught errors to console.error, with new onUncaughtError/onCaughtError options on createRoot/hydrateRoot.",
+    "TypeScript changes in 19: useRef() now requires an argument, ref callbacks must not implicitly return a value, global JSX namespace removed in favor of React.JSX.",
+    "React 19.2 (2025-10-01, non-breaking minor) added <Activity>, useEffectEvent, server-only cacheSignal, and changed the useId prefix from ':r:' to '_r_' for CSS-selector/XML-name compatibility.",
+    "Migration codemods are available: `npx codemod@latest react/19/migration-recipe` and `npx types-react-codemod@latest preset-19 ./path-to-app`; the guide recommends upgrading to React 18.3 first to surface deprecation warnings before moving to 19."
+  ],
+  "recommendations": [
+    "Pin the project to a React 19.x release (19.0 through the current 19.3 line are all compatible with Next.js 15's App Router); no special enabling step is needed beyond the package.json version already in use.",
+    "Use useActionState (not the removed/renamed useFormState) for receipt-creation, issue, write-off, and stock-take forms so pending/error UI states (acceptance criteria 6, 8, 9) are handled with the official pattern rather than hand-rolled state.",
+    "Use useOptimistic sparingly only where it clearly helps perceived responsiveness (e.g., marking an AI-suggested count as 'confirming' while the user edits it) -- do not use it to write unconfirmed AI counts to Firestore, which would violate acceptance criterion 7.",
+    "If writing any custom input components that MUI wraps, prefer ref-as-prop over forwardRef since forwardRef is now deprecated in the official guide.",
+    "Do not use removed APIs (defaultProps on function components, string refs, ReactDOM.render/findDOMNode, react-dom/test-utils) anywhere in new code; use ES6 default parameters and createRoot/hydrateRoot-based patterns instead.",
+    "If useRef() is used anywhere in the new TypeScript code, always pass an explicit initial value (e.g., useRef<HTMLInputElement>(null)) to satisfy the React 19 TypeScript signature.",
+    "Treat react-dom's new onCaughtError/onUncaughtError hooks as the place to log unexpected render errors (relevant to the 'no crash/silent 500' requirement for image upload / Claude API failures), though the actual fetch-failure handling in the API route itself is a server-side concern, not a React API concern."
+  ],
+  "as_of": "React 19.3 (19.3.0, released 2026-09-09) per react.dev/versions, accessed 2026-10-28; core React 19 API surface documented as of the 2024-12-05 React 19 blog post and 2024-04-25 upgrade guide.",
+  "sources": [
+    {
+      "title": "React Versions",
+      "url": "https://react.dev/versions",
+      "type": "official-docs",
+      "quote": "React 19.3 (September 9, 2026) - Latest version at react.dev"
+    },
+    {
+      "title": "React v19",
+      "url": "https://react.dev/blog/2024/12/05/react-19",
+      "type": "official-docs",
+      "quote": "React 19 is now stable and available on npm! ... Actions ... useActionState ... useFormStatus ... useOptimistic ... use API ... ref as a prop"
+    },
+    {
+      "title": "React 19 Upgrade Guide",
+      "url": "https://react.dev/blog/2024/04/25/react-19-upgrade-guide",
+      "type": "official-docs",
+      "quote": "propTypes checks removed from React package ... defaultProps removed for function components ... ReactDOM.render -> Use createRoot()"
+    },
+    {
+      "title": "React 19.2",
+      "url": "https://react.dev/blog/2025/10/01/react-19-2",
+      "type": "official-docs",
+      "quote": "React 19.2 is a non-breaking minor release ... <Activity /> ... useEffectEvent ... cacheSignal ... useId prefix update"
+    }
+  ],
+  "current_version": "19.3 (19.3.0, released 2026-09-09, per react.dev/versions)",
+  "api_surface": [
+    "useState, useEffect, useContext (for RoleGuard/useRole patterns)",
+    "useActionState (receipt, issue, write-off, stock-take form submission with pending/error state)",
+    "useFormStatus (read pending state inside form child components)",
+    "useOptimistic (optional optimistic UI for AI-suggested counts prior to user confirmation)",
+    "ref as a component prop (replacing forwardRef for custom input wrappers)",
+    "createRoot/hydrateRoot error handlers: onUncaughtError, onCaughtError (optional, for surfacing unexpected render-time errors)",
+    "use() (optional, for reading promises/context conditionally if needed outside Next.js data-fetching patterns)"
+  ],
+  "pitfalls": [
+    "defaultProps and PropTypes on function components are removed in React 19 -- must use default parameters/TypeScript instead",
+    "useFormState was renamed to useActionState in the stable release",
+    "forwardRef is deprecated in favor of passing ref directly as a prop; plan new custom components accordingly",
+    "String refs, legacy context (contextTypes/getChildContext), React.createFactory, and module-pattern factories are all removed",
+    "ReactDOM.render, ReactDOM.hydrate, findDOMNode, and unmountComponentAtNode are removed; react-dom/test-utils is removed (act moved to react package)",
+    "TypeScript: useRef() now requires an explicit argument; ref callbacks must not implicitly return a value; global JSX namespace removed",
+    "React no longer re-throws errors automatically -- uncaught errors go to window.reportError and caught errors to console.error by default, which changes how error boundaries/test assertions may need to be written",
+    "React 19.2 changed the useId-generated prefix from ':r:' to '_r_', which could break any code relying on the old format for CSS selectors (low relevance to this build but worth noting if any snapshot tests pin IDs)"
+  ],
+  "uncertain": []
+}

@@ -1,0 +1,56 @@
+{
+  "summary": "The secure pattern is: client uploads the photo directly to Firebase Storage under a path keyed by the inventory item/count (e.g. /inventory/counts/{countId}/{fileId}.jpg), with storage.rules gating both read and write by the user's role (via custom claims or a mirrored Firestore role lookup) and validating file size/content-type at write time; the Firestore count document then stores only the storage path (not a public download URL) plus audit metadata. Because getDownloadURL() mints a long-lived token that bypasses rule re-evaluation on every subsequent fetch, role-restricted photos (e.g. valuation-tier-only attachments) should be read back with getBytes()/getBlob() (SDK v9.5+), which re-checks security rules on each call, rather than persisting or embedding a getDownloadURL token. Role checks in storage.rules should mirror the same role source used by Firestore rules/RoleGuard/useRole to avoid rule drift between the two services, and if Firestore lookups from storage.rules are needed, use firestore.get()/firestore.exists() with fully-qualified paths, noting the 2-document-per-evaluation limit and added latency/billing.",
+  "key_findings": [
+    "Custom claims are read in Storage rules via request.auth.token.<claim>, e.g. `allow write: if request.auth.token.role == 'admin';` — same claim namespace as Firestore rules (firebase.google.com/docs/storage/security/rules-conditions, current as of 2026-10-20).",
+    "Cross-service rules expose firestore.get() and firestore.exists() in storage.rules; paths must be fully specified as /databases/(default)/documents/collection/doc, with $(variable) escaping for interpolated path segments (firebase.blog cross-service rules announcement, 2022-09-28; still the documented syntax as of the 2026-10-20 rules-conditions doc).",
+    "Cross-service Firestore reads from storage.rules are capped at 2 unique documents per rule evaluation (repeat reads of the same doc are cached and don't count); add ~75ms latency same-region or ~200ms cross-region; and are billed as Firestore reads even when the request is denied (firebase.blog, 2022-09-28).",
+    "File validation at upload time uses request.resource.size (bytes) and request.resource.contentType.matches('image/.*') inside the write rule (firebase.google.com/docs/storage/security/rules-conditions).",
+    "Rules Version 2 (`rules_version = '2';`) is required for recursive wildcards ({path=**}) and the list operation when organizing photo paths hierarchically (firebase.google.com/docs/storage/security/core-syntax, current as of 2026-10-20).",
+    "getDownloadURL() returns a URL containing an access token that, once generated, bypasses further security-rule evaluation for anyone holding the link — it is evaluated once at mint time, not on each access (firebase.google.com/docs/storage/web/download-files, current as of 2026-10-21; corroborated by firebase-js-sdk GitHub issue #5342 discussing this as a known, longstanding caveat).",
+    "getBytes() and getBlob() (web SDK v9.5+) and getStream() (Node) download data directly through the SDK and re-evaluate security rules on every call, giving tighter per-request access control than a cached download URL (firebase.google.com/docs/storage/web/download-files, 2026-10-21).",
+    "Best-practice guidance for role checks in rules generally recommends custom claims over per-request Firestore lookups specifically to avoid extra billable reads and latency, reserving firestore.get()/exists() for cases where claims aren't available or roles change too often to re-mint tokens (search synthesis grounded in the rules-conditions and cross-service-rules docs above)."
+  ],
+  "recommendations": [
+    "Upload count photos directly from the client to Storage at a path like /inventory/counts/{countId}/{fileId}.jpg or /inventory/items/{itemId}/counts/{countId}/{fileId}.jpg, so storage.rules can pattern-match the same role/ownership logic used for the corresponding Firestore count document.",
+    "Gate storage.rules on request.auth.token.role (custom claim mirroring the Firestore role field used by RoleGuard/useRole) for both read and write, rather than relying only on client-side hiding, so AC11/AC12 role separation (logging vs admin) is enforced server-side for attachments too.",
+    "If the role is not available as a custom claim, use firestore.get()/firestore.exists() against the user's role document, but keep this to at most one lookup per rule to stay under the 2-document cap and minimize added latency/Firestore billing.",
+    "Validate request.resource.size (e.g. reject >5–10MB, consistent with AC8's oversized-image handling) and request.resource.contentType.matches('image/.*') in the write rule itself, in addition to client-side validation, so the UI's 'handled error state' for oversized images is backed by a server-enforced limit.",
+    "Store only the Storage path (not a getDownloadURL string) on the Firestore count document (e.g. photoPath: 'inventory/counts/abc123/xyz.jpg'); resolve a short-lived display URL on read, or use getBytes()/getBlob() when rendering role-restricted photos, since persisting a getDownloadURL token effectively grants indefinite access to anyone who later reads that Firestore field, undermining the Firestore-side role rules on AC6/AC9/AC11.",
+    "Set rules_version = '2' in storage.rules and use a single nested match block per inventory photo path so write (upload) and read (view) permissions can diverge by role without duplicating path logic.",
+    "Record audit metadata (uploadedBy uid, uploadedAt timestamp, and the AI suggestion vs confirmed values) on the Firestore count document itself rather than in Storage object metadata, since AC7 requires the AI suggestion to never be persisted until a user confirms/edits it — the photo write and the Firestore write should be treated as separate steps, with the Firestore count only created/updated after confirmation."
+  ],
+  "as_of": "Firebase documentation pages fetched 2026-10-20/2026-10-21 UTC; cross-service rules feature originally announced 2022-09-28 and still current per the 2026-10-20 rules-conditions doc.",
+  "sources": [
+    {
+      "title": "Use conditions in Firebase Cloud Storage Security Rules",
+      "url": "https://firebase.google.com/docs/storage/security/rules-conditions",
+      "type": "official-docs",
+      "quote": "No more than two Firestore documents may be accessed in a single Rules evaluation... Mint a Firebase Authentication custom token that contains additional information."
+    },
+    {
+      "title": "Announcing cross-service Security Rules",
+      "url": "https://firebase.blog/posts/2022/09/announcing-cross-service-security-rules/",
+      "type": "article",
+      "quote": "We enforce a limit of two Firestore document queries per rules evaluation... You will be billed for the Firestore reads, even if your rules reject the request."
+    },
+    {
+      "title": "Download files with Cloud Storage on Web",
+      "url": "https://firebase.google.com/docs/storage/web/download-files",
+      "type": "official-docs",
+      "quote": "getBytes() and getBlob()... allow for finer-grained access control via Firebase Security Rules... Re-evaluate security rules on every call."
+    },
+    {
+      "title": "Basic Security Rules / core syntax (Cloud Storage for Firebase)",
+      "url": "https://firebase.google.com/docs/storage/security/core-syntax",
+      "type": "official-docs",
+      "quote": "security rules are not filters... recursive wildcards match zero or more path items in Version 2."
+    },
+    {
+      "title": "Firebase Storage READ security rules: almost pointless, as currently implemented. · Issue #5342 · firebase/firebase-js-sdk",
+      "url": "https://github.com/firebase/firebase-js-sdk/issues/5342",
+      "type": "forum",
+      "quote": "getDownloadURL() creates a TOKENIZED URL, which BYPASSES the above security rules."
+    }
+  ],
+  "uncertain": []
+}

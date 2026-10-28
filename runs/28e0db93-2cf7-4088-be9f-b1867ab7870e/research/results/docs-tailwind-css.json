@@ -1,0 +1,74 @@
+{
+  "summary": "Tailwind CSS v4 (currently v4.3 per the official docs site) is a CSS-first, zero-config framework that integrates with Next.js via the `@tailwindcss/postcss` PostCSS plugin rather than a `tailwind.config.js` file. For this build (Next.js 15 App Router + MUI), installation is `npm install tailwindcss @tailwindcss/postcss postcss`, a `postcss.config.mjs` registering the plugin, and a single `@import \"tailwindcss\";` line in `app/globals.css` — no separate config file is required unless custom theme tokens are needed. The main risk for this stack is Tailwind's Preflight base-style reset and the v4 default border-color change (`currentColor` instead of `gray-200`) potentially clashing with MUI's own CSS baseline/reset, which should be verified visually once both libraries are wired up together.",
+  "key_findings": [
+    "Current stable version shown on the official docs site is v4.3 [uncertain]",
+    "v4 install for Next.js: `npm install tailwindcss @tailwindcss/postcss postcss`, create `postcss.config.mjs` with `{ plugins: { \"@tailwindcss/postcss\": {} } }`, add `@import \"tailwindcss\";` to `app/globals.css` — no `tailwind.config.js` is required by default",
+    "v4 requires Safari 16.4+, Chrome 111+, Firefox 128+ due to use of modern CSS (`@property`, `color-mix()`); v3.4 should be used instead if older browser support is needed",
+    "v3 `@tailwind base; @tailwind components; @tailwind utilities;` directives are replaced in v4 by a single `@import \"tailwindcss\";`",
+    "PostCSS plugin package renamed from `tailwindcss` to `@tailwindcss/postcss`; CLI package renamed to `@tailwindcss/cli`",
+    "Several utilities removed/renamed in v4: `bg-opacity-*`/`text-opacity-*`/`border-opacity-*` → opacity modifier syntax (e.g. `bg-black/50`); `flex-shrink-*`→`shrink-*`; `flex-grow-*`→`grow-*`; `overflow-ellipsis`→`text-ellipsis`",
+    "Default border color changed from `gray-200` to `currentColor` in v4; default ring width changed from 3px to 1px and default ring color from `blue-500` to `currentColor`",
+    "Custom utility authoring API changed from `@layer utilities { .foo {} }` to `@utility foo { ... }`",
+    "Variant stacking order for compound variants was reversed (right-to-left in v3 → left-to-right in v4), affecting patterns like `first:*:pt-0`",
+    "Arbitrary-value CSS variable syntax changed from square brackets (`bg-[--brand-color]`) to parentheses (`bg-(--brand-color)`)",
+    "The `corePlugins` config option used in v3 to disable built-in utilities is no longer supported in v4",
+    "An automated migration tool is provided: `npx @tailwindcss/upgrade`, intended to be run on a separate branch with manual diff review"
+  ],
+  "recommendations": [
+    "Use Tailwind v4 with the `@tailwindcss/postcss` PostCSS plugin and a CSS-first `@import \"tailwindcss\";` setup in `app/globals.css`, matching the official Next.js framework guide, rather than a legacy `tailwind.config.js`-driven v3 setup",
+    "Because this build pairs Tailwind with MUI, explicitly test for Preflight/base-style collisions (especially the v4 default border-color and ring changes) once both are in the same app, and scope Tailwind utility classes to avoid fighting MUI component styling",
+    "Do not use v3-era opacity utilities (`bg-opacity-*`, etc.), `flex-shrink-*`/`flex-grow-*`, or `@layer utilities` custom utility syntax — these are removed/changed in v4 and would silently fail or warn",
+    "If any arbitrary-value CSS variable or comma-separated grid template syntax is used, apply v4 syntax (parentheses for vars, underscores instead of commas) since v3 syntax is a breaking change",
+    "Confirm the exact Tailwind version pinned in package.json at implementation time rather than relying on the docs site's displayed version, since the exact patch/minor (v4.3) could not be cross-verified against the npm registry or GitHub releases in this research pass"
+  ],
+  "as_of": "2026-10-28 (Tailwind CSS docs site displaying v4.3; exact release date not independently confirmed)",
+  "sources": [
+    {
+      "title": "Installing Tailwind CSS with PostCSS",
+      "url": "https://tailwindcss.com/docs/installation/using-postcss",
+      "type": "official-docs",
+      "quote": "npm install tailwindcss @tailwindcss/postcss postcss ... @import \"tailwindcss\";"
+    },
+    {
+      "title": "Upgrade guide",
+      "url": "https://tailwindcss.com/docs/upgrade-guide",
+      "type": "official-docs",
+      "quote": "Tailwind CSS v4.0 requires Safari 16.4, Chrome 111, and Firefox 128 ... npx @tailwindcss/upgrade"
+    },
+    {
+      "title": "Installing Tailwind CSS with Next.js",
+      "url": "https://tailwindcss.com/docs/installation/framework-guides/nextjs",
+      "type": "official-docs",
+      "quote": "npm install tailwindcss @tailwindcss/postcss postcss ... Create a postcss.config.mjs file ... Add an @import to ./app/globals.css"
+    },
+    {
+      "title": "Tailwind CSS Installation (version indicator)",
+      "url": "https://tailwindcss.com/docs/installation",
+      "type": "official-docs",
+      "quote": "this documentation is for Tailwind CSS v4.3 ... displayed as \"v4.3\" right after the Tailwind CSS logo"
+    }
+  ],
+  "current_version": "v4.3 [uncertain]",
+  "api_surface": [
+    "`npm install tailwindcss @tailwindcss/postcss postcss` (dependency install)",
+    "`postcss.config.mjs` with `plugins: { \"@tailwindcss/postcss\": {} }`",
+    "`@import \"tailwindcss\";` in `app/globals.css`",
+    "Standard utility classes (layout, spacing, color, flex/grid) used directly in JSX className props across the Next.js App Router components",
+    "Optional `@theme` / CSS custom-property based customization instead of `tailwind.config.js` (v4 CSS-first config)",
+    "`@utility` directive if any custom utility classes are authored"
+  ],
+  "pitfalls": [
+    "v4 requires modern browsers only (Safari 16.4+, Chrome 111+, Firefox 128+) — no fallback for older browsers without staying on v3.4",
+    "v3 `@tailwind base/components/utilities` directives no longer work in v4 — must use `@import \"tailwindcss\";`",
+    "PostCSS/CLI package names changed (`tailwindcss`→`@tailwindcss/postcss`, separate `@tailwindcss/cli`) — using the old package name as the PostCSS plugin will break the build",
+    "Default border and ring colors changed to `currentColor` in v4, which can visually break existing v3-styled components (including possible MUI border conflicts) if not explicitly set",
+    "Several v3 utilities were renamed or removed (`shadow-sm`→`shadow-xs`, `shadow`→`shadow-sm`, `outline-none`→`outline-hidden`, `ring`→`ring-3`, opacity utilities, `flex-shrink-*`/`flex-grow-*`) — copy-pasted v3-era snippets/tutorials may use stale class names",
+    "`corePlugins` option is removed in v4, so any plan to disable specific core utilities via config will not work",
+    "Arbitrary CSS variable syntax and comma-separated grid/bg-position values changed syntax in v4, so v3-style arbitrary value classes are a breaking change, not just a deprecation"
+  ],
+  "uncertain": [
+    "key_findings",
+    "current_version",
+    "as_of"
+  ]
+}

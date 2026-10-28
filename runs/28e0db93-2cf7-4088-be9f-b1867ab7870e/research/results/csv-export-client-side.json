@@ -1,0 +1,52 @@
+{
+  "summary": "I could not inspect the actual PMU EMS finance module source (no repo access), so the exact existing export pattern there is unverifiable; however, the standard, well-established client-side CSV pattern for a Next.js/React/TypeScript app with no backend involvement is to build the CSV string in the browser and trigger a download via a Blob and an anchor element, with no server round-trip. For structured rows like opening/received/issued/written-off/closing per item, the common approach is either hand-rolled string-joining or Papa.unparse() (papaparse) over an array-of-objects, then wrapping the result in a Blob with MIME type text/csv and triggering download via URL.createObjectURL plus a temporary <a download> element, followed by URL.revokeObjectURL to release memory. This recommendation should be treated as a general best-practice match rather than a confirmed match to the finance module's actual code.",
+  "key_findings": [
+    "Papa.unparse(data[, config]) converts an array of arrays or an array of objects into a CSV string; config supports quotes, delimiter, header, newline, and escapeFormulae options (source: papaparse.com/docs, opened directly).",
+    "papaparse's escapeFormulae option (default behavior varies by version) prepends a `'` to cells starting with =, +, -, @ to prevent CSV/formula injection when values are opened in spreadsheet software — relevant since cost/quantity totals will be numeric but item names are user-entered text.",
+    "Latest published papaparse version on the npm registry is 5.7.0 (verified via https://registry.npmjs.org/papaparse/latest).",
+    "papaparse has no bundled TypeScript types; the DefinitelyTyped package @types/papaparse (latest 5.5.2, verified via npm registry) supplies types for TypeScript projects.",
+    "The browser download pattern — Blob + URL.createObjectURL(blob) + a temporary <a download> element + a.click() + URL.revokeObjectURL(url) — is the standard client-side file-download mechanism; URL.createObjectURL is Baseline widely available since July 2015 and is explicitly NOT available in Service Workers due to memory-leak risk (verified via MDN).",
+    "MDN explicitly instructs calling URL.revokeObjectURL() after the object URL is no longer needed to avoid memory leaks."
+  ],
+  "recommendations": [
+    "Match whatever the finance module already does if it exists (confirm by reading that module's export code directly before implementing) — do not assume this research substitutes for checking the actual sibling module's pattern, since that could not be verified here.",
+    "If no finance-module precedent is found, use a dependency-free Blob + <a download> approach for the date-range summary CSV (opening/received/issued/written-off/closing + cost columns) to avoid adding papaparse purely for export when the row shape is simple and fixed.",
+    "If papaparse is already a dependency (e.g., used for CSV import elsewhere), reuse Papa.unparse() for consistency rather than hand-rolling a second CSV serializer.",
+    "Enable or replicate escapeFormulae-style sanitization (prefixing a leading `'` on fields starting with =, +, -, @) if any user-entered text (item names, write-off reasons) could end up in exported cells, to prevent formula-injection when opened in Excel/Sheets.",
+    "Always call URL.revokeObjectURL() after triggering the download to avoid leaking the blob URL, and perform the whole export client-side (no new Next.js API route) since the data needed (date-range summary rows) is already computed/rendered on screen — this keeps the CSV export consistent with the 'the CSV export's totals match the on-screen totals' acceptance criterion by deriving the CSV directly from the same on-screen aggregate rather than a second fetch/query."
+  ],
+  "as_of": "2026-10-28 (papaparse 5.7.0 and @types/papaparse 5.5.2 per npm registry; MDN URL.createObjectURL status as currently published)",
+  "sources": [
+    {
+      "title": "Documentation - Papa Parse",
+      "url": "https://www.papaparse.com/docs",
+      "type": "official-docs",
+      "quote": "Papa.unparse(data[, config]) ... writes out correct delimited text strings given an array of arrays or an array of objects."
+    },
+    {
+      "title": "papaparse — npm registry metadata (latest)",
+      "url": "https://registry.npmjs.org/papaparse/latest",
+      "type": "official-docs",
+      "quote": "Version: 5.7.0 ... Repository: https://github.com/mholt/PapaParse"
+    },
+    {
+      "title": "@types/papaparse — npm registry metadata (latest)",
+      "url": "https://registry.npmjs.org/@types/papaparse/latest",
+      "type": "official-docs",
+      "quote": "Version: 5.5.2 ... TypeScript definitions for papaparse"
+    },
+    {
+      "title": "URL: createObjectURL() static method - Web APIs | MDN",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL_static",
+      "type": "official-docs",
+      "quote": "Status: Widely Available ... Always call URL.revokeObjectURL() after use to prevent memory leaks ... NOT available in Service Workers (memory leak risk)"
+    },
+    {
+      "title": "GitHub - mholt/PapaParse",
+      "url": "https://github.com/mholt/PapaParse",
+      "type": "repo",
+      "quote": "Fast and powerful CSV parser for the browser that supports web workers and streaming large files. Converts CSV to JSON and JSON to CSV."
+    }
+  ],
+  "uncertain": []
+}

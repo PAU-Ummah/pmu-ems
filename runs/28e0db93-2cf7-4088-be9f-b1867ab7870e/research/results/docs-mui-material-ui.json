@@ -1,0 +1,80 @@
+{
+  "summary": "The current stable release line is Material UI v9 (latest point release v9.5.0, published ~2026-10-09), which runs on React 17/18/19, Node 14+, and requires @emotion/react + @emotion/styled as peer packages. For this inventory module, the build will use core layout/data-display components (Table, Grid with the new `size` prop API, Dialog, Snackbar/Alert, Select/RadioGroup, TextField, CircularProgress/Skeleton, Button) plus MUI's theming (ThemeProvider/CssBaseline) for RoleGuard-gated screens; no MUI X DataGrid is assumed unless added separately. The main pitfalls for a project starting fresh on v9 are: the old `Grid` component is now `GridLegacy` (don't use xs/sm props directly—use the v7+ `size={{xs:12}}` object API), deprecated `component`/`componentsProps` props have been fully removed, and some accessibility-driven prop removals (e.g. Dialog's `disableEscapeKeyDown`) will break code copied from older v5/v6 tutorials or AI-generated snippets.",
+  "key_findings": [
+    "Current stable version: Material UI (core) v9.5.0, part of a coordinated v9 release across Material UI and MUI X; v10.0.0-alpha.0 already published as of 2026-10-09, so v9 is the safe production target.",
+    "Install command: `npm install @mui/material @emotion/react @emotion/styled` (Emotion is the default/recommended styling engine, especially for SSR with Next.js).",
+    "Peer dependency support: React ^17.0.0, ^18.0.0, or ^19.0.0 — this build (React 19) is directly supported with no extra shims.",
+    "If using React 18 or below (not this build's case), `react-is` version must be overridden to match the installed React major version because MUI v9 bundles react-is@19 internally.",
+    "styled-components is explicitly documented as NOT compatible with server-rendered Material UI apps due to babel plugin limitations — irrelevant here since Emotion is the default and Next.js SSR is in use.",
+    "Since MUI v7 (carried into v9), the legacy 12-column `Grid` with `xs`/`sm` props is renamed `GridLegacy`; the former `Grid2` (originally `Unstable_Grid2` in v5, stabilized as `Grid2` in v6) now occupies the `Grid` import name and uses `size={{ xs: 12, sm: 6 }}` / `offset={{ xs: 2 }}` instead of per-breakpoint props.",
+    "MUI v6 (still in effect for v9) removed deprecated ListItem button-related props (`button`, `selected`, etc.) — use `ListItemButton` for clickable list rows.",
+    "MUI v9's breaking changes vs v8 center on removing deprecated `component` and `componentsProps` props library-wide, plus accessibility changes: Backdrop no longer sets `aria-hidden` by default, and Dialog/Modal dropped the `disableEscapeKeyDown` prop.",
+    "MUI v9 also reworks `sx` prop internals for up to ~30% performance improvement on heavy `sx` usage and claims a ~3% bundle-size reduction versus v7.",
+    "Minimum supported environment since v6 (still true in v9): Node.js 14+, Chrome 109+, TypeScript 4.7+; IE 11 support was fully dropped in v6, shrinking bundle size by ~2.5MB."
+  ],
+  "recommendations": [
+    "Install with `npm install @mui/material @emotion/react @emotion/styled` and keep React 19 as-is; no react-is override needed for this stack.",
+    "Use the modern `Grid` component with the `size={{ xs: 12, sm: 6 }}` prop object for the stock screen's layout (item cards, batch list) — never import `GridLegacy` or write bare `xs={12}` props, since AI-generated code or older tutorials may still suggest the pre-v7 syntax.",
+    "Use `ListItemButton` (not a clickable `ListItem`) for selectable rows such as 'choose batch to adjust' or event-linked issue rows.",
+    "For the write-off reason requirement (radio/select, required field) and AI-suggestion confirm/edit screen, use `RadioGroup`/`Select` with MUI's built-in `required` + `error`/`helperText` props, paired with your own validation, rather than relying on any deprecated prop-based validation.",
+    "For the oversized-image/Claude-API-failure error state, use `Alert`/`Snackbar` with explicit error state components rather than relying on default behavior, since Backdrop's `aria-hidden` default changed in v9 and could subtly affect modal/dialog accessibility if you build custom overlays.",
+    "Avoid any `component` or `componentsProps` usage copied from pre-v9 examples — these were removed in v9; use `slots`/`slotProps` instead where component customization is needed.",
+    "Pin an exact MUI version range (e.g. `^9.5.0`) rather than `latest`, since v10.0.0-alpha.0 is already circulating and could be pulled in accidentally by a loose range during `npm install`."
+  ],
+  "as_of": "2026-10-28 (MUI core v9.5.0, published ~2026-10-09; v10.0.0-alpha.0 exists but is not stable)",
+  "sources": [
+    {
+      "title": "Material UI – Installation",
+      "url": "https://mui.com/material-ui/getting-started/installation/",
+      "type": "official-docs",
+      "quote": "npm install @mui/material @emotion/react @emotion/styled ... React: ^17.0.0, ^18.0.0, or ^19.0.0"
+    },
+    {
+      "title": "Material UI – Upgrade to v6",
+      "url": "https://mui.com/material-ui/migration/upgrade-to-v6/",
+      "type": "official-docs",
+      "quote": "support for IE 11 has been completely removed ... Old: xs={12} sm={6} xsOffset={2} New: size={{ xs: 12, sm: 6 }} offset={{ xs: 2, sm: 3 }}"
+    },
+    {
+      "title": "Material UI – Versions",
+      "url": "https://mui.com/material-ui/getting-started/versions/",
+      "type": "official-docs",
+      "quote": "v9 is the current stable major version of Material UI, marked with a checkmark (✓) as recommended for production use."
+    },
+    {
+      "title": "Introducing Material UI v9",
+      "url": "https://mui.com/blog/introducing-material-ui-v9/",
+      "type": "official-docs",
+      "quote": "the main breaking changes are related to the removal of deprecated props such as component and componentsProps across the library ... Backdrop no longer includes aria-hidden by default ... Dialog and Modal: removed disableEscapeKeyDown prop"
+    },
+    {
+      "title": "@mui/material - npm",
+      "url": "https://www.npmjs.com/package/@mui/material",
+      "type": "other",
+      "quote": "The latest version of @mui/material is 9.5.0, last published 19 days ago ... a v10.0.0-alpha.0 pre-release version was published on October 9, 2026"
+    }
+  ],
+  "current_version": "9.5.0 (Material UI core, v9 major line; v10.0.0-alpha.0 exists but is not stable)",
+  "api_surface": [
+    "@mui/material: Table/TableHead/TableBody/TableRow/TableCell (on-hand quantity + batch list view)",
+    "Grid (post-v7 Grid2-based API, size={{xs,...}} prop) for responsive layout",
+    "TextField, Select, RadioGroup/FormControlLabel (receipt form, write-off reason, stock-take counted quantity)",
+    "Dialog/DialogTitle/DialogContent/DialogActions (confirm/edit AI-suggested count before write)",
+    "Button, IconButton",
+    "Alert, Snackbar (handled error states for oversized image / Claude API failure)",
+    "CircularProgress / Skeleton (loading states during AI vision call)",
+    "ListItemButton (selectable batch/event rows)",
+    "ThemeProvider, CssBaseline (app-level theming, consistent with existing RBAC-gated screens)",
+    "sx prop for styling (benefits from v9 sx performance improvements)"
+  ],
+  "pitfalls": [
+    "Legacy Grid (xs/sm props) was renamed GridLegacy as of v7 and remains so in v9; the current `Grid` import is the former Grid2 and requires the `size`/`offset` object props — mixing old and new syntax is a common AI-code pitfall.",
+    "ListItem's clickable props (button, selected, disabled, autoFocus) were removed in v6 and remain removed in v9; must use ListItemButton.",
+    "v9 removed deprecated `component` and `componentsProps` props library-wide — use `slots`/`slotProps` instead.",
+    "v9 changed default a11y behavior: Backdrop no longer sets aria-hidden by default; Dialog/Modal no longer accept `disableEscapeKeyDown`.",
+    "styled-components is not compatible with server-rendered MUI apps (relevant since this build is Next.js SSR/App Router) — stick with the default Emotion engine.",
+    "If the stack were ever downgraded to React ≤18, `react-is` must be version-overridden to avoid runtime prop-check errors since MUI v9 bundles react-is@19 internally — not an issue for this build's React 19, but a trap if dependencies drift.",
+    "v10.0.0-alpha.0 is already published; an unpinned `npm install @mui/material@latest` could pull a pre-release — pin to the v9.x range explicitly."
+  ],
+  "uncertain": []
+}

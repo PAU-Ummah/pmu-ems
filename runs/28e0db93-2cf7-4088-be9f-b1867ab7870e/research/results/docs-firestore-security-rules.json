@@ -1,0 +1,100 @@
+{
+  "summary": "Firestore Security Rules are configured as a separate ruleset (firestore.rules) written in Google's CEL-based rules language, declared with `rules_version = '2';` and `service cloud.firestore { match /databases/{database}/documents { ... } }`, then deployed via the Firebase CLI (`firebase deploy --only firestore:rules`) or the Firebase/Cloud console. For this build, rules will use `request.auth`, custom role-lookup functions (e.g. via `get()`/`exists()` against a users/roles doc or custom claims), `request.resource.data` field validation on create/update, and per-collection `allow create/update/delete/get/list` statements to enforce the logging-vs-admin split (ACs 6, 11, 12) and block missing write-off reasons. No new major rules_version (v3) exists yet — v2 (introduced 2019) remains current and is what should be used. The biggest pitfall for this build is that Security Rules are not query filters: a `list` query is rejected outright if it *could* return a document violating the rules, so role-restricted fields like cost/valuation must live in a separate document/collection rather than being hidden field-by-field inside a shared query.",
+  "key_findings": [
+    "Rules always start with `service cloud.firestore { match /databases/{database}/documents { ... } }`; rules are deployed per named database, separately from app code, via Firebase console or CLI (firebase.google.com/docs/firestore/security/rules-structure, firebase.google.com/docs/rules/get-started).",
+    "`rules_version = '2';` is required to use recursive wildcards (`{name=**}`), collection-group query rules, and `request.query` (limit/offset/orderBy) inspection; omitting it defaults to the older v1 behavior (firebase.google.com/docs/rules/rules-language).",
+    "Core condition API: `request.auth` / `request.auth.uid`, `resource.data` (current doc state), `request.resource.data` (proposed post-write state), `request.time`, `get(path)`, `exists(path)`, `getAfter(path)`, custom `function name() { return ...; }` helpers with `let` bindings (firebase.google.com/docs/firestore/security/rules-conditions).",
+    "Official quota limits (firebase.google.com/docs/firestore/quotas): max 10 `exists()`/`get()`/`getAfter()` calls for a single-document/query request, 20 for multi-document reads/transactions/batched writes (10 per sub-operation); max function call-stack depth 20; max 7 function arguments; max 10 `let` bindings per function; no recursive/cyclical function calls; max nested match depth 10; max 1,000 expressions evaluated per request; ruleset source limit 256 KB, compiled limit 250 KB.",
+    "Security Rules are not filters: 'queries are all-or-nothing' — if a query could return a document that would fail the rule, the entire request is denied regardless of what's actually in the database; `where()`/`request.query` constraints in the query must provably satisfy the rule condition (firebase.google.com/docs/firestore/security/rules-query).",
+    "Collection-group queries need `rules_version = '2'` and a rule written as `match /{path=**}/[COLLECTION_ID]/{doc}`, which then applies to that collection ID at every depth in the hierarchy — a pitfall if the same subcollection name is reused elsewhere in the data model.",
+    "Common insecure patterns flagged by the official 'Avoid insecure rules' guide: blanket `allow read, write: if true`, over-broad recursive wildcards, checking only `request.auth != null` without an ownership/role check, and omitting `request.resource.data` validation on create/update (firebase.google.com/docs/rules/insecure-rules).",
+    "Recent platform-level changes (2025–2026, via Firebase release notes) are tooling-focused, not language-breaking: Firestore Security Rules can now be viewed/edited/deployed directly in the Google Cloud console with ruleset history/clone/restore (reported ~July 2026), and a Rules Simulator became available in the Cloud console (reported ~September 2026); no new `rules_version` (e.g. a v3) was found.",
+    "Testing guidance: use the Firebase Local Emulator Suite for automated rules unit tests, or the Rules Simulator in console for ad-hoc checks, before deploying to production (firebase.google.com/docs/rules/get-started)."
+  ],
+  "recommendations": [
+    "Write firestore.rules with `rules_version = '2';` and the standard `service cloud.firestore { match /databases/{database}/documents { ... } }` wrapper, extending the existing file rather than replacing it, per the PRD constraint.",
+    "Implement role checks (logging vs admin) as a reusable function, e.g. `function hasRole(role) { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role; }`, consistent with the existing RoleGuard/useRole convention — but budget for the `get()` call against the 10-calls-per-request quota on any single request path.",
+    "Do not try to hide valuation/cost fields from the logging role by filtering within a shared `items`/`batches` query — because Firestore rules reject a query outright if any potential result could violate the rule, put cost-layer/valuation data the logging role must not see in a separate collection or subcollection with its own `allow get/list` rule restricted to admin.",
+    "Validate all writes with `request.resource.data`: enforce required fields on stock-in receipts (date, quantity, unitCost, optional expiry), require a non-empty `reason` field on write-offs/adjustments (expired/damaged/lost) at the rules level (AC 6), and reject updates/creates to issues/write-offs that also touch `events.amountSpent` or any `invoices/*` document (AC 13) — the latter should be enforced by scoping rules per-collection so the inventory rules have no write path into `events`/`invoices` at all.",
+    "For on-hand/negative-stock and over-issue rejection (AC 2), keep that logic in the pure FIFO functions (AC 14) and Cloud Functions/API layer — Firestore rules can validate individual document shape but cannot reliably sum across a batches collection to check an aggregate on-hand quantity, so don't rely on rules alone for that invariant.",
+    "Test rules locally with the Firebase Emulator Suite (and/or the Rules Simulator) for the role-based allow/deny cases in ACs 6, 11, 12 before considering the firestore.rules changes complete; no production deployment is in scope per the constraints.",
+    "Use `rules_version = '2'` query constraints (`request.query.limit`, etc.) if any list endpoint needs to cap result size, since v1 rules don't expose `request.query` at all."
+  ],
+  "as_of": "2026-10-28 (pages fetched live; quotas page reflects current documented limits, no v3 rules language found)",
+  "sources": [
+    {
+      "title": "Structuring Cloud Firestore Security Rules",
+      "url": "https://firebase.google.com/docs/firestore/security/rules-structure",
+      "type": "official-docs",
+      "quote": "Cloud Firestore Security Rules always begin with the service cloud.firestore declaration... the match /databases/{database}/documents declaration specifies that rules should match any Firestore database in the project."
+    },
+    {
+      "title": "Writing conditions for Cloud Firestore Security Rules",
+      "url": "https://firebase.google.com/docs/firestore/security/rules-conditions",
+      "type": "official-docs",
+      "quote": "request.auth ... request.resource.data ... get(path) ... exists(path) ... getAfter(path)."
+    },
+    {
+      "title": "Security Rules language",
+      "url": "https://firebase.google.com/docs/rules/rules-language",
+      "type": "official-docs",
+      "quote": "rules_version = '2'; service cloud.firestore { ... } ... Functions can contain only a single return statement."
+    },
+    {
+      "title": "Get started with Firebase Security Rules",
+      "url": "https://firebase.google.com/docs/rules/get-started",
+      "type": "official-docs",
+      "quote": "Use the Firebase Emulator for unit tests in local environments, or the Rules Simulator for quick validation ... then deploy."
+    },
+    {
+      "title": "Firestore Security Rules and queries (Securely query data)",
+      "url": "https://firebase.google.com/docs/firestore/security/rules-query",
+      "type": "official-docs",
+      "quote": "Security rules are not filters—queries are all or nothing ... the rules engine evaluates queries against their potential result set, not actual documents."
+    },
+    {
+      "title": "Avoid insecure rules",
+      "url": "https://firebase.google.com/docs/rules/insecure-rules",
+      "type": "official-docs",
+      "quote": "allow read, write: if true ... anyone who guesses your project ID can steal, modify, or delete the data."
+    },
+    {
+      "title": "Firestore quotas and limits",
+      "url": "https://firebase.google.com/docs/firestore/quotas",
+      "type": "official-docs",
+      "quote": "Maximum number of exists(), get(), and getAfter() calls per request: 10 for single-document requests and query requests; 20 for multi-document reads, transactions, and batched writes."
+    },
+    {
+      "title": "Firebase Release Notes",
+      "url": "https://firebase.google.com/support/releases",
+      "type": "official-docs",
+      "quote": "You can now view, manage, and deploy Firestore Security Rules directly in the Google Cloud console for Firestore (Standard and Enterprise editions)."
+    }
+  ],
+  "current_version": "Firestore Security Rules language v2 (rules_version = '2'); no v3 exists as of this research",
+  "api_surface": [
+    "rules_version = '2';",
+    "service cloud.firestore { match /databases/{database}/documents { ... } }",
+    "match /collection/{docId} { allow get, list, create, update, delete: if <condition>; }",
+    "request.auth, request.auth.uid",
+    "resource.data, request.resource.data",
+    "request.time",
+    "get(/databases/$(database)/documents/...), exists(/databases/$(database)/documents/...)",
+    "custom function helpers with let bindings for role checks (e.g. hasRole(role))",
+    "request.resource.data.keys().hasOnly([...]) / hasAll([...]) for required-field validation (e.g. write-off reason)",
+    "Firebase CLI: firebase deploy --only firestore:rules"
+  ],
+  "pitfalls": [
+    "Queries are all-or-nothing: a list/query request is denied entirely if any potential result document could fail the rule — field-level hiding of valuation data inside a shared query is not possible; use a separate collection/doc instead.",
+    "rules_version must be '2' to use recursive wildcards, collection-group rules, and request.query (limit/orderBy/offset) — v1 is still the silent default if the declaration is omitted.",
+    "Document-access quota: only 10 get()/exists()/getAfter() calls per single request (20 for multi-doc/transactions/batched writes) — role-check functions that call get() on a user doc consume this budget and can silently start failing if composed with other lookups.",
+    "Function call stack depth capped at 20, max 7 arguments, max 10 let-bindings, no recursive/cyclical function calls — deeply nested helper functions can hit compiler limits.",
+    "Ruleset size caps: 256 KB source / 250 KB compiled — extending firestore.rules for a new inventory module should stay mindful of cumulative size with existing rules.",
+    "Checking only `request.auth != null` is a common insecure pattern flagged by official docs — must pair with explicit role/ownership checks for the logging-vs-admin split (AC 11/12).",
+    "Collection-group rules (`match /{path=**}/[COLLECTION_ID]/{doc}`) apply to every collection with that name at any depth — reusing a subcollection name elsewhere in the existing data model could unintentionally widen or narrow access.",
+    "Tooling/console changes (rules editing and simulator moving into the Google Cloud console, reported mid-to-late 2026) are workflow changes, not rules-language breaking changes, but should be noted if deployment instructions reference the older Firebase console UI exclusively [uncertain]."
+  ],
+  "uncertain": [
+    "pitfalls"
+  ]
+}

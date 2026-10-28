@@ -1,0 +1,132 @@
+# OSA research outline -- generated from the locked baby PRD. Do not hand-edit mid-run.
+topic: "FIFO-based non-profit inventory module for PMU EMS (Next.js/Firebase) with AI-assisted stock counting"
+items:
+  - slug: "docs-next-js"
+    title: "Official documentation: Next.js"
+    question: "Find the OFFICIAL documentation for \"Next.js\": its current stable version, how it is installed or enabled, the API surface this build will use, and any breaking changes or pitfalls in the last 3 years."
+    kind: "docs"
+    modules:
+      - "general-web"
+  - slug: "docs-react"
+    title: "Official documentation: React"
+    question: "Find the OFFICIAL documentation for \"React\": its current stable version, how it is installed or enabled, the API surface this build will use, and any breaking changes or pitfalls in the last 3 years."
+    kind: "docs"
+    modules:
+      - "general-web"
+  - slug: "docs-typescript"
+    title: "Official documentation: TypeScript"
+    question: "Find the OFFICIAL documentation for \"TypeScript\": its current stable version, how it is installed or enabled, the API surface this build will use, and any breaking changes or pitfalls in the last 3 years."
+    kind: "docs"
+    modules:
+      - "general-web"
+  - slug: "docs-firebase-authentication"
+    title: "Official documentation: Firebase Authentication"
+    question: "Find the OFFICIAL documentation for \"Firebase Authentication\": its current stable version, how it is installed or enabled, the API surface this build will use, and any breaking changes or pitfalls in the last 3 years."
+    kind: "docs"
+    modules:
+      - "general-web"
+  - slug: "docs-firestore"
+    title: "Official documentation: Firestore"
+    question: "Find the OFFICIAL documentation for \"Firestore\": its current stable version, how it is installed or enabled, the API surface this build will use, and any breaking changes or pitfalls in the last 3 years."
+    kind: "docs"
+    modules:
+      - "general-web"
+  - slug: "docs-firestore-security-rules"
+    title: "Official documentation: Firestore Security Rules"
+    question: "Find the OFFICIAL documentation for \"Firestore Security Rules\": its current stable version, how it is installed or enabled, the API surface this build will use, and any breaking changes or pitfalls in the last 3 years."
+    kind: "docs"
+    modules:
+      - "general-web"
+  - slug: "docs-firebase-storage"
+    title: "Official documentation: Firebase Storage"
+    question: "Find the OFFICIAL documentation for \"Firebase Storage\": its current stable version, how it is installed or enabled, the API surface this build will use, and any breaking changes or pitfalls in the last 3 years."
+    kind: "docs"
+    modules:
+      - "general-web"
+  - slug: "docs-tailwind-css"
+    title: "Official documentation: Tailwind CSS"
+    question: "Find the OFFICIAL documentation for \"Tailwind CSS\": its current stable version, how it is installed or enabled, the API surface this build will use, and any breaking changes or pitfalls in the last 3 years."
+    kind: "docs"
+    modules:
+      - "general-web"
+  - slug: "docs-mui-material-ui"
+    title: "Official documentation: MUI (Material UI)"
+    question: "Find the OFFICIAL documentation for \"MUI (Material UI)\": its current stable version, how it is installed or enabled, the API surface this build will use, and any breaking changes or pitfalls in the last 3 years."
+    kind: "docs"
+    modules:
+      - "general-web"
+  - slug: "docs-vitest"
+    title: "Official documentation: Vitest"
+    question: "Find the OFFICIAL documentation for \"Vitest\": its current stable version, how it is installed or enabled, the API surface this build will use, and any breaking changes or pitfalls in the last 3 years."
+    kind: "docs"
+    modules:
+      - "general-web"
+  - slug: "docs-anthropic-claude-api-messages-vision"
+    title: "Official documentation: Anthropic Claude API (Messages / Vision)"
+    question: "Find the OFFICIAL documentation for \"Anthropic Claude API (Messages / Vision)\": its current stable version, how it is installed or enabled, the API surface this build will use, and any breaking changes or pitfalls in the last 3 years."
+    kind: "docs"
+    modules:
+      - "general-web"
+  - slug: "fifo-costing-ias2"
+    title: "IAS 2 FIFO cost-flow rules and donated inventory treatment"
+    question: "What does IAS 2 require for FIFO cost-layer consumption and for valuing donated (fair-value, possibly zero-cost) inventory, so the engine and its explanations are defensible for coursework?"
+    kind: "research"
+    modules:
+      - "academic-papers"
+      - "general-web"
+  - slug: "firestore-transactions-atomic-writes"
+    title: "Atomic multi-document stock mutations with Firestore transactions"
+    question: "How to structure a Firestore transaction that reads multiple cost-layer docs, mutates several of them, and writes a movement record atomically without race conditions?"
+    kind: "research"
+    modules:
+      - "general-web"
+      - "github-debug"
+  - slug: "firestore-security-rules-role-based"
+    title: "Two-tier RBAC in firestore.rules for new collections"
+    question: "What rule patterns correctly scope read/write per collection (items, layers, movements, counts) to a logging role vs an admin role, matching the existing role field on `users`?"
+    kind: "research"
+    modules:
+      - "general-web"
+  - slug: "anthropic-vision-api-nextjs"
+    title: "Calling Claude's vision API from a Next.js Route Handler"
+    question: "What is the correct request shape for sending an image to Claude's messages/vision endpoint server-side, including size limits and structured-output handling for item/count/confidence?"
+    kind: "research"
+    modules:
+      - "general-web"
+  - slug: "vitest-pure-function-testing"
+    title: "Vitest setup for deterministic TS unit tests in this repo"
+    question: "What vitest config and test patterns best suit testing pure FIFO functions (partial layers, multi-layer issues, edge cases) in a Next.js/TypeScript project?"
+    kind: "research"
+    modules:
+      - "general-web"
+      - "github-debug"
+  - slug: "firebase-storage-image-upload"
+    title: "Storing and linking count photos as audit attachments"
+    question: "What is the secure pattern for uploading a stock-count photo to Firebase Storage and referencing it from a Firestore count document, with access restricted by role?"
+    kind: "research"
+    modules:
+      - "general-web"
+  - slug: "csv-export-client-side"
+    title: "Client-side CSV export for date-range summaries"
+    question: "What client-side CSV generation approach matches the existing finance module's export pattern, for opening/received/issued/written-off/closing rows?"
+    kind: "research"
+    modules:
+      - "general-web"
+      - "github-debug"
+execution:
+  timeRange: "last 3 years"
+  batchSize: 4
+  resume: true
+  docsRequired: true
+  academic:
+    enabled: true
+    queries:
+      - "IAS 2 Inventories FIFO cost formula requirements"
+      - "accounting treatment for donated inventory fair value measurement"
+      - "FIFO inventory costing layer ledger algorithm"
+  githubLookup:
+    enabled: true
+    queries:
+      - "FIFO inventory management open source Firestore"
+      - "Next.js Firestore inventory tracker reference implementation"
+      - "Claude vision API stock count image recognition example"

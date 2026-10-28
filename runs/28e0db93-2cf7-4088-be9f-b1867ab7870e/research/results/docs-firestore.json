@@ -1,0 +1,91 @@
+{
+  "summary": "Firestore is Google's NoSQL document database, used here via the Firebase Web modular SDK (npm package `firebase`, currently v13.1.0) through `firebase/firestore`. The build will install Firestore in the Firebase Console in production mode, initialize it with `initializeApp`/`getFirestore`, and read/write cost-layer and movement documents with `collection`/`doc`/`addDoc`/`setDoc`/`getDocs`/`query`/`where`/`orderBy`. FIFO consumption and write-offs that must be atomic and never go negative should use `runTransaction` (not `writeBatch`, since it needs reads to decide which layers to consume), and RBAC is enforced by extending `firestore.rules` with role lookups via `get()`/`exists()` against a users/roles document. The main version-sensitive pitfall in the last 3 years is the Node.js engine bump to Node 20+ as of SDK v12.0.0 (July 2025) and continued type-signature changes to `UpdateData`/`FirestoreDataConverter`.",
+  "key_findings": [
+    "Current stable Firebase JS SDK (npm package `firebase`, includes `firebase/firestore`) is v13.1.0, published 2026-10-21, per the official release notes page.",
+    "Install with `npm install firebase@13.1.0 --save`; initialize with `initializeApp(firebaseConfig)` then `getFirestore(app)` (official quickstart).",
+    "Core modular API surface confirmed from official docs: `collection()`, `doc()`, `addDoc()`, `setDoc()`, `getDoc()`, `getDocs()`, `query()`, `where()`, `orderBy()`.",
+    "Atomic multi-document operations: `runTransaction(db, async (transaction) => {...})` with `transaction.get/set/update/delete`; reads must precede writes in a transaction, and 'a function calling a transaction might run more than once if a concurrent edit affects a document that the transaction reads' (official docs) — relevant because FIFO layer consumption reads multiple layer docs then writes to several.",
+    "Alternative `writeBatch(db)` with `.set/.update/.delete` + `.commit()` is write-only (no reads/retries), atomic, but not suited to decide-then-write FIFO logic without a prior transaction read.",
+    "Official quota limits: transaction time limit 270s (60s idle expiry); max 500 field transformations per Commit/transaction; max API request size 10 MiB; document size limit 1 MiB; field value cap ~1 MiB - 89 bytes; max nesting depth 20 levels.",
+    "Security Rules: must start with `rules_version = '2';` for collection-group query support (introduced ~2019, still current baseline). Role-based rules are written by looking up another document, e.g. `get(/databases/$(database)/documents/users/$(request.auth.uid)).data.admin == true`, and rules support granular `allow create|read|update|delete` verbs.",
+    "Firebase JS SDK v12.0.0 (2025-07-17) raised the minimum supported Node.js version to 20 and set ES2020 as the minimum build target — a breaking change for any CI/build tooling still on Node < 20.",
+    "Firebase JS SDK v10.0.0 (2023-07-06) changed `UpdateData`/`FirestoreDataConverter` generics (added a second type parameter) to fix `updateDoc()` typing — can break existing TypeScript code using custom converters.",
+    "Firebase JS SDK v13.0.0 (2026-10-07) further modified `UpdateData<T>` to support indexed/`Record<X,T>` types; mostly additive/typing but worth checking against strict TS inventory types."
+  ],
+  "recommendations": [
+    "Pin `firebase` to the current major (^13.x) in package.json and ensure the dev/CI Node.js version is >= 20, since v12+ requires it.",
+    "Implement FIFO consumption (partial/multi-layer issue, over-issue rejection) inside a single `runTransaction`: read all needed layer docs first, compute consumption in pure JS, then write updated layer quantities plus the movement doc — this satisfies 'no movement written on rejection' and 'never negative' acceptance criteria atomically.",
+    "Use `writeBatch` only for independent, read-free writes (e.g., writing a receipt's single new layer doc); do not use it where the write depends on current on-hand quantity.",
+    "Extend `firestore.rules` additively: add `match` blocks for the new inventory collections, using `get()`/`exists()` lookups against the existing users/role document pattern already used elsewhere in the project, and keep `rules_version = '2';` unchanged.",
+    "Enforce write-off reason and role checks in both the UI and in `firestore.rules` as data validation (`request.resource.data.reason in ['expired','damaged','lost']`) rather than relying on UI validation alone, since rules are the acceptance-criterion boundary for role 11/12.",
+    "Watch TypeScript converter/generic signatures (`FirestoreDataConverter`, `UpdateData`) when typing cost-layer and movement documents, since these generics changed in SDK v10 and v13 — verify with `npm run build`/`tsc` after upgrading."
+  ],
+  "as_of": "2026-10-28 (Firebase JS SDK v13.1.0, published 2026-10-21)",
+  "sources": [
+    {
+      "title": "Cloud Firestore Documentation (Firebase)",
+      "url": "https://firebase.google.com/docs/firestore",
+      "type": "official-docs",
+      "quote": "Cloud Firestore is a flexible, scalable NoSQL database ... Web SDK: Modern modular SDK v9+ documentation available in the Build section"
+    },
+    {
+      "title": "Transactions and batched writes | Firestore",
+      "url": "https://firebase.google.com/docs/firestore/manage-data/transactions",
+      "type": "official-docs",
+      "quote": "a function calling a transaction might run more than once if a concurrent edit affects a document that the transaction reads"
+    },
+    {
+      "title": "Usage and limits | Firestore",
+      "url": "https://firebase.google.com/docs/firestore/quotas",
+      "type": "official-docs",
+      "quote": "Time limit for a transaction: 270 seconds, with a 60-second idle expiration time ... Each document cannot exceed 1 MiB (1,048,576 bytes)"
+    },
+    {
+      "title": "Get started with Cloud Firestore Security Rules",
+      "url": "https://firebase.google.com/docs/firestore/security/get-started",
+      "type": "official-docs",
+      "quote": "match /<some_path>/ { allow read, write: if <some_condition>; } ... rules_version = '2';"
+    },
+    {
+      "title": "Writing conditions for Cloud Firestore Security Rules",
+      "url": "https://firebase.google.com/docs/firestore/security/rules-conditions",
+      "type": "official-docs",
+      "quote": "allow delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.admin == true;"
+    },
+    {
+      "title": "Get started with Cloud Firestore",
+      "url": "https://firebase.google.com/docs/firestore/quickstart",
+      "type": "official-docs",
+      "quote": "npm install firebase@13.1.0 --save ... const db = getFirestore(app);"
+    },
+    {
+      "title": "Firebase JavaScript SDK Release Notes",
+      "url": "https://firebase.google.com/support/release-notes/js",
+      "type": "official-docs",
+      "quote": "Updated minimum Node.js requirement to version 20 ... SDK now uses ES2020 as minimum standard (Version 12.0.0, July 17, 2025)"
+    }
+  ],
+  "current_version": "firebase npm package v13.1.0 (published 2026-10-21), includes firebase/firestore modular SDK",
+  "api_surface": [
+    "initializeApp(firebaseConfig), getFirestore(app)",
+    "collection(db, path), doc(db, path, id)",
+    "addDoc(collectionRef, data), setDoc(docRef, data)",
+    "getDoc(docRef), getDocs(query)",
+    "query(collectionRef, where(...), orderBy(...))",
+    "runTransaction(db, async (transaction) => { transaction.get/set/update/delete })",
+    "writeBatch(db) -> batch.set/update/delete, batch.commit()",
+    "firestore.rules: match /databases/{db}/documents + match blocks per collection, allow read/create/update/delete with request.auth and get()/exists() role lookups, rules_version = '2'"
+  ],
+  "pitfalls": [
+    "SDK v12.0.0 (2025-07-17) requires Node.js >= 20 and ES2020 minimum target — CI/build environments on older Node will break.",
+    "SDK v10.0.0 (2023-07-06) and v13.0.0 (2026-10-07) changed `UpdateData`/`FirestoreDataConverter` generics — custom TypeScript converters for inventory types may need signature updates.",
+    "Transactions auto-retry on contention and 'should not directly modify application state' outside the transaction callback — side effects (e.g., toasts, external calls) must be kept out of the FIFO transaction function.",
+    "Transactions have a hard 270s limit (60s idle) and reads must happen before writes — large multi-layer FIFO issues reading many layer docs should be kept efficient and ordered correctly.",
+    "Batched writes are atomic but cannot read; using writeBatch for FIFO issue logic (which needs to read current layers first) would be incorrect — must use runTransaction instead.",
+    "Document size cap is 1 MiB and max 500 field transformations per commit/transaction — not a practical limit for this app's scale but worth knowing if bulk stock-takes are batched.",
+    "Security rules propagation to active listeners can take up to ~10 minutes after deployment [uncertain] (noted in docs but exact current figure not independently reverified beyond the fetched summary)."
+  ],
+  "uncertain": [
+    "pitfalls"
+  ]
+}

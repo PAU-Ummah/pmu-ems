@@ -1,0 +1,74 @@
+{
+  "summary": "The official Anthropic docs (platform.claude.com, the current home for docs.claude.com) describe the Messages API as the single endpoint (POST /v1/messages) used for both text and vision; vision is not a separate product but an `image` content block type within a normal Messages request. For this build, a Next.js API route should call the Anthropic SDK server-side, send the user's photo as a `base64` image content block alongside a text instruction asking for item + count, and parse the JSON-ish response client-side for user confirmation before writing to Firestore (satisfying AC7/AC8). The API requires the `x-api-key` header and an `anthropic-version` header; the latest documented version is `2026-10-21`, with `2023-06-01` as the long-standing baseline most SDKs still default to. Key operational limits to respect: 10MB max base64 image size on the direct API, 32MB max total request size, and specific error types (`429 rate_limit_error`, `529 overloaded_error`, `413 request_too_large`) that must be translated into the 'handled error state' required by AC8 rather than a crash/500.",
+  "key_findings": [
+    "Vision is implemented via an `image` content block inside a normal POST https://api.anthropic.com/v1/messages request, with `source.type` of `base64`, `url`, or `file` (Files API) — confirmed by reading platform.claude.com/docs/en/build-with-claude/vision.",
+    "Supported image formats: image/jpeg, image/png, image/gif, image/webp. Animated GIFs: only first frame used.",
+    "Max image size: 10 MB base64-encoded on the direct Claude API (5 MB on Bedrock, 10 MB on claude.ai). Max dimensions 8000x8000 px; above 20 images in one request a stricter per-image pixel limit kicks in.",
+    "Overall Messages API request size limit is 32 MB (returns 413 request_too_large if exceeded); Files API allows up to 500 MB uploads.",
+    "Required headers: `x-api-key` (API key) and `anthropic-version` (e.g. `2023-06-01` or the current `2026-10-21`). Client SDKs set this header automatically.",
+    "Current/latest API version per the versioning page is `2026-10-21`; it removed `temperature`/`top_p`/`top_k` params (400 error if sent) and tightened a few document/citation block rules — not relevant to this build's simple vision-classification call, but worth knowing the SDK default version may differ.",
+    "Error shape is consistent JSON: `{type:'error', error:{type, message}, request_id}`. Error types relevant to this build's error-state requirement: 400 invalid_request_error, 401 authentication_error, 413 request_too_large (oversized image), 429 rate_limit_error, 500 api_error, 504 timeout_error, 529 overloaded_error.",
+    "Official SDK auto-retries transient errors (connection errors, 429, 5xx) twice by default with exponential backoff, honoring `retry-after`.",
+    "Claude's own counting is explicitly called out as approximate ('Claude can give approximate counts of objects in an image but might not always be precisely accurate, especially with large numbers of small objects') — directly supports AC7's requirement that a human must confirm/edit the AI suggestion before it is ever written to Firestore.",
+    "Uploaded images are not stored beyond the request (ephemeral) and are not used for model training, per the vision page's FAQ.",
+    "Resolution/token cost: images are billed in 28x28px 'visual token' patches; a typical ~1000x1000px photo costs roughly 1,296–1,521 visual tokens depending on model resolution tier — relevant for estimating per-photo cost for a nonprofit's budget.",
+    "Model identifiers shown throughout current docs examples (e.g. claude-opus-5-5, claude-sonnet-5, claude-sonnet-5-5, claude-haiku-5-5) reflect the Anthropic model lineup as of the docs' last update; pick the cheapest/fastest vision-capable model available at build time for a simple 'what item + how many' classification task."
+  ],
+  "recommendations": [
+    "Call the Messages API only from a Next.js API route (server-side), using the official `@anthropic-ai/sdk` (or `anthropic` Python if applicable) so the API key stays in an environment variable and never reaches the client — matches the locked constraint and the SDK's built-in retry/backoff handling.",
+    "Resize/compress the photographed image client-side (or in the API route) before base64-encoding to stay well under the 10 MB per-image / 32 MB total request limits, and return a clear 'image too large' error to the UI if it still exceeds limits (AC8).",
+    "Send the image as a `base64` `image` content block plus a text instruction asking Claude to return a structured suggestion (item name + quantity); use `output_config`/structured-output or careful prompt instructions to get parseable JSON back, but always require explicit user confirm/edit before any Firestore write (AC7).",
+    "Wrap the Anthropic API call in a try/catch that maps known error types (429, 500, 504, 529, 413, invalid_request_error) to a user-facing 'AI suggestion unavailable, please enter manually' state rather than letting the request 500 or crash the UI (AC8).",
+    "Pin a specific `anthropic-version` header (or rely on the latest SDK's default) rather than hardcoding an old date, and periodically check the versioning page for breaking changes before upgrading the SDK.",
+    "Do not rely on Claude's count as authoritative — treat it purely as a pre-fill suggestion, consistent with Anthropic's own documented counting-accuracy limitation.",
+    "Choose the lowest-cost vision-capable model in the current lineup (smallest resolution tier / lowest per-token price) for this low-stakes 'suggest item + count' use case rather than a frontier/high-resolution model, since the nonprofit use case doesn't need maximum fidelity and the docs show high-resolution tiers can cost ~3x more in visual tokens."
+  ],
+  "as_of": "Anthropic API version 2026-10-21 (versioning page); vision/messages/errors docs fetched live from platform.claude.com on 2026-10-28",
+  "sources": [
+    {
+      "title": "Vision - Claude Docs",
+      "url": "https://platform.claude.com/docs/en/build-with-claude/vision",
+      "type": "official-docs",
+      "quote": "On the API, provide images to Claude as `image` content blocks using one of three source types: 1. A base64-encoded image embedded in the request body 2. A URL reference to an image hosted online 3. A `file_id` returned by the Files API"
+    },
+    {
+      "title": "Messages API Reference - Claude Docs",
+      "url": "https://platform.claude.com/docs/en/api/messages",
+      "type": "official-docs",
+      "quote": "**`x-api-key`** (required): Your Anthropic API key ... Content Blocks ... Image Block: {\"type\": \"image\", \"source\": {\"type\": \"base64|url|file\", ...}}"
+    },
+    {
+      "title": "Versions - Claude Docs",
+      "url": "https://platform.claude.com/docs/en/api/versioning",
+      "type": "official-docs",
+      "quote": "When making API requests, you must send an `anthropic-version` request header. For example, `anthropic-version: 2026-10-21`. ... Anthropic recommends using the latest API version whenever possible."
+    },
+    {
+      "title": "Claude API errors - Claude Docs",
+      "url": "https://platform.claude.com/docs/en/api/errors",
+      "type": "official-docs",
+      "quote": "429 - `rate_limit_error`: Your organization has hit a rate limit ... 529 - `overloaded_error`: The API is temporarily overloaded. ... Messages API | 32 MB"
+    }
+  ],
+  "current_version": "anthropic-version header: 2026-10-21 (latest); 2023-06-01 is the long-standing baseline most SDKs still send by default [uncertain]",
+  "api_surface": [
+    "POST https://api.anthropic.com/v1/messages (Messages API) — called server-side from a Next.js API route",
+    "Request headers: x-api-key, anthropic-version, content-type: application/json",
+    "Request body: { model, max_tokens, messages: [{ role: 'user', content: [ {type:'image', source:{type:'base64', media_type, data}}, {type:'text', text} ] }] }",
+    "Response: { id, type, role, content: [{type:'text', text}], model, stop_reason, usage:{input_tokens, output_tokens} }",
+    "Error response shape: { type:'error', error:{type, message}, request_id }",
+    "Official Anthropic SDK (e.g. @anthropic-ai/sdk) client.messages.create(...) with built-in retry/backoff"
+  ],
+  "pitfalls": [
+    "Image + overall request size limits: 10MB per base64 image, 32MB total request — oversized photos from a phone camera can easily exceed this and must be compressed/resized server-side before sending.",
+    "Above 20 images in a single request, a much stricter per-image pixel limit applies — not directly relevant for a single stock-count photo, but relevant if future features batch multiple photos.",
+    "API version 2026-10-21 removed `temperature`, `top_p`, `top_k` params entirely (400 error on any model) — avoid using these if copying older example code.",
+    "Several recent model-specific breaking changes around `thinking` configuration (adaptive vs enabled vs disabled vs between_tools) differ by model — if using extended/adaptive thinking features, must match the exact model's supported mode or get a 400 invalid_request_error; for a simple vision classification call, thinking is unnecessary so this can largely be avoided by omitting the `thinking` parameter.",
+    "429 rate_limit_error can also mean a spend-cap was hit (no retry-after header, keeps failing) — don't assume all 429s are transient and retryable the same way.",
+    "Claude's own object-counting is documented as approximate for images with many small objects — must not be trusted as ground truth, reinforcing AC7's human-confirmation requirement.",
+    "Streaming responses can error mid-stream after an initial 200 OK — if streaming is used for the vision call (not required for this build), standard try/catch on the initial response won't catch it."
+  ],
+  "uncertain": [
+    "current_version"
+  ]
+}

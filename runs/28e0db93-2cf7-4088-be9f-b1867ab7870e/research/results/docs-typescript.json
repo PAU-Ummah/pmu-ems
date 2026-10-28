@@ -1,0 +1,69 @@
+{
+  "summary": "The official TypeScript documentation (typescriptlang.org, devblogs.microsoft.com) confirms the current stable release is TypeScript 7.0.2, a from-scratch rewrite of the compiler in Go (codename 'Corsa') shipped July 8, 2026, giving ~8-12x faster builds. Installation is unchanged (`npm install typescript --save-dev`, run via `npx tsc`), but TypeScript 7.0 ships no programmatic/compiler API — only a native `tsc` binary — and this breaks tools that rely on the JS Program/transformer API, including ts-jest and (per secondary sources) current Vitest/Next.js 15 type-checking integration until TS 7.1 restores an API. For this build (Next.js 15, vitest, pure FIFO functions), the safe choice is to pin TypeScript to the 6.x line rather than adopt 7.0, since the acceptance criteria require `npm test` (vitest) and a normal Next.js 15 build/type-check pipeline that depend on compiler-API tooling. Core API surface used will be ordinary tsconfig.json compilerOptions (strict, target, module/moduleResolution, jsx, paths) plus standard type-only language features (interfaces, generics, utility types, `satisfies`) for the FIFO pure functions and Firestore/Next.js typings — no direct TS compiler API calls are needed.",
+  "key_findings": [
+    "TypeScript 7.0 GA released July 8, 2026 (npm version 7.0.2), a full rewrite of the compiler in Go, no longer running as JS on Node — install/run commands (`npm install typescript --save-dev`, `npx tsc`) are unchanged. Source: official TypeScript 7.0 announcement.",
+    "TypeScript 7.0 reports 7.7x-11.9x faster full builds than TS 6.0 in Microsoft's own benchmarks (e.g. VS Code 125.7s -> 10.6s), with 6-26% lower memory use.",
+    "TypeScript 7.0 ships WITHOUT the JavaScript programmatic compiler API (no Program/transformer API, no `tsserver.js`); only the native `tsc`/language-server binary ships. Microsoft's own migration guidance and the ts-jest project's documentation both state ts-jest 'needs' the JS API and recommends a side-by-side npm alias workaround (`@typescript/native` for TS7 CLI + `typescript` pinned to a TS6 compatibility package) until TS 7.1 restores an API.",
+    "TypeScript 7.1 is in Beta as of October 20, 2026 and is the version slated to reintroduce a programmatic API and import-attributes support for ambient modules.",
+    "Breaking defaults/removed features confirmed on the official TS7.0 overview: `strict` now defaults to true, `module` defaults to `esnext`, `types` defaults to `[]` (no auto @types discovery), ES5 target removed, legacy AMD/UMD/CommonJS module emit removed, classic module resolution deprecated, and `baseUrl` is removed (use `paths` relative to project root — but `paths` normally requires `baseUrl` per the general tsconfig reference, so TS7 changes this contract).",
+    "The general TypeScript tsconfig reference (stable across TS6/early TS7) documents the compilerOptions this build needs: `strict` (bundles noImplicitAny, strictNullChecks, etc.), `target`, `module`/`moduleResolution` (e.g. `nodenext` or `bundler`), `jsx: react-jsx`, `esModuleInterop`, `skipLibCheck`, `isolatedModules`, and `baseUrl`+`paths` for `@/*` aliases."
+  ],
+  "recommendations": [
+    "Pin the project's `typescript` devDependency to the 6.x line (latest confirmed: 6.0.3) rather than 7.0.2, because vitest and the Next.js 15 type-checking pipeline rely on the programmatic compiler API that TypeScript 7.0 does not ship; re-evaluate once TypeScript 7.1 (currently Beta) ships a stable API.",
+    "Set `isolatedModules: true` and `esModuleInterop: true` in tsconfig.json so FIFO pure-function modules transpile safely per-file under both the Next.js/SWC build and vitest.",
+    "Use `jsx: \"react-jsx\"` (React 17+/React 19 transform) and keep `strict: true` explicitly in tsconfig regardless of which major version is used, since the default for `strict` differs across TS major versions and this build's correctness requirements (FIFO math, no negative stock) benefit from strict null/undefined checking.",
+    "If path aliases (`@/*`) are used for the new inventory module files, keep `baseUrl` set explicitly in tsconfig rather than relying on root defaults, since this behavior is inconsistent between TS6 and TS7.",
+    "Do not attempt to use any TypeScript 7.0 CLI-only features that assume a programmatic API (e.g. custom ts-morph/AST tooling) for this build; keep all Claude Vision API typing and Firestore typing on standard `.d.ts`/interface declarations, which work identically under TS6 and TS7."
+  ],
+  "as_of": "TypeScript 7.0.2 (GA July 8, 2026) is current stable per official sources; TypeScript 7.1 Beta as of October 20, 2026; recommend building against TypeScript 6.0.3 for tooling compatibility.",
+  "sources": [
+    {
+      "title": "TypeScript - Download / Installing TypeScript",
+      "url": "https://www.typescriptlang.org/download",
+      "type": "official-docs",
+      "quote": "npm install typescript --save-dev ... npx tsc"
+    },
+    {
+      "title": "Announcing TypeScript 7.0",
+      "url": "https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/",
+      "type": "official-docs",
+      "quote": "a 10x faster native port of TypeScript ... 8x to 12x speedups on full builds ... strict now defaults to true ... baseUrl removed"
+    },
+    {
+      "title": "TypeScript tsconfig Reference",
+      "url": "https://www.typescriptlang.org/tsconfig",
+      "type": "official-docs",
+      "quote": "paths ... Requires: baseUrl to be set ... jsx: react-jsx - Uses JSX transform (React 17+, no need to import React)"
+    },
+    {
+      "title": "microsoft/TypeScript Releases",
+      "url": "https://github.com/microsoft/TypeScript/releases",
+      "type": "repo",
+      "quote": "TypeScript 7.0.2 ... TypeScript 7.1 Beta ... TypeScript 6.0.3"
+    },
+    {
+      "title": "ts-jest: Using TypeScript 7",
+      "url": "https://kulshekhar.github.io/ts-jest/docs/next/guides/typescript-7",
+      "type": "official-docs",
+      "quote": "TypeScript 7.0 ships a native tsc, but it does not ship the JavaScript compiler API that ts-jest needs ... TypeScript 7.0 has no stable programmatic API"
+    }
+  ],
+  "current_version": "TypeScript 7.0.2 (GA, native Go compiler) is the official current stable release; this build should instead target TypeScript 6.0.3 for compiler-API/tooling compatibility with vitest and Next.js 15 [uncertain]",
+  "api_surface": [
+    "tsconfig.json compilerOptions: strict, target, module, moduleResolution, jsx (react-jsx), esModuleInterop, skipLibCheck, isolatedModules, baseUrl/paths",
+    "`npx tsc` / `npx tsc --noEmit` for type-checking in CI and local dev",
+    "Standard language features: interfaces/types for FIFO cost-layer and movement models, generics and utility types (Partial, Pick, Omit) for Firestore document typing, `satisfies` operator for config/const objects",
+    "No direct use of the TypeScript Compiler API (ts.createProgram, ts.transform, etc.) — this build only needs `tsc` as a build/check step, not programmatic compilation"
+  ],
+  "pitfalls": [
+    "TypeScript 7.0 (native Go compiler) ships with no JavaScript programmatic compiler API; tools built on that API (ts-jest confirmed directly; Vitest's esbuild/oxc-based pipeline and Next.js's internal type-checker reported in secondary sources) can fail or require workarounds until TypeScript 7.1 restores an API — avoid upgrading the project's `typescript` package to 7.x until this build's tooling (vitest, Next.js 15) is confirmed compatible [uncertain: exact Vitest/Next.js 15 behavior not verified from an opened official source]",
+    "TypeScript 7.0 removes ES5 targeting and legacy AMD/UMD/CommonJS module emission — irrelevant for this build's ESM/Next.js setup but would break any leftover CommonJS-targeted config",
+    "TypeScript 7.0 removes `baseUrl` as a standalone setting (paths become project-root relative); this differs from the general tsconfig reference showing `paths` requires `baseUrl`, so `@/*` alias configs must be re-verified if the project ever moves to TS7",
+    "`types` now defaults to `[]` in TS7 instead of auto-discovering `@types` packages — ambient type packages (e.g. `@types/node`) must be explicitly listed in `types` once/if TS7 is adopted",
+    "TypeScript 7.1 (Beta as of Oct 20, 2026) is the version expected to restore the programmatic API and add import-attributes support for ambient modules — treat 7.0.x as not yet safe for this build's tool stack"
+  ],
+  "uncertain": [
+    "current_version",
+    "pitfalls"
+  ]
+}

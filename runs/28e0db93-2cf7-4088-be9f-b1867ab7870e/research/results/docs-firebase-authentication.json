@@ -1,0 +1,75 @@
+{
+  "summary": "Firebase Authentication is a managed auth backend accessed via the modular Firebase JS SDK (`firebase/auth`), currently shipping as part of SDK v13.1.0 (Oct 21, 2026). For this build it is installed via `npm install firebase`, initialized with `initializeApp()` + `getAuth(app)`, and the app will rely on `onAuthStateChanged`, sign-in/sign-out helpers, and server-set custom claims (via Admin SDK `setCustomUserClaims`) read in Firestore rules as `request.auth.token.<claim>` to implement the existing RoleGuard/useRole RBAC pattern for the new inventory collections. The last Authentication-specific breaking change in the official JS SDK release notes was in v10.0.0 (Jul 2023) — outside behavior this build touches (React Native storage default, RecaptchaVerifier param order, ParsedToken typing) — and no Authentication breaking changes are listed through the current v13.x line.",
+  "key_findings": [
+    "Firebase Authentication overview docs (firebase.google.com/docs/auth) describe it as backend services + SDKs for password, phone, and federated sign-in, integrating via OAuth2/OIDC; page last updated 2026-10-20.",
+    "Web install is `npm install firebase`; no pinned version is mandated by the docs themselves (firebase.google.com/docs/web/setup).",
+    "Modular initialization pattern: `import { initializeApp } from 'firebase/app'`, `import { getAuth } from 'firebase/auth'`, then `const app = initializeApp(firebaseConfig); const auth = getAuth(app);`.",
+    "Core API surface documented at firebase.google.com/docs/auth/web/start: `getAuth(app)`, `createUserWithEmailAndPassword(auth, email, password)`, `signInWithEmailAndPassword(auth, email, password)`, `onAuthStateChanged(auth, callback)`.",
+    "Current Firebase JS SDK line per official release notes (firebase.google.com/support/release-notes/js): v13.1.0 (2026-10-21) is latest; v13.0.0 (2026-10-07) was a major bump but contained no listed Authentication-specific breaking changes (changes were in AI Logic / Firestore typings).",
+    "Last Authentication breaking changes were in v10.0.0 (2023-07-06): removed explicit `firebase/auth/react-native` entry point, React Native `getAuth()` now defaults to importing AsyncStorage from `@react-native-async-storage/async-storage`, `ParsedToken` values changed from `any` to `unknown`, and `RecaptchaVerifier` constructor reordered to take `auth` as the first parameter.",
+    "Custom claims for RBAC are set server-side only via Admin SDK: `getAuth().setCustomUserClaims(uid, { admin: true })`; they propagate to the ID token on next sign-in, token refresh, or `getIdToken(true)` (firebase.google.com/docs/auth/admin/custom-claims).",
+    "Firestore security rules read custom claims via `request.auth.token.<claim>` (e.g. `request.auth.token.admin === true`), enabling role checks (logging vs admin tier) without extra document lookups — directly applicable to firestore.rules for the inventory collections.",
+    "Custom claims payload is capped at 1000 bytes total and is meant for access-control data only, not general profile data.",
+    "Client-side claim read pattern: `getAuth().currentUser?.getIdTokenResult().then(r => r.claims.admin)`."
+  ],
+  "recommendations": [
+    "Use `npm install firebase` and the modular v9+ API (`firebase/auth`, `getAuth`, `onAuthStateChanged`) — this is already the project's stack and remains current best practice; do not reintroduce the `firebase/compat` API.",
+    "If RBAC for the inventory module's logging-vs-admin tiers (acceptance criteria 11–12) is implemented via custom claims, set them only from a trusted server context (Admin SDK) and keep the payload well under the 1000-byte limit — store just role flags, not profile data.",
+    "In firestore.rules, gate inventory write-off/adjustment/valuation-view rules on `request.auth.token.role == 'admin'` (or equivalent claim/field already used by the existing RoleGuard/useRole convention) rather than client-trusted fields, consistent with how the rest of the app's RBAC works.",
+    "Remember claims only take effect after token refresh — if role changes are made during a session, force `getIdToken(true)` or require re-login before relying on the new role client-side; don't assume an immediate UI update.",
+    "No Authentication SDK breaking changes need to be absorbed for this build (last one affecting web apps relevant to this stack was v10.0.0 in 2023, around RecaptchaVerifier/ParsedToken typing, which this build does not use); just keep the `firebase` package reasonably current (v13.x) via normal `npm install`."
+  ],
+  "as_of": "Firebase JS SDK v13.1.0, released 2026-10-21; Authentication overview page last updated 2026-10-20",
+  "sources": [
+    {
+      "title": "Firebase Authentication (overview)",
+      "url": "https://firebase.google.com/docs/auth",
+      "type": "official-docs",
+      "quote": "Firebase Authentication provides backend services, easy-to-use SDKs, and ready-made UI libraries to authenticate users to your app."
+    },
+    {
+      "title": "Get Started with Firebase Authentication on Web",
+      "url": "https://firebase.google.com/docs/auth/web/start",
+      "type": "official-docs",
+      "quote": "const auth = getAuth(app); ... createUserWithEmailAndPassword(auth, email, password) ... onAuthStateChanged(auth, callback)"
+    },
+    {
+      "title": "Add Firebase to your JavaScript project",
+      "url": "https://firebase.google.com/docs/web/setup",
+      "type": "official-docs",
+      "quote": "npm install firebase ... const app = initializeApp(firebaseConfig);"
+    },
+    {
+      "title": "Firebase JavaScript SDK Release Notes",
+      "url": "https://firebase.google.com/support/release-notes/js",
+      "type": "official-docs",
+      "quote": "Removed the explicit firebase/auth/react-native entry point... Reordered the parameters of the RecaptchaVerifier constructor so that auth is the first parameter."
+    },
+    {
+      "title": "Control Access with Custom Claims and Security Rules",
+      "url": "https://firebase.google.com/docs/auth/admin/custom-claims",
+      "type": "official-docs",
+      "quote": "The payload must not exceed 1000 bytes. ... getAuth().setCustomUserClaims(uid, {admin: true})"
+    }
+  ],
+  "current_version": "Firebase JS SDK v13.1.0 (2026-10-21); Authentication module (firebase/auth) ships as part of this version with no version number pinned independently by the docs",
+  "api_surface": [
+    "initializeApp(firebaseConfig)",
+    "getAuth(app)",
+    "onAuthStateChanged(auth, callback)",
+    "signInWithEmailAndPassword(auth, email, password)",
+    "createUserWithEmailAndPassword(auth, email, password)",
+    "signOut(auth)",
+    "currentUser.getIdTokenResult() / getIdToken(true) (client, for reading/refreshing custom claims)",
+    "Admin SDK: getAuth().setCustomUserClaims(uid, claims) (server-only, for role claims used by RoleGuard/useRole and firestore.rules)",
+    "firestore.rules expression: request.auth.token.<claim> (e.g. role/admin check)"
+  ],
+  "pitfalls": [
+    "v10.0.0 (2023-07-06): RecaptchaVerifier constructor parameter order changed (auth now first) — relevant only if phone auth/reCAPTCHA is ever added; not used by this inventory build.",
+    "v10.0.0: ParsedToken claim values typed as unknown instead of any — minor TypeScript impact if reading custom claims client-side with strict typing.",
+    "No Authentication-specific breaking changes recorded between v10.0.0 (2023) and the current v13.1.0 (2026) in official release notes — the surface this build uses (getAuth, onAuthStateChanged, custom claims) has been stable.",
+    "Custom claims have a hard 1000-byte payload limit and only update on token refresh, not instantly — a common real-world gotcha for role-based UI gating immediately after an admin changes a user's role.",
+    "Custom claims can only be set from a trusted server/Admin SDK context, never from client code — relevant when designing how the logging/admin role distinction (acceptance criteria 11–12) gets assigned."
+  ],
+  "uncertain": []
+}
