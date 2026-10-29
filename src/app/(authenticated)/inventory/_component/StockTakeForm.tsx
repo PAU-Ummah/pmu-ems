@@ -145,9 +145,9 @@ export default function StockTakeForm({
                     required
                   />
                   <Button
-                    variant="outline"
+                    variant="primary"
                     onClick={() => setAiDialogOpen(true)}
-                    className="shrink-0 whitespace-nowrap text-xs"
+                    className="shrink-0 whitespace-nowrap !bg-success-700 !text-sm font-semibold !text-white hover:!bg-success-800 focus:!ring-success-600"
                   >
                     Use AI Count
                   </Button>
