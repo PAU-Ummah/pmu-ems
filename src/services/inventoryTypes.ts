@@ -15,6 +15,9 @@ export interface InventoryItem {
   unitOfMeasure: string;
   createdAt: string;
   createdBy: string;
+  archived?: boolean;
+  archivedAt?: string;
+  archivedBy?: string;
 }
 
 export interface InventoryLayerDoc extends InventoryLayer {

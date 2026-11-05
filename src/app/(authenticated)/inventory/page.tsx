@@ -19,6 +19,12 @@ import { useInventoryItems } from '@/hooks/useInventoryItems';
 import { useEvents } from '@/hooks/useEvents';
 import { useCurrentSession } from '@/hooks/useCurrentSession';
 import { useRole } from '@/hooks/useRole';
+import {
+  archiveInventoryItem,
+  deleteInventoryItem,
+  restoreInventoryItem,
+} from '@/services/inventoryService';
+import { useAuth } from '@/context/AuthContext';
 import ItemForm from './_component/ItemForm';
 import ReceiptForm from './_component/ReceiptForm';
 import IssueForm from './_component/IssueForm';
@@ -30,6 +36,9 @@ export default function InventoryPage() {
   const { currentSessionId } = useCurrentSession();
   const { events } = useEvents(currentSessionId);
   const { canAdminInventory } = useRole();
+  const { user } = useAuth();
+  const [showArchived, setShowArchived] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [itemFormOpen, setItemFormOpen] = useState(false);
   const [receiptFormOpen, setReceiptFormOpen] = useState(false);
   const [receiptDefaultItemId, setReceiptDefaultItemId] = useState<string | undefined>(undefined);
@@ -58,6 +67,30 @@ export default function InventoryPage() {
   const openStockTakeForm = (itemId?: string) => {
     setStockTakeDefaultItemId(itemId);
     setStockTakeFormOpen(true);
+  };
+
+  const activeItems = items.filter(({ item }) => !item.archived);
+  const visibleItems = showArchived ? items : activeItems;
+
+  const runItemAction = async (action: () => Promise<void>) => {
+    setActionError(null);
+    try {
+      await action();
+      refresh();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Something went wrong.');
+    }
+  };
+
+  const handleDelete = (itemId: string, name: string) => {
+    if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
+    runItemAction(() => deleteInventoryItem(itemId));
+  };
+
+  const handleArchive = (itemId: string, name: string) => {
+    if (!user) return;
+    if (!window.confirm(`Archive "${name}"? Its history is kept and you can restore it later.`)) return;
+    runItemAction(() => archiveInventoryItem(itemId, user.uid));
   };
 
   return (
@@ -95,18 +128,30 @@ export default function InventoryPage() {
               <Button variant="outline">Reports &amp; Valuation</Button>
             </Link>
           )}
+          {canAdminInventory() && (
+            <label className="flex items-center gap-2 px-2 text-sm text-gray-700 dark:text-gray-300">
+              <input
+                type="checkbox"
+                checked={showArchived}
+                onChange={(e) => setShowArchived(e.target.checked)}
+              />
+              Show archived
+            </label>
+          )}
         </div>
+
+        {actionError && <p className="mb-4 text-sm text-error-500">{actionError}</p>}
 
         {loading ? (
           <Loading />
-        ) : items.length === 0 ? (
+        ) : visibleItems.length === 0 ? (
           <EmptyState
             title="No inventory items yet"
             description="Add an item to start tracking refreshment stock."
           />
         ) : (
           <div className="flex flex-col gap-6">
-            {items.map(({ item, layers, onHand, nextLayer }) => (
+            {visibleItems.map(({ item, layers, onHand, nextLayer }) => (
               <div
                 key={item.id}
                 className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]"
@@ -124,36 +169,73 @@ export default function InventoryPage() {
                     <Badge color="primary" variant="light" size="md">
                       On hand: {onHand}
                     </Badge>
-                    <Button
-                      variant="outline"
-                      startIcon={<Add />}
-                      onClick={() => openReceiptForm(item.id)}
-                      className="text-xs"
-                    >
-                      Add Receipt
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => openIssueForm(item.id)}
-                      className="text-xs"
-                    >
-                      Issue Stock
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => openStockTakeForm(item.id)}
-                      className="text-xs"
-                    >
-                      Stock Take
-                    </Button>
-                    {canAdminInventory() && (
-                      <Button
-                        variant="outline"
-                        onClick={() => openWriteOffForm(item.id)}
-                        className="text-xs"
-                      >
-                        Write Off
-                      </Button>
+                    {item.archived ? (
+                      <>
+                        <Badge color="warning" variant="light" size="md">
+                          Archived
+                        </Badge>
+                        {canAdminInventory() && (
+                          <Button
+                            variant="outline"
+                            onClick={() => runItemAction(() => restoreInventoryItem(item.id!))}
+                            className="text-xs"
+                          >
+                            Restore
+                          </Button>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          variant="outline"
+                          startIcon={<Add />}
+                          onClick={() => openReceiptForm(item.id)}
+                          className="text-xs"
+                        >
+                          Add Receipt
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => openIssueForm(item.id)}
+                          className="text-xs"
+                        >
+                          Issue Stock
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => openStockTakeForm(item.id)}
+                          className="text-xs"
+                        >
+                          Stock Take
+                        </Button>
+                        {canAdminInventory() && (
+                          <Button
+                            variant="outline"
+                            onClick={() => openWriteOffForm(item.id)}
+                            className="text-xs"
+                          >
+                            Write Off
+                          </Button>
+                        )}
+                        {canAdminInventory() && layers.length === 0 && (
+                          <Button
+                            variant="outline"
+                            onClick={() => handleDelete(item.id!, item.name)}
+                            className="text-xs"
+                          >
+                            Delete
+                          </Button>
+                        )}
+                        {canAdminInventory() && layers.length > 0 && onHand === 0 && (
+                          <Button
+                            variant="outline"
+                            onClick={() => handleArchive(item.id!, item.name)}
+                            className="text-xs"
+                          >
+                            Archive
+                          </Button>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -245,14 +327,14 @@ export default function InventoryPage() {
         <ReceiptForm
           isOpen={receiptFormOpen}
           onClose={() => setReceiptFormOpen(false)}
-          items={items.map(({ item }) => item)}
+          items={activeItems.map(({ item }) => item)}
           defaultItemId={receiptDefaultItemId}
           onCreated={refresh}
         />
         <IssueForm
           isOpen={issueFormOpen}
           onClose={() => setIssueFormOpen(false)}
-          items={items.map(({ item }) => item)}
+          items={activeItems.map(({ item }) => item)}
           events={events}
           defaultItemId={issueDefaultItemId}
           onCreated={refresh}
@@ -260,15 +342,15 @@ export default function InventoryPage() {
         <WriteOffForm
           isOpen={writeOffFormOpen}
           onClose={() => setWriteOffFormOpen(false)}
-          items={items.map(({ item }) => item)}
+          items={activeItems.map(({ item }) => item)}
           defaultItemId={writeOffDefaultItemId}
           onCreated={refresh}
         />
         <StockTakeForm
           isOpen={stockTakeFormOpen}
           onClose={() => setStockTakeFormOpen(false)}
-          items={items.map(({ item }) => item)}
-          itemsWithStock={items}
+          items={activeItems.map(({ item }) => item)}
+          itemsWithStock={activeItems}
           defaultItemId={stockTakeDefaultItemId}
           onCreated={refresh}
         />

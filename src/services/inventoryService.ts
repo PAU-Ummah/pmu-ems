@@ -1,11 +1,13 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
   query,
   runTransaction,
+  updateDoc,
   where,
 } from 'firebase/firestore';
 import { db } from '@/services/firebase';
@@ -46,6 +48,39 @@ export async function createInventoryItem(
     createdBy,
   });
   return docRef.id;
+}
+
+/** Deletes an item only if it has no batches and no movements; otherwise it must be archived. */
+export async function deleteInventoryItem(itemId: string): Promise<void> {
+  const [layersSnap, movementsSnap] = await Promise.all([
+    getDocs(query(collection(db, 'inventoryLayers'), where('itemId', '==', itemId))),
+    getDocs(query(collection(db, 'inventoryMovements'), where('itemId', '==', itemId))),
+  ]);
+  if (!layersSnap.empty || !movementsSnap.empty) {
+    throw new Error('This item has stock history, so it cannot be deleted. Archive it instead.');
+  }
+  await deleteDoc(doc(db, 'inventoryItems', itemId));
+}
+
+/** Hides an item from the stock screen without touching its history. */
+export async function archiveInventoryItem(itemId: string, archivedBy: string): Promise<void> {
+  const { layers } = await getItemWithLayers(itemId);
+  if (layers.some((layer) => layer.remainingQty > 0)) {
+    throw new Error('This item still has stock on hand. Issue or write it off before archiving.');
+  }
+  await updateDoc(doc(db, 'inventoryItems', itemId), {
+    archived: true,
+    archivedAt: new Date().toISOString(),
+    archivedBy,
+  });
+}
+
+export async function restoreInventoryItem(itemId: string): Promise<void> {
+  await updateDoc(doc(db, 'inventoryItems', itemId), {
+    archived: false,
+    archivedAt: null,
+    archivedBy: null,
+  });
 }
 
 export interface CreateReceiptParams {
