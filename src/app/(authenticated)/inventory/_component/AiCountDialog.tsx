@@ -45,6 +45,8 @@ export default function AiCountDialog({ isOpen, onClose, onAccept }: AiCountDial
   const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
   const [editedCount, setEditedCount] = useState('');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [note, setNote] = useState('');
+  const [layers, setLayers] = useState('1');
 
   const reset = () => {
     setLoading(false);
@@ -52,6 +54,16 @@ export default function AiCountDialog({ isOpen, onClose, onAccept }: AiCountDial
     setSuggestion(null);
     setEditedCount('');
     setPhotoFile(null);
+    setNote('');
+    setLayers('1');
+  };
+
+  const handleLayersChange = (value: string) => {
+    setLayers(value);
+    const layersNum = Number(value);
+    if (suggestion && Number.isInteger(layersNum) && layersNum >= 1) {
+      setEditedCount(String(suggestion.count * layersNum));
+    }
   };
 
   const resetAndClose = () => {
@@ -87,7 +99,7 @@ export default function AiCountDialog({ isOpen, onClose, onAccept }: AiCountDial
           'content-type': 'application/json',
           authorization: `Bearer ${idToken}`,
         },
-        body: JSON.stringify({ imageBase64, mediaType: file.type }),
+        body: JSON.stringify({ imageBase64, mediaType: file.type, note }),
       });
       const data = await response.json();
 
@@ -97,6 +109,7 @@ export default function AiCountDialog({ isOpen, onClose, onAccept }: AiCountDial
       }
 
       setSuggestion(data);
+      setLayers('1');
       setEditedCount(String(data.count));
       setPhotoFile(file);
     } catch {
@@ -137,6 +150,16 @@ export default function AiCountDialog({ isOpen, onClose, onAccept }: AiCountDial
 
         <div className="flex flex-col gap-4">
           <div>
+            <Label htmlFor="aiCountNote">Note for the AI (optional)</Label>
+            <InputField
+              id="aiCountNote"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="e.g. count the biscuit packs, not the carton"
+            />
+          </div>
+
+          <div>
             <Label htmlFor="aiCountPhoto">Photo of carton</Label>
             <input
               id="aiCountPhoto"
@@ -157,9 +180,24 @@ export default function AiCountDialog({ isOpen, onClose, onAccept }: AiCountDial
           {suggestion && (
             <div className="flex flex-col gap-3 rounded-lg border border-gray-200 p-4 dark:border-gray-700">
               <p className="text-sm text-gray-700 dark:text-gray-300">
-                Looks like: {suggestion.item} — count: {suggestion.count}
+                Looks like: {suggestion.item} — {suggestion.count} visible
                 {' '}({Math.round(suggestion.confidence * 100)}% confidence)
               </p>
+
+              <div>
+                <Label htmlFor="aiCountLayers">Layers in the box</Label>
+                <InputField
+                  id="aiCountLayers"
+                  type="number"
+                  min={1}
+                  value={layers}
+                  onChange={(e) => handleLayersChange(e.target.value)}
+                />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  The AI only counts what it can see. If identical layers are hidden underneath,
+                  enter how many layers the box holds and the total updates.
+                </p>
+              </div>
 
               {suggestion.confidence < 0.7 && (
                 <p className="text-sm text-warning-500">

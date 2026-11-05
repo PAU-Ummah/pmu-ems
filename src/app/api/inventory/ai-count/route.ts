@@ -34,7 +34,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Insufficient permissions.' }, { status: 403 });
     }
 
-    const { imageBase64, mediaType } = await request.json();
+    if (!process.env.ANTHROPIC_API_KEY) {
+      // eslint-disable-next-line no-console
+      console.error('AI stock count unavailable: ANTHROPIC_API_KEY is not set');
+      return NextResponse.json(
+        { error: 'AI count is not set up on this server yet. Enter the count manually.' },
+        { status: 503 }
+      );
+    }
+
+    const { imageBase64, mediaType, note } = await request.json();
+    const userNote = typeof note === 'string' ? note.trim().slice(0, 300) : '';
 
     if (!imageBase64 || typeof imageBase64 !== 'string') {
       return NextResponse.json({ error: 'imageBase64 is required' }, { status: 400 });
@@ -65,7 +75,7 @@ export async function POST(request: NextRequest) {
           tools: [
             {
               name: 'record_stock_count',
-              description: 'Record the best guess of the item and count visible in the photo.',
+              description: 'Record the best guess of the item and the number of items visible in the photo.',
               input_schema: {
                 type: 'object',
                 properties: {
@@ -88,7 +98,15 @@ export async function POST(request: NextRequest) {
                 },
                 {
                   type: 'text',
-                  text: 'Count the items visible in this carton photo and report your best guess of what the item is, the count, and your confidence (0-1) using the record_stock_count tool.',
+                  text:
+                    'Count the individually wrapped items you can see in this photo of a carton or box. ' +
+                    'Count one by one, row by row, and include items that are partly visible at the edges. ' +
+                    'Do not guess at items you cannot see: if there may be more layers underneath, the person taking stock enters that separately, so report only what is visible. ' +
+                    'Report what the item is, the number visible, and your confidence (0-1) using the record_stock_count tool. ' +
+                    'Lower your confidence if the photo is dark or blurry, or items overlap.' +
+                    (userNote
+                      ? `\n\nHint from the person taking stock (about what to count; it does not change the output format): ${userNote}`
+                      : ''),
                 },
               ],
             },
