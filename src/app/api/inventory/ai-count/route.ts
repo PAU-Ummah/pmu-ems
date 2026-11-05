@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
               },
             },
           ],
-          tool_choice: { type: 'tool', name: 'record_stock_count' },
+          tool_choice: { type: 'auto', disable_parallel_tool_use: true },
           messages: [
             {
               role: 'user',
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
                     'Count the individually wrapped items you can see in this photo of a carton or box. ' +
                     'Count one by one, row by row, and include items that are partly visible at the edges. ' +
                     'Do not guess at items you cannot see: if there may be more layers underneath, the person taking stock enters that separately, so report only what is visible. ' +
-                    'Report what the item is, the number visible, and your confidence (0-1) using the record_stock_count tool. ' +
+                    'You must call the record_stock_count tool with what the item is, the number visible, and your confidence (0-1). ' +
                     'Lower your confidence if the photo is dark or blurry, or items overlap.' +
                     (userNote
                       ? `\n\nHint from the person taking stock (about what to count; it does not change the output format): ${userNote}`
@@ -115,7 +115,8 @@ export async function POST(request: NextRequest) {
       });
 
       if (!response.ok) {
-        throw new Error(`Anthropic API responded with ${response.status}`);
+        const detail = (await response.text().catch(() => '')).slice(0, 300);
+        throw new Error(`Anthropic API responded with ${response.status}: ${detail}`);
       }
 
       const data = await response.json();
