@@ -4,7 +4,7 @@ import { adminAuth, adminDb } from '@/services/firebaseAdmin';
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const SUPPORTED_MEDIA_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const INVENTORY_ROLES = ['event-organizer', 'it', 'finance-manager', 'admin', 'registrar'];
-const DEFAULT_MODEL = 'claude-haiku-5-5';
+const DEFAULT_MODEL = 'claude-sonnet-5-5';
 
 function base64ByteSize(base64: string): number {
   const padding = base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0;
